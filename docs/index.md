@@ -11,7 +11,7 @@ In order to use the Myra Security Provider you first need your API_KEY and your 
 terraform {
   required_providers {
     myrasec = {
-      source  = "myrasecurity/myrasec"
+      source  = "Myra-Security-GmbH/myrasec"
       version = "~> 1.0.0"
     }
   }
