@@ -229,8 +229,7 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 	}
 
 	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-
+		created, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("created").(string))
 		if err != nil {
 			return nil, err
 		}
@@ -241,8 +240,7 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 	}
 
 	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-
+		modified, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("modified").(string))
 		if err != nil {
 			return nil, err
 		}
