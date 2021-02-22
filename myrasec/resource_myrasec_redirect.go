@@ -137,8 +137,8 @@ func resourceMyrasecRedirectRead(d *schema.ResourceData, meta interface{}) error
 			continue
 		}
 		d.Set("redirect_id", r.ID)
-		d.Set("created", r.Created)
-		d.Set("modified", r.Modified)
+		d.Set("created", r.Created.Format(time.RFC3339))
+		d.Set("modified", r.Modified.Format(time.RFC3339))
 		d.Set("type", r.Type)
 		d.Set("subdomain_name", r.SubDomainName)
 		d.Set("source", r.Source)
@@ -196,7 +196,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 	}
 
 	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("created").(string))
+		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 	}
 
 	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("modified").(string))
+		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
 		if err != nil {
 			return nil, err
 		}

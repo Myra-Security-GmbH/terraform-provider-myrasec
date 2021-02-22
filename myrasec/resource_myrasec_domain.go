@@ -193,7 +193,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	}
 
 	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("created").(string))
+		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +204,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	}
 
 	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("modified").(string))
+		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
 		if err != nil {
 			return nil, err
 		}
@@ -215,7 +215,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	}
 
 	if len(d.Get("paused_until").(string)) > 0 {
-		pausedUntil, err := time.Parse("2006-01-02T15:04:05-0700", d.Get("paused_until").(string))
+		pausedUntil, err := time.Parse(time.RFC3339, d.Get("paused_until").(string))
 		if err != nil {
 			return nil, err
 		}
