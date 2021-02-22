@@ -55,4 +55,16 @@ resource "myrasec_cache_setting" "index" {
         myrasec_dns_record.www
     ]
 }
+
+# Create a new redirect
+resource "myrasec_redirect" "redirect" {
+  subdomain_name = "www.example.com"
+  matching_type = "exact"
+  type = "permanent"
+  source = "/index_old"
+  destination = "/index_new"
+  depends_on = [
+    myrasec_dns_record.www
+  ]
+}
 ```
