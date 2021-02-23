@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.77.0 // indirect
 	cloud.google.com/go/storage v1.13.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Myra-Security-GmbH/myrasec-go v0.0.0-20210219081321-75d78e037ddf
+	github.com/Myra-Security-GmbH/myrasec-go v0.0.0-20210223130010-4fa19683b157
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.14 // indirect
@@ -33,10 +33,12 @@ require (
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
+	github.com/zclconf/go-cty v1.8.0 // indirect
 	github.com/zclconf/go-cty-yaml v1.0.2 // indirect
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20210218145215-b8e89b74b9df // indirect
+	golang.org/x/net v0.0.0-20210222171744-9060382bd457 // indirect
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99 // indirect
-	golang.org/x/sys v0.0.0-20210218155724-8ebf48af031b // indirect
-	google.golang.org/genproto v0.0.0-20210218151259-fe80b386bf06 // indirect
+	golang.org/x/sys v0.0.0-20210223095934-7937bea0104d // indirect
+	google.golang.org/genproto v0.0.0-20210222212404-3e1e516060db // indirect
 )
