@@ -115,6 +115,65 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				ForceNew:    true,
 				Description: "Port for SRV records.",
 			},
+			"upstream_options": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"upstream_id": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "ID of the upstream configuration.",
+						},
+						"modified": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Date of last modification.",
+						},
+						"created": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Date of creation.",
+						},
+						"backup": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							ForceNew:    true,
+							Description: "Marks the server as a backup server. It will be used when the primary servers are unavailable. Cannot be used in combination with \"Preserve client IP on the same upstream\".",
+						},
+						"down": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							ForceNew:    true,
+							Description: "Marks the server as unavailable.",
+						},
+						"fail_timeout": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     1,
+							ForceNew:    true,
+							Description: "Double usage: 1. Time period in which the max_fails must occur until the upstream is deactivated. 2. Time period the upstream is deactivated until it is reactivated. The time during which the specified number of unsuccessful attempts \"Max fails\" to communicate with the server should happen to consider the server unavailable. Also the period of time the server will be considered unavailable. Default is 10 seconds.",
+						},
+						"max_fails": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     100,
+							ForceNew:    true,
+							Description: "The number of unsuccessful attempts to communicate with the server that should happen in the duration set by \"Fail timeout\" to consider the server unavailable. Also the server is considered unavailable for the duration set by \"Fail timeout\". By default, the number of unsuccessful attempts is set to 1. Setting the value to zero disables the accounting of attempts. What is considered an unsuccessful attempt is defined by the \"Next upstream error handling\".",
+						},
+						"weight": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     1,
+							ForceNew:    true,
+							Description: "Weight defines the count of requests a upstream handles before the next upstream is selected.",
+						},
+					},
+				},
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -176,6 +235,17 @@ func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) erro
 		d.Set("created", r.Created.Format(time.RFC3339))
 		d.Set("modified", r.Modified.Format(time.RFC3339))
 		d.Set("comment", r.Comment)
+
+		d.Set("upstream_options", map[string]interface{}{
+			"upstream_id":  r.UpstreamOptions.ID,
+			"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
+			"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
+			"backup":       r.UpstreamOptions.Backup,
+			"down":         r.UpstreamOptions.Down,
+			"fail_timeout": r.UpstreamOptions.FailTimeout,
+			"max_fails":    r.UpstreamOptions.MaxFails,
+			"weight":       r.UpstreamOptions.Weight,
+		})
 		break
 	}
 
@@ -246,6 +316,53 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 		}
 		record.Modified = &types.DateTime{
 			Time: modified,
+		}
+	}
+
+	options, ok := d.GetOk("upstream_options")
+	if !ok {
+		return record, nil
+	}
+	record.UpstreamOptions = &myrasec.UpstreamOptions{}
+
+	for _, upstream := range options.([]interface{}) {
+		for key, val := range upstream.(map[string]interface{}) {
+			switch key {
+			case "upstream_id":
+				record.UpstreamOptions.ID = val.(int)
+			case "modified":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				modified, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				record.UpstreamOptions.Modified = &types.DateTime{
+					Time: modified,
+				}
+			case "created":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				created, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				record.UpstreamOptions.Created = &types.DateTime{
+					Time: created,
+				}
+			case "backup":
+				record.UpstreamOptions.Backup = val.(bool)
+			case "down":
+				record.UpstreamOptions.Down = val.(bool)
+			case "fail_timeout":
+				record.UpstreamOptions.FailTimeout = val.(int)
+			case "max_fails":
+				record.UpstreamOptions.MaxFails = val.(int)
+			case "weight":
+				record.UpstreamOptions.Weight = val.(int)
+			}
 		}
 	}
 
