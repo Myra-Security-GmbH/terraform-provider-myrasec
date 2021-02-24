@@ -127,7 +127,7 @@ func resourceMyrasecRedirectRead(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error parsing redirect id: %s", err)
 	}
 
-	redirects, err := client.ListRedirects(d.Get("subdomain_name").(string))
+	redirects, err := client.ListRedirects(d.Get("subdomain_name").(string), nil)
 	if err != nil {
 		return fmt.Errorf("Error fetching redirects: %s", err)
 	}

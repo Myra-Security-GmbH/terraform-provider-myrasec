@@ -133,7 +133,7 @@ func resourceMyrasecCacheSettingRead(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("Error parsing setting id: %s", err)
 	}
 
-	settings, err := client.ListCacheSettings(d.Get("subdomain_name").(string))
+	settings, err := client.ListCacheSettings(d.Get("subdomain_name").(string), nil)
 	if err != nil {
 		return fmt.Errorf("Error fetching cache settings: %s", err)
 	}

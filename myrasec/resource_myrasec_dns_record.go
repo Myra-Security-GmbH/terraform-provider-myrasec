@@ -213,7 +213,7 @@ func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error parsing record id: %s", err)
 	}
 
-	records, err := client.ListDNSRecords(d.Get("domain_name").(string))
+	records, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
 	if err != nil {
 		return fmt.Errorf("Error fetching DNS records: %s", err)
 	}
@@ -236,16 +236,18 @@ func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) erro
 		d.Set("modified", r.Modified.Format(time.RFC3339))
 		d.Set("comment", r.Comment)
 
-		d.Set("upstream_options", map[string]interface{}{
-			"upstream_id":  r.UpstreamOptions.ID,
-			"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
-			"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
-			"backup":       r.UpstreamOptions.Backup,
-			"down":         r.UpstreamOptions.Down,
-			"fail_timeout": r.UpstreamOptions.FailTimeout,
-			"max_fails":    r.UpstreamOptions.MaxFails,
-			"weight":       r.UpstreamOptions.Weight,
-		})
+		if r.UpstreamOptions != nil {
+			d.Set("upstream_options", map[string]interface{}{
+				"upstream_id":  r.UpstreamOptions.ID,
+				"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
+				"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
+				"backup":       r.UpstreamOptions.Backup,
+				"down":         r.UpstreamOptions.Down,
+				"fail_timeout": r.UpstreamOptions.FailTimeout,
+				"max_fails":    r.UpstreamOptions.MaxFails,
+				"weight":       r.UpstreamOptions.Weight,
+			})
+		}
 		break
 	}
 

@@ -513,7 +513,7 @@ func resourceMyrasecSettingsCreate(d *schema.ResourceData, meta interface{}) err
 func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	settings, err := client.ListSettings(d.Get("subdomain_name").(string))
+	settings, err := client.ListSettings(d.Get("subdomain_name").(string), nil)
 	if err != nil {
 		return fmt.Errorf("Error fetching settings: %s", err)
 	}

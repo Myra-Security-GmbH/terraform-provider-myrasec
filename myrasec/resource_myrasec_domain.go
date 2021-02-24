@@ -109,7 +109,7 @@ func resourceMyrasecDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error parsing domain id: %s", err)
 	}
 
-	domains, err := client.ListDomains()
+	domains, err := client.ListDomains(nil)
 	if err != nil {
 		return fmt.Errorf("Error fetching domains: %s", err)
 	}

@@ -60,7 +60,7 @@ func dataSourceDomains() *schema.Resource {
 func dataSourceDomainsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	domains, err := client.ListDomains()
+	domains, err := client.ListDomains(nil)
 	if err != nil {
 		return fmt.Errorf("Error fetching domains: %s", err)
 	}
