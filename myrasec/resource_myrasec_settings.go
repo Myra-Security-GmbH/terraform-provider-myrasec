@@ -48,7 +48,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				ForceNew:    true,
 				Description: "Detection of POST floods by using a JavaScript based puzzle.",
 			},
-			"antibot_post_flood_theshold": {
+			"antibot_post_flood_threshold": {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
@@ -95,7 +95,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				ForceNew:    true,
-				Description: "Block traffic from the TOR network",
+				Description: "Block traffic from the TOR network.",
 			},
 			"cache_enabled": {
 				Type:        schema.TypeBool,
@@ -129,7 +129,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				ForceNew:    true,
 				Description: "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB.",
 			},
-			"deffie_hellman_exchange": {
+			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
@@ -144,7 +144,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 				ForceNew:    true,
-				Description: "Enable or disable origin SNI",
+				Description: "Enable or disable origin SNI.",
 			},
 			"forwarded_for_replacement": {
 				Type:        schema.TypeString,
@@ -192,7 +192,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Default:     80,
 				ForceNew:    true,
-				Description: "Allows to set a port for communication with origin via Http.",
+				Description: "Allows to set a port for communication with origin via HTTP.",
 			},
 			"ignore_nocache": {
 				Type:        schema.TypeBool,
@@ -208,7 +208,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 				ForceNew:    true,
-				Description: "Optimization of images",
+				Description: "Optimization of images.",
 			},
 			"ipv6_active": {
 				Type:        schema.TypeBool,
@@ -219,25 +219,22 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Allow connections via IPv6 to your systems.",
 			},
 			"limit_allowed_http_method": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Optional: true,
-				//				Default:      []string{""},
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				//ValidateFunc: valuesInSlice([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "MKCOL", "COPY", "MOVE", "OPTIONS", "PROPFIND", "PROPPATCH", "LOCK", "UNLOCK", "PATCH"}),
 				ForceNew:    true,
 				Description: "Not selected HTTP methods will be blocked.",
 			},
 			"limit_tls_version": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				//ValidateFunc: valuesInSlice([]string{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
 				ForceNew:    true,
 				Description: "Only selected TLS versions will be used.",
 			},
@@ -282,14 +279,12 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				//	Default:      []string{"error", "timeout", "invalid_header"},
-				//ValidateFunc: valuesInSlice([]string{"error", "timeout", "invalid_header", "http_403", "http_404", "http_429", "http_500", "http_502", "http_503", "http_504", "off"}),
 				ForceNew:    true,
 				Description: "Specifies the error that mark the current upstream as \"down\".",
 			},
@@ -308,7 +303,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Default:      "none",
 				ValidateFunc: validation.StringInSlice([]string{"none", "close", "upgrade"}, false),
 				ForceNew:     true,
-				Description:  "Connection header",
+				Description:  "Connection header.",
 			},
 			"proxy_cache_bypass": {
 				Type:        schema.TypeString,
@@ -319,14 +314,12 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
 			},
 			"proxy_cache_stale": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				//				Default:      []string{"updating"},
-				//ValidateFunc: valuesInSlice([]string{"error", "timeout", "invalid_header", "updating", "http_500", "http_502", "http_503", "http_504", "http_403", "http_404", "off"}),
 				ForceNew:    true,
 				Description: "Determines in which cases a stale cached response can be used when an error occurs.",
 			},
@@ -421,16 +414,14 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Enables / disables the Web Application Firewall.",
 			},
 			"waf_levels_enable": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				//				Default:      []string{"waf_tag", "waf_domain", "waf_subdomain"},
-				//ValidateFunc: valuesInSlice([]string{"waf_tag", "waf_domain", "waf_subdomain"}),
 				ForceNew:    true,
-				Description: "",
+				Description: "Level of applied WAF rules.",
 			},
 			"waf_policy": {
 				Type:         schema.TypeString,
@@ -441,6 +432,10 @@ func resourceMyrasecSettings() *schema.Resource {
 				ForceNew:     true,
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
 			},
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
 		},
 	}
 }
@@ -479,7 +474,7 @@ func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error
 
 	d.Set("access_log", settings.AccessLog)
 	d.Set("antibot_post_flood", settings.AntibotPostFlood)
-	d.Set("antibot_post_flood_theshold", settings.AntibotPostFloodTreshold)
+	d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
 	d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
 	d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
 	d.Set("balancing_method", settings.BalancingMethod)
@@ -489,7 +484,7 @@ func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("cache_revalidate", settings.CacheRevalidate)
 	d.Set("cdn", settings.CDN)
 	d.Set("client_max_body_size", settings.ClientMaxBodySize)
-	d.Set("deffie_hellman_exchange", settings.DeffieHellmanExchange)
+	d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
 	d.Set("enable_origin_sni", settings.EnableOriginSNI)
 	d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
 	d.Set("hsts", settings.HSTS)
@@ -561,7 +556,7 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 	settings := &myrasec.Settings{
 		AccessLog:                   d.Get("access_log").(bool),
 		AntibotPostFlood:            d.Get("antibot_post_flood").(bool),
-		AntibotPostFloodTreshold:    d.Get("antibot_post_flood_theshold").(int),
+		AntibotPostFloodThreshold:   d.Get("antibot_post_flood_threshold").(int),
 		AntibotProofOfWork:          d.Get("antibot_proof_of_work").(bool),
 		AntibotProofOfWorkThreshold: d.Get("antibot_proof_of_work_threshold").(int),
 		BalancingMethod:             d.Get("balancing_method").(string),
@@ -571,7 +566,7 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 		CacheRevalidate:             d.Get("cache_revalidate").(bool),
 		CDN:                         d.Get("cdn").(bool),
 		ClientMaxBodySize:           d.Get("client_max_body_size").(int),
-		DeffieHellmanExchange:       d.Get("deffie_hellman_exchange").(int),
+		DiffieHellmanExchange:       d.Get("diffie_hellman_exchange").(int),
 		EnableOriginSNI:             d.Get("enable_origin_sni").(bool),
 		ForwardedForReplacement:     d.Get("forwarded_for_replacement").(string),
 		HSTS:                        d.Get("hsts").(bool),
@@ -582,18 +577,14 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 		IgnoreNoCache:               d.Get("ignore_nocache").(bool),
 		ImageOptimization:           d.Get("image_optimization").(bool),
 		IPv6Active:                  d.Get("ipv6_active").(bool),
-		LimitAllowedHTTPMethod:      d.Get("limit_allowed_http_method").([]string),
-		LimitTLSVersion:             d.Get("limit_tls_version").([]string),
 		LogFormat:                   d.Get("log_format").(string),
 		MonitoringAlertThreshold:    d.Get("monitoring_alert_threshold").(int),
 		MonitoringContactEMail:      d.Get("monitoring_contact_email").(string),
 		MonitoringSendAlert:         d.Get("monitoring_send_alert").(bool),
 		MyraSSLHeader:               d.Get("myra_ssl_header").(bool),
-		NextUpstream:                d.Get("next_upstream").([]string),
 		OnlyHTTPS:                   d.Get("only_https").(bool),
 		OriginConnectionHeader:      d.Get("origin_connection_header").(string),
 		ProxyCacheBypass:            d.Get("proxy_cache_bypass").(string),
-		ProxyCacheStale:             d.Get("proxy_cache_stale").([]string),
 		ProxyConnectTimeout:         d.Get("proxy_connect_timeout").(int),
 		ProxyReadTimeout:            d.Get("proxy_read_timeout").(int),
 		RequestLimitBlock:           d.Get("request_limit_block").(string),
@@ -605,8 +596,27 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 		Spdy:                        d.Get("spdy").(bool),
 		SSLOriginPort:               d.Get("ssl_origin_port").(int),
 		WAFEnable:                   d.Get("waf_enable").(bool),
-		WAFLevelsEnable:             d.Get("waf_levels_enable").([]string),
 		WAFPolicy:                   d.Get("waf_policy").(string),
+	}
+
+	for _, method := range d.Get("limit_allowed_http_method").([]interface{}) {
+		settings.LimitAllowedHTTPMethod = append(settings.LimitAllowedHTTPMethod, method.(string))
+	}
+
+	for _, upstream := range d.Get("next_upstream").([]interface{}) {
+		settings.NextUpstream = append(settings.NextUpstream, upstream.(string))
+	}
+
+	for _, version := range d.Get("limit_tls_version").([]interface{}) {
+		settings.LimitTLSVersion = append(settings.LimitTLSVersion, version.(string))
+	}
+
+	for _, stale := range d.Get("proxy_cache_stale").([]interface{}) {
+		settings.ProxyCacheStale = append(settings.ProxyCacheStale, stale.(string))
+	}
+
+	for _, level := range d.Get("waf_levels_enable").([]interface{}) {
+		settings.WAFLevelsEnable = append(settings.WAFLevelsEnable, level.(string))
 	}
 
 	return settings, nil

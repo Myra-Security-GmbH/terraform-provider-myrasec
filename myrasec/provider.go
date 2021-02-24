@@ -37,7 +37,7 @@ func Provider() *schema.Provider {
 			"myrasec_dns_record":    resourceMyrasecDNSRecord(),
 			"myrasec_cache_setting": resourceMyrasecCacheSetting(),
 			"myrasec_redirect":      resourceMyrasecRedirect(),
-			//"myrasec_settings":      resourceMyrasecSettings(),
+			"myrasec_settings":      resourceMyrasecSettings(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
