@@ -12,6 +12,52 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	defaultValueAccessLog                   = true
+	defaultValueAntibotPostFlood            = false
+	defaultValueAntibotPostFloodThreshold   = 540
+	defaultValueAntibotProofOfWork          = true
+	defaultValueAntibotProofOfWorkThreshold = 1800
+	defaultValueBalancingMethod             = "round_robin"
+	defaultValueBlockNotWhitelisted         = false
+	defaultValueBlockTorNetwork             = false
+	defaultValueCacheEnabled                = false
+	defaultValueCacheRevalidate             = false
+	defaultValueCDN                         = false
+	defaultValueClientMaxBodySize           = 10
+	defaultValueDiffieHellmanExchange       = 2048
+	defaultValueEnableOriginSNI             = true
+	defaultValueForwardedForReplacement     = "X-Forwarded-For"
+	defaultValueHSTS                        = false
+	defaultValueHSTSIncludeSubdomains       = false
+	defaultValueHSTSMaxAge                  = 31536000
+	defaultValueHSTSPreload                 = false
+	defaultValueHTTPOriginPort              = 80
+	defaultValueIgnoreNoCache               = false
+	defaultValueImageOptimization           = true
+	defaultValueIPv6Active                  = true
+	defaultValueLogFormat                   = "myra-combined-waf"
+	defaultValueMonitoringAlertThreshold    = 300
+	defaultValueMonitoringContactEMail      = ""
+	defaultValueMonitoringSendAlert         = false
+	defaultValueMyraSSLHeader               = false
+	defaultValueOnlyHTTPS                   = false
+	defaultValueOriginConnectionHeader      = "none"
+	defaultValueProxyCacheBypass            = ""
+	defaultValueProxyConnectTimeout         = 60
+	defaultValueProxyReadTimeout            = 600
+	defaultValueRequestLimitBlock           = "CAPTCHA"
+	defaultValueRequestLimitLevel           = 6000
+	defaultValueRequestLimitReport          = false
+	defaultValueRequestLimitReportEMail     = ""
+	defaultValueRewrite                     = false
+	defaultValueSourceProtocol              = "same"
+	defaultValueSpdy                        = true
+	defaultValueSSLOriginPort               = 443
+	defaultValueWAFEnable                   = false
+	defaultValueWAFPolicy                   = "allow"
+)
+
 //
 // resourceMyrasecSettings ...
 //
@@ -36,7 +82,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueAccessLog,
 				ForceNew:    true,
 				Description: "Activate separated access log",
 			},
@@ -44,7 +90,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueAntibotPostFlood,
 				ForceNew:    true,
 				Description: "Detection of POST floods by using a JavaScript based puzzle.",
 			},
@@ -52,7 +98,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     540,
+				Default:     defaultValueAntibotPostFloodThreshold,
 				ForceNew:    true,
 				Description: "This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved.",
 			},
@@ -60,7 +106,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     true,
+				Default:     defaultValueAntibotProofOfWork,
 				ForceNew:    true,
 				Description: "Detection of valid clients by using a JavaScript based puzzle.",
 			},
@@ -68,7 +114,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     1800,
+				Default:     defaultValueAntibotProofOfWorkThreshold,
 				ForceNew:    true,
 				Description: "This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved.",
 			},
@@ -76,7 +122,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Default:      "round_robin",
+				Default:      defaultValueBalancingMethod,
 				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn"}, false),
 				ForceNew:     true,
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
@@ -85,7 +131,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueBlockNotWhitelisted,
 				ForceNew:    true,
 				Description: "Block all IPs, which are not whitelisted.",
 			},
@@ -93,7 +139,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueBlockTorNetwork,
 				ForceNew:    true,
 				Description: "Block traffic from the TOR network.",
 			},
@@ -101,7 +147,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueCacheEnabled,
 				ForceNew:    true,
 				Description: "Turn caching on or off.",
 			},
@@ -109,7 +155,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueCacheRevalidate,
 				ForceNew:    true,
 				Description: "Enable stale cache item revalidation.",
 			},
@@ -117,7 +163,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueCDN,
 				ForceNew:    true,
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
@@ -125,7 +171,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     10,
+				Default:     defaultValueClientMaxBodySize,
 				ForceNew:    true,
 				Description: "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB.",
 			},
@@ -133,7 +179,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				Default:      2048,
+				Default:      defaultValueDiffieHellmanExchange,
 				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
 				ForceNew:     true,
 				Description:  "The Diffie-Hellman key exchange parameter length.",
@@ -142,7 +188,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     true,
+				Default:     defaultValueEnableOriginSNI,
 				ForceNew:    true,
 				Description: "Enable or disable origin SNI.",
 			},
@@ -150,7 +196,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
-				Default:     "X-Forwarded-For",
+				Default:     defaultValueForwardedForReplacement,
 				ForceNew:    true,
 				Description: "Set your own X-Forwarded-For header.",
 			},
@@ -158,7 +204,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueHSTS,
 				ForceNew:    true,
 				Description: "HSTS Strict Transport Security (HSTS).",
 			},
@@ -166,7 +212,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueHSTSIncludeSubdomains,
 				ForceNew:    true,
 				Description: "HSTS includeSubDomains directive.",
 			},
@@ -174,7 +220,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     31536000,
+				Default:     defaultValueHSTSMaxAge,
 				ForceNew:    true,
 				Description: "HSTS max-age.",
 			},
@@ -182,7 +228,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueHSTSPreload,
 				ForceNew:    true,
 				Description: "HSTS preload directive.",
 			},
@@ -190,7 +236,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     80,
+				Default:     defaultValueHTTPOriginPort,
 				ForceNew:    true,
 				Description: "Allows to set a port for communication with origin via HTTP.",
 			},
@@ -198,7 +244,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueIgnoreNoCache,
 				ForceNew:    true,
 				Description: "If activated, no-cache headers (Cache-Control: [private|no-store|no-cache]) will be ignored.",
 			},
@@ -206,7 +252,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     true,
+				Default:     defaultValueImageOptimization,
 				ForceNew:    true,
 				Description: "Optimization of images.",
 			},
@@ -214,7 +260,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     true,
+				Default:     defaultValueIPv6Active,
 				ForceNew:    true,
 				Description: "Allow connections via IPv6 to your systems.",
 			},
@@ -242,7 +288,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
-				Default:     "myra-combined-waf",
+				Default:     defaultValueLogFormat,
 				ForceNew:    true,
 				Description: "Use a different log format.",
 			},
@@ -250,7 +296,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     300,
+				Default:     defaultValueMonitoringAlertThreshold,
 				ForceNew:    true,
 				Description: "Errors per minute that must occur until a report is sent.",
 			},
@@ -258,7 +304,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
-				Default:     "",
+				Default:     defaultValueMonitoringContactEMail,
 				ForceNew:    true,
 				Description: "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
 			},
@@ -266,7 +312,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueMonitoringSendAlert,
 				ForceNew:    true,
 				Description: "Enables / disables the upstream error reporting.",
 			},
@@ -274,7 +320,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueMyraSSLHeader,
 				ForceNew:    true,
 				Description: "Activates the X-Myra-SSL Header.",
 			},
@@ -292,7 +338,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueOnlyHTTPS,
 				ForceNew:    true,
 				Description: "Shall the origin server always be requested via HTTPS?",
 			},
@@ -300,7 +346,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Default:      "none",
+				Default:      defaultValueOriginConnectionHeader,
 				ValidateFunc: validation.StringInSlice([]string{"none", "close", "upgrade"}, false),
 				ForceNew:     true,
 				Description:  "Connection header.",
@@ -309,7 +355,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
-				Default:     "",
+				Default:     defaultValueProxyCacheBypass,
 				ForceNew:    true,
 				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
 			},
@@ -327,7 +373,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     60,
+				Default:     defaultValueProxyConnectTimeout,
 				ForceNew:    true,
 				Description: "Timeout for establishing a connection to the upstream server.",
 			},
@@ -335,7 +381,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     600,
+				Default:     defaultValueProxyReadTimeout,
 				ForceNew:    true,
 				Description: "Timeout for reading the upstream response.",
 			},
@@ -343,7 +389,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Default:      "CAPTCHA",
+				Default:      defaultValueRequestLimitBlock,
 				ValidateFunc: validation.StringInSlice([]string{"CAPTCHA", "HTTP429", "no"}, false),
 				ForceNew:     true,
 				Description:  "Show CAPTCHA after exceeding the configured request limit.",
@@ -352,7 +398,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     6000,
+				Default:     defaultValueRequestLimitLevel,
 				ForceNew:    true,
 				Description: "Sets how many requests are allowed from an IP per minute.",
 			},
@@ -360,7 +406,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueRequestLimitReport,
 				ForceNew:    true,
 				Description: "If activated, an email will be send containing blocked ip addresses that exceeded the configured request limit.",
 			},
@@ -368,7 +414,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
-				Default:     "",
+				Default:     defaultValueRequestLimitReportEMail,
 				ForceNew:    true,
 				Description: "Email addresses, to which request limit emails should be send. Multiple addresses are separated with a space.",
 			},
@@ -376,7 +422,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueRewrite,
 				ForceNew:    true,
 				Description: "Enable the JavaScript optimization.",
 			},
@@ -384,7 +430,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Default:      "same",
+				Default:      defaultValueSourceProtocol,
 				ValidateFunc: validation.StringInSlice([]string{"same", "http", "https"}, false),
 				ForceNew:     true,
 				Description:  "Protocol to query the origin server.",
@@ -393,7 +439,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     true,
+				Default:     defaultValueSpdy,
 				ForceNew:    true,
 				Description: "Activates the SPDY protocol.",
 			},
@@ -401,7 +447,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeInt,
 				Required:    false,
 				Optional:    true,
-				Default:     443,
+				Default:     defaultValueSSLOriginPort,
 				ForceNew:    true,
 				Description: "Allows to set a port for communication with origin via SSL.",
 			},
@@ -409,7 +455,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Default:     false,
+				Default:     defaultValueWAFEnable,
 				ForceNew:    true,
 				Description: "Enables / disables the Web Application Firewall.",
 			},
@@ -427,7 +473,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				Default:      "allow",
+				Default:      defaultValueWAFPolicy,
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				ForceNew:     true,
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
@@ -525,7 +571,7 @@ func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error
 }
 
 //
-// resourceMyrasecSettingsDelete ...
+// resourceMyrasecSettingsDelete restores the default setting values
 //
 func resourceMyrasecSettingsDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
@@ -626,27 +672,56 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 // buildDefaultSettings ...
 //
 func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings, error) {
-	settings := &myrasec.Settings{}
+	settings := &myrasec.Settings{
+		AccessLog:                   defaultValueAccessLog,
+		AntibotPostFlood:            defaultValueAntibotPostFlood,
+		AntibotPostFloodThreshold:   defaultValueAntibotPostFloodThreshold,
+		AntibotProofOfWork:          defaultValueAntibotProofOfWork,
+		AntibotProofOfWorkThreshold: defaultValueAntibotProofOfWorkThreshold,
+		BalancingMethod:             defaultValueBalancingMethod,
+		BlockNotWhitelisted:         defaultValueBlockNotWhitelisted,
+		BlockTorNetwork:             defaultValueBlockTorNetwork,
+		CacheEnabled:                defaultValueCacheEnabled,
+		CacheRevalidate:             defaultValueCacheRevalidate,
+		CDN:                         defaultValueCDN,
+		ClientMaxBodySize:           defaultValueClientMaxBodySize,
+		DiffieHellmanExchange:       defaultValueDiffieHellmanExchange,
+		EnableOriginSNI:             defaultValueEnableOriginSNI,
+		ForwardedForReplacement:     defaultValueForwardedForReplacement,
+		HSTS:                        defaultValueHSTS,
+		HSTSIncludeSubdomains:       defaultValueHSTSIncludeSubdomains,
+		HSTSMaxAge:                  defaultValueHSTSMaxAge,
+		HSTSPreload:                 defaultValueHSTSPreload,
+		HTTPOriginPort:              defaultValueHTTPOriginPort,
+		IgnoreNoCache:               defaultValueIgnoreNoCache,
+		ImageOptimization:           defaultValueImageOptimization,
+		IPv6Active:                  defaultValueIPv6Active,
+		LogFormat:                   defaultValueLogFormat,
+		MonitoringAlertThreshold:    defaultValueMonitoringAlertThreshold,
+		MonitoringContactEMail:      defaultValueMonitoringContactEMail,
+		MonitoringSendAlert:         defaultValueMonitoringSendAlert,
+		MyraSSLHeader:               defaultValueMyraSSLHeader,
+		OnlyHTTPS:                   defaultValueOnlyHTTPS,
+		OriginConnectionHeader:      defaultValueOriginConnectionHeader,
+		ProxyCacheBypass:            defaultValueProxyCacheBypass,
+		ProxyConnectTimeout:         defaultValueProxyConnectTimeout,
+		ProxyReadTimeout:            defaultValueProxyReadTimeout,
+		RequestLimitBlock:           defaultValueRequestLimitBlock,
+		RequestLimitLevel:           defaultValueRequestLimitLevel,
+		RequestLimitReport:          defaultValueRequestLimitReport,
+		RequestLimitReportEMail:     defaultValueRequestLimitReportEMail,
+		Rewrite:                     defaultValueRewrite,
+		SourceProtocol:              defaultValueSourceProtocol,
+		Spdy:                        defaultValueSpdy,
+		SSLOriginPort:               defaultValueSSLOriginPort,
+		WAFEnable:                   defaultValueWAFEnable,
+		WAFPolicy:                   defaultValueWAFPolicy,
+		LimitAllowedHTTPMethod:      nil,
+		NextUpstream:                []string{"error", "timeout", "invalid_header"},
+		LimitTLSVersion:             []string{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"},
+		ProxyCacheStale:             []string{"updating"},
+		WAFLevelsEnable:             []string{"waf_tag", "waf_domain", "waf_subdomain"},
+	}
 
 	return settings, nil
-}
-
-//
-// valuesInSlice ...
-//
-func valuesInSlice(valid []string) schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (warnings []string, errors []error) {
-		values := i.([]string)
-		for _, v := range values {
-			for _, str := range valid {
-				if v == str || (strings.ToLower(v) == strings.ToLower(str)) {
-					return warnings, errors
-				}
-			}
-
-			errors = append(errors, fmt.Errorf("expected %s to be one of %v, got %s", k, valid, v))
-			return warnings, errors
-		}
-		return warnings, errors
-	}
 }
