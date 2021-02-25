@@ -31,7 +31,7 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
-				Description: "The Subdomain for the cache Setting.",
+				Description: "The Subdomain for the cache setting.",
 			},
 			"setting_id": {
 				Type:        schema.TypeInt,

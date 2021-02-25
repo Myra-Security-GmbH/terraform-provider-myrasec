@@ -22,7 +22,7 @@ resource "myrasec_cache_setting" "index" {
 
 The following arguments are supported:
 
-* `subdomain_name` (Required) The Subdomain for the cache Setting.
+* `subdomain_name` (Required) The Subdomain for the cache setting.
 * `setting_id` (computed) ID of the cache setting.
 * `created` (computed) Date of creation.
 * `modified` (computed) Date of last modification.
