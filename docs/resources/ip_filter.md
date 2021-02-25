@@ -29,3 +29,4 @@ The following arguments are supported:
 * `value` (Required) The IP you want to whitelist or blacklist. By using CIDR notation on IPv4 IPs, you are able to define whole subnets.
 * `enabled` (Optional) Enable or disable a filter. Default `true`.
 * `expire_date` (Optional) Expire date schedules the deaktivation of the filter. If none is set, the filter will be active until manual deactivation.
+* `comment` (Optional) A comment to describe this IP filter. Default `""`.

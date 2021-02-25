@@ -80,6 +80,13 @@ func resourceMyrasecIPFilter() *schema.Resource {
 				ForceNew:    true,
 				Description: "Enable or disable a filter.",
 			},
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				ForceNew:    true,
+				Description: "A comment to describe this IP filter.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -134,6 +141,7 @@ func resourceMyrasecIPFilterRead(d *schema.ResourceData, meta interface{}) error
 		d.Set("type", r.Type)
 		d.Set("value", r.Value)
 		d.Set("enabled", r.Enabled)
+		d.Set("comment", r.Comment)
 		if r.ExpireDate != nil {
 			d.Set("expire_date", r.ExpireDate.Format(time.RFC3339))
 		}
@@ -176,6 +184,7 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 		Type:    d.Get("type").(string),
 		Value:   d.Get("value").(string),
 		Enabled: d.Get("enabled").(bool),
+		Comment: d.Get("comment").(string),
 	}
 
 	if d.Get("filter_id").(int) > 0 {
