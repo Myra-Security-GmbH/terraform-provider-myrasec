@@ -21,10 +21,10 @@ resource "myrasec_ip_filter" "filter" {
 
 The following arguments are supported:
 
+* `filter_id` (Computed) ID of the IP filter.
+* `created` (Computed) Date of creation.
+* `modified` (Computed) Date of last modification.
 * `subdomain_name` (Required) The Subdomain for the IP filter.
-* `filter_id` (computed) ID of the IP filter.
-* `created` (computed) Date of creation.
-* `modified` (computed) Date of last modification.
 * `type` (Required) Type of the IP filter. Valid types are: `BLACKLIST`, `WHITELIST` and `WHITELIST_REQUEST_LIMITER`.
 * `value` (Required) The IP you want to whitelist or blacklist. By using CIDR notation on IPv4 IPs, you are able to define whole subnets.
 * `enabled` (Optional) Enable or disable a filter. Default `true`.

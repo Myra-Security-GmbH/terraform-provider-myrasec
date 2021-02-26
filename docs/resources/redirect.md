@@ -22,10 +22,10 @@ resource "myrasec_redirect" "redirect" {
 
 The following arguments are supported:
 
+* `redirect_id` (Computed) ID of the redirect.
+* `created` (Computed) Date of creation.
+* `modified` (Computed) Date of last modification.
 * `subdomain_name` (Required) The Subdomain for the cache Setting.
-* `redirect_id` (computed) ID of the redirect.
-* `created` (computed) Date of creation.
-* `modified` (computed) Date of last modification.
 * `matching_type` (Required) Type to match the redirect. Valid types are: `exact`, `prefix` and `suffix`.
 * `source` (Required) Location to match against.
 * `destination` (Required) Target where redirect should point to.

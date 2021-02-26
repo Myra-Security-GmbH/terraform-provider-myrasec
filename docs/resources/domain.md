@@ -17,9 +17,9 @@ resource "myrasec_domain" "example" {
 
 The following arguments are supported:
 
-* `domain_id` (computed) ID of the domain.
-* `created` (computed) Date of creation.
-* `modified` (computed) Date of last modification.
+* `domain_id` (Computed) ID of the domain.
+* `created` (Computed) Date of creation.
+* `modified` (Computed) Date of last modification.
 * `name` (Required) Domain name.
 * `auto_update` (Optional) Auto update flag for the domain. Default `true`.
 * `auto_dns` (Optional) Auto DNS flag for the domain. Default `true`.

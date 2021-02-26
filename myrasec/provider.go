@@ -39,6 +39,7 @@ func Provider() *schema.Provider {
 			"myrasec_redirect":      resourceMyrasecRedirect(),
 			"myrasec_settings":      resourceMyrasecSettings(),
 			"myrasec_ip_filter":     resourceMyrasecIPFilter(),
+			"myrasec_ratelimit":     resourceMyrasecRateLimit(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

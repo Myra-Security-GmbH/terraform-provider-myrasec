@@ -22,10 +22,10 @@ resource "myrasec_cache_setting" "index" {
 
 The following arguments are supported:
 
-* `subdomain_name` (Required) The Subdomain for the cache setting.
 * `setting_id` (computed) ID of the cache setting.
 * `created` (computed) Date of creation.
 * `modified` (computed) Date of last modification.
+* `subdomain_name` (Required) The Subdomain for the cache setting.
 * `type` (Required) Type how path should match. Valid types are: `exact`, `prefix` and `suffix`.
 * `path` (Required) Path which must match to cache response.
 * `ttl` (Required) Time to live.
