@@ -38,6 +38,7 @@ func Provider() *schema.Provider {
 			"myrasec_cache_setting": resourceMyrasecCacheSetting(),
 			"myrasec_redirect":      resourceMyrasecRedirect(),
 			"myrasec_settings":      resourceMyrasecSettings(),
+			"myrasec_ip_filter":     resourceMyrasecIPFilter(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
