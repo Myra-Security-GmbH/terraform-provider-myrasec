@@ -31,10 +31,10 @@ resource "myrasec_dns_record" "www" {
 
 The following arguments are supported:
 
-* `domain_name` (Required) The Domain for the DNS record.
 * `record_id` (Computed) ID of the DNS record.
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
+* `domain_name` (Required) The Domain for the DNS record.
 * `record_type` (Required) A record type to identify the type of a record. Valid types are: `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SRV` and `CAA`.
 * `name` (Required) Subdomain name of a DNS record.
 * `value` (Required) Depends on the record type. Typically an IPv4/6 address or a domain entry.
