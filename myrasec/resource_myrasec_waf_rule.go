@@ -90,35 +90,41 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     1,
+				ForceNew:    true,
 				Description: "The order in which the rules take action.",
 			},
 			"sync": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
 				Description: "",
 			},
 			"template": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
 				Description: "",
 			},
 			"process_next": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
 				Description: "After a rule has been applied, the rule chain will be executed as determined.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+				ForceNew:    true,
 				Description: "Define wether this rule is enabled or not.",
 			},
 			"conditions": {
 				Type:     schema.TypeList,
 				Required: true,
+				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"condition_id": {
@@ -174,9 +180,10 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			"actions": {
 				Type:     schema.TypeList,
 				Optional: true,
+				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"condition_id": {
+						"action_id": {
 							Type:        schema.TypeInt,
 							Computed:    true,
 							Description: "ID of the WAF rule.",
@@ -266,7 +273,64 @@ func resourceMyrasecWAFRuleRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("created", r.Created.Format(time.RFC3339))
 		d.Set("modified", r.Modified.Format(time.RFC3339))
 		d.Set("subdomain_name", r.SubDomainName)
-		// @TODO
+		d.Set("name", r.Name)
+		d.Set("description", r.Description)
+		d.Set("log_identifier", r.LogIdentifier)
+		d.Set("direction", r.Direction)
+		d.Set("sort", r.Sort)
+		d.Set("sync", r.Sync)
+		d.Set("process_next", r.ProcessNext)
+		d.Set("enabled", r.Enabled)
+
+		conditions := []interface{}{}
+		for _, condition := range r.Conditions {
+
+			c := map[string]interface{}{
+				"condition_id":        condition.ID,
+				"force_custom_values": condition.ForceCustomValues,
+				"available_phases":    condition.AvailablePhases,
+				"alias":               condition.Alias,
+				"category":            condition.Category,
+				"matching_type":       condition.MatchingType,
+				"name":                condition.Name,
+				"key":                 condition.Key,
+				"value":               condition.Value,
+			}
+
+			if condition.Created != nil {
+				c["created"] = condition.Created.Format(time.RFC3339)
+			}
+
+			if condition.Modified != nil {
+				c["modified"] = condition.Modified.Format(time.RFC3339)
+			}
+
+			conditions = append(conditions, c)
+		}
+		d.Set("conditions", conditions)
+
+		actions := []interface{}{}
+		for _, action := range r.Actions {
+			a := map[string]interface{}{
+				"action_id":           action.ID,
+				"force_custom_values": action.ForceCustomValues,
+				"available_phases":    action.AvailablePhases,
+				"name":                action.Name,
+				"type":                action.Type,
+				"value":               action.Value,
+				"custom_key":          action.CustomKey,
+			}
+
+			if action.Created != nil {
+				a["created"] = action.Created.Format(time.RFC3339)
+			}
+
+			if action.Modified != nil {
+				a["modified"] = action.Modified.Format(time.RFC3339)
+			}
+			actions = append(actions, a)
+		}
+		d.Set("actions", actions)
 
 		break
 	}
@@ -305,6 +369,14 @@ func resourceMyrasecWAFRuleDelete(d *schema.ResourceData, meta interface{}) erro
 func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, error) {
 	rule := &myrasec.WAFRule{
 		SubDomainName: d.Get("subdomain_name").(string),
+		Name:          d.Get("name").(string),
+		Description:   d.Get("description").(string),
+		LogIdentifier: d.Get("log_identifier").(string),
+		Direction:     d.Get("direction").(string),
+		Sort:          d.Get("sort").(int),
+		Sync:          d.Get("sync").(bool),
+		ProcessNext:   d.Get("process_next").(bool),
+		Enabled:       d.Get("enabled").(bool),
 	}
 
 	if d.Get("rule_id").(int) > 0 {
@@ -330,6 +402,106 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		rule.Modified = &types.DateTime{
 			Time: modified,
 		}
+	}
+
+	conditions, ok := d.GetOk("conditions")
+	if !ok {
+		return rule, nil
+	}
+
+	for _, condition := range conditions.([]interface{}) {
+		c := &myrasec.WAFCondition{}
+		for key, val := range condition.(map[string]interface{}) {
+			switch key {
+			case "condition_id":
+				c.ID = val.(int)
+			case "modified":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				modified, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				c.Modified = &types.DateTime{
+					Time: modified,
+				}
+			case "created":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				created, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				c.Created = &types.DateTime{
+					Time: created,
+				}
+			case "force_custom_values":
+				c.ForceCustomValues = val.(bool)
+			case "alias":
+				c.Alias = val.(string)
+			case "available_phases":
+				c.AvailablePhases = val.(int)
+			case "category":
+				c.Category = val.(string)
+			case "matching_type":
+				c.MatchingType = val.(string)
+			case "name":
+				c.Name = val.(string)
+			case "value":
+				c.Value = val.(string)
+			case "key":
+				c.Key = val.(string)
+			}
+		}
+		rule.Conditions = append(rule.Conditions, c)
+	}
+
+	actions, ok := d.GetOk("actions")
+	if !ok {
+		return rule, nil
+	}
+
+	for _, action := range actions.([]interface{}) {
+		a := &myrasec.WAFAction{}
+		for key, val := range action.(map[string]interface{}) {
+			switch key {
+			case "action_id":
+				a.ID = val.(int)
+			case "modified":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				modified, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				a.Modified = &types.DateTime{
+					Time: modified,
+				}
+			case "created":
+				if len(val.(string)) <= 0 {
+					continue
+				}
+				created, err := time.Parse(time.RFC3339, val.(string))
+				if err != nil {
+					return nil, err
+				}
+				a.Created = &types.DateTime{
+					Time: created,
+				}
+			case "name":
+				a.Name = val.(string)
+			case "type":
+				a.Type = val.(string)
+			case "available_phases":
+				a.AvailablePhases = val.(int)
+			case "custom_key":
+				a.CustomKey = val.(string)
+			}
+		}
+		rule.Actions = append(rule.Actions, a)
 	}
 
 	return rule, nil
