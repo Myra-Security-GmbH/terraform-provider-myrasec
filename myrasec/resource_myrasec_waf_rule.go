@@ -130,7 +130,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 						"condition_id": {
 							Type:        schema.TypeInt,
 							Computed:    true,
-							Description: "ID of the WAF rule.",
+							Description: "ID of the WAF rule condition.",
 						},
 						"modified": {
 							Type:        schema.TypeString,
