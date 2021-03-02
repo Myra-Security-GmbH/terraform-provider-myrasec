@@ -144,11 +144,11 @@ func resourceMyrasecWAFRule() *schema.Resource {
 						},
 						"force_custom_values": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Computed: true,
 						},
 						"available_phases": {
 							Type:     schema.TypeInt,
-							Optional: true,
+							Computed: true,
 						},
 						"alias": {
 							Type:     schema.TypeString,
@@ -377,6 +377,7 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		Sync:          d.Get("sync").(bool),
 		ProcessNext:   d.Get("process_next").(bool),
 		Enabled:       d.Get("enabled").(bool),
+		RuleType:      "domain",
 	}
 
 	if d.Get("rule_id").(int) > 0 {
@@ -499,6 +500,8 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 				a.AvailablePhases = val.(int)
 			case "custom_key":
 				a.CustomKey = val.(string)
+			case "value":
+				a.Value = val.(string)
 			}
 		}
 		rule.Actions = append(rule.Actions, a)

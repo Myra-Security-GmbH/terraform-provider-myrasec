@@ -13,13 +13,9 @@ resource "myrasec_waf_rule" "waf" {
   log_identifier = "IDENTIFY_ME"
   direction = "in"
   sort = 1
-  sync = false
   process_next = false
   enabled = true
   conditions {
-      alias = "URL"
-      available_phases = 1
-      category = "URL"
       matching_type = "IREGEX"
       name = "url"
       value = "blockme"
@@ -57,27 +53,24 @@ The following arguments are supported:
 * `conditions.condition_id` (Computed) ID of the WAF rule condition.
 * `conditions.created` (Computed) Date of creation.
 * `conditions.modified` (Computed) Date of last modification.
-* `conditions.matching_type` (Optional)  
+* `conditions.name` (Required)
+* `conditions.matching_type` (Required)
     IREGEX - Pattern matching using case insensitive regex  
     REGEX - Pattern matching using case sensitive regex
 
     EXACT - String matching using the whole string verbatim  
     SUFFIX - String matching at the end  
     PREFIX - String matching from the beginning  
-* `conditions.name` (Optional) 
-* `conditions.key` (Optional) 
-* `conditions.value` (Optional) 
+* `conditions.value` (Required)
+* `conditions.key` (Depends on the type)
 
 ### WAF rule actions arguments
 * `actions.action_id` (Computed) ID of the WAF rule action.
 * `actions.created` (Computed) Date of creation.
 * `actions.modified` (Computed) Date of last modification.
-* `actions.force_custom_values` (Optional) 
-* `actions.available_phases` (Optional) 
-* `actions.name` (Optional) 
-* `actions.type` (Optional) 
-* `actions.custom_key` (Optional) 
-* `actions.value` (Optional) 
+* `actions.type` (Required)
+* `actions.value` (Required)
+* `actions.custom_key` (Depends on the type)
 
 
 ## Available WAF condtions
