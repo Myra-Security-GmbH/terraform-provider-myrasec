@@ -15,9 +15,10 @@ const ProviderUserAgent = "terraform-provider-myrasec"
 // Config ...
 //
 type Config struct {
-	APIKey   string
-	Secret   string
-	Language string
+	APIKey     string
+	Secret     string
+	Language   string
+	APIBaseURL string
 }
 
 //
@@ -31,6 +32,10 @@ func (c Config) validate() error {
 	}
 	if c.Secret == "" {
 		err = multierror.Append(err, fmt.Errorf("API Secret must be configured for the Myrasec provider"))
+	}
+
+	if c.APIBaseURL == "" {
+		err = multierror.Append(err, fmt.Errorf("API base URL must be configured for the Myrasec provider"))
 	}
 
 	return err.ErrorOrNil()
@@ -51,5 +56,8 @@ func (c Config) Client() (*myrasec.API, error) {
 	}
 
 	api.SetUserAgent(ProviderUserAgent)
+
+	api.BaseURL = c.APIBaseURL
+
 	return api, nil
 }

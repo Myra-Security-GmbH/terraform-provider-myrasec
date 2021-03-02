@@ -28,6 +28,12 @@ func Provider() *schema.Provider {
 				Default:     "en",
 				Description: "The API language",
 			},
+			"api_base_url": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "https://api.myracloud.com/%s/rapi/%s",
+				Description: "API Base URL. Keep the default value. No change required.",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"myrasec_domains":        dataSourceDomains(),
@@ -53,9 +59,10 @@ func Provider() *schema.Provider {
 //
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		APIKey:   d.Get("api_key").(string),
-		Secret:   d.Get("secret").(string),
-		Language: d.Get("language").(string),
+		APIKey:     d.Get("api_key").(string),
+		Secret:     d.Get("secret").(string),
+		Language:   d.Get("language").(string),
+		APIBaseURL: d.Get("api_base_url").(string),
 	}
 
 	if err := config.validate(); err != nil {
