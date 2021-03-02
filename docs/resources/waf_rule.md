@@ -118,7 +118,7 @@ value = "SOME VALUE"
 ```hcl
 type = "add_header|modify_header|uri_subst"
 custom_key = "SOME KEY"
-value = "SOME VALUE
+value = "SOME VALUE"
 ```
 ```hcl
 type = "origin_rate_limit"
@@ -147,7 +147,7 @@ value = "SOME VALUE"
 ```hcl
 type = "add_header|modify_header|uri_subst"
 custom_key = "SOME KEY"
-value = "SOME VALUE
+value = "SOME VALUE"
 ```
 ```hcl
 type = "origin_rate_limit"
