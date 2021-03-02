@@ -10,13 +10,13 @@ import (
 )
 
 //
-// dataSourceDomains ...
+// dataSourceWAFActions ...
 //
-func dataSourceDomains() *schema.Resource {
+func dataSourceWAFActions() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDomainsRead,
+		Read: dataSourceWAFActionsRead,
 		Schema: map[string]*schema.Schema{
-			"domains": {
+			"waf_actions": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -37,20 +37,24 @@ func dataSourceDomains() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"auto_update": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"auto_dns": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"paused": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"paused_until": {
+						"type": {
 							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"custom_key": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"available_phases": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"force_custom_values": {
+							Type:     schema.TypeBool,
 							Computed: true,
 						},
 					},
@@ -61,17 +65,17 @@ func dataSourceDomains() *schema.Resource {
 }
 
 //
-// dataSourceDomainsRead ...
+// dataSourceWAFActionsRead ...
 //
-func dataSourceDomainsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	domains, err := client.ListDomains(nil)
+	actions, err := client.ListWAFActions()
 	if err != nil {
-		return fmt.Errorf("Error fetching domains: %s", err)
+		return fmt.Errorf("Error fetching WAF actions: %s", err)
 	}
 
-	if err := d.Set("domains", domains); err != nil {
+	if err := d.Set("waf_actions", actions); err != nil {
 		return err
 	}
 

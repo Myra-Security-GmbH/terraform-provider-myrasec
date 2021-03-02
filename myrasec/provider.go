@@ -30,7 +30,9 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"myrasec_domains": dataSourceDomains(),
+			"myrasec_domains":        dataSourceDomains(),
+			"myrasec_waf_conditions": dataSourceWAFConditions(),
+			"myrasec_waf_actions":    dataSourceWAFActions(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":        resourceMyrasecDomain(),
@@ -40,6 +42,7 @@ func Provider() *schema.Provider {
 			"myrasec_settings":      resourceMyrasecSettings(),
 			"myrasec_ip_filter":     resourceMyrasecIPFilter(),
 			"myrasec_ratelimit":     resourceMyrasecRateLimit(),
+			"myrasec_waf_rule":      resourceMyrasecWAFRule(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

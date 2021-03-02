@@ -124,7 +124,7 @@ func resourceMyrasecRateLimitRead(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error parsing rate limit id: %s", err)
 	}
 
-	ratelimits, err := client.ListRateLimits(map[string]string{"subDomainName": d.Get("subdomain_name").(string)})
+	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": d.Get("subdomain_name").(string)})
 	if err != nil {
 		return fmt.Errorf("Error fetching rate limit settings: %s", err)
 	}

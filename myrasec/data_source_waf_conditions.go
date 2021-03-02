@@ -10,13 +10,13 @@ import (
 )
 
 //
-// dataSourceDomains ...
+// dataSourceWAFConditions ...
 //
-func dataSourceDomains() *schema.Resource {
+func dataSourceWAFConditions() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDomainsRead,
+		Read: dataSourceWAFConditionsRead,
 		Schema: map[string]*schema.Schema{
-			"domains": {
+			"waf_conditions": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -37,20 +37,32 @@ func dataSourceDomains() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"auto_update": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"auto_dns": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"paused": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"paused_until": {
+						"matching_type": {
 							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"alias": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"key": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"category": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"available_phases": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"force_custom_values": {
+							Type:     schema.TypeBool,
 							Computed: true,
 						},
 					},
@@ -61,17 +73,17 @@ func dataSourceDomains() *schema.Resource {
 }
 
 //
-// dataSourceDomainsRead ...
+// dataSourceWAFConditionsRead ...
 //
-func dataSourceDomainsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceWAFConditionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	domains, err := client.ListDomains(nil)
+	conditions, err := client.ListWAFConditions()
 	if err != nil {
-		return fmt.Errorf("Error fetching domains: %s", err)
+		return fmt.Errorf("Error fetching WAF conditions: %s", err)
 	}
 
-	if err := d.Set("domains", domains); err != nil {
+	if err := d.Set("waf_conditions", conditions); err != nil {
 		return err
 	}
 
