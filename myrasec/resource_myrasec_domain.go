@@ -53,12 +53,6 @@ func resourceMyrasecDomain() *schema.Resource {
 				Default:     true,
 				Description: "Auto update flag for the domain.",
 			},
-			"auto_dns": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Description: "Auto DNS flag for the domain.",
-			},
 			"paused": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -121,7 +115,6 @@ func resourceMyrasecDomainRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("domain_id", r.ID)
 		d.Set("name", r.Name)
 		d.Set("auto_update", r.AutoUpdate)
-		d.Set("auto_dns", r.AutoDNS)
 		d.Set("paused", r.Paused)
 		d.Set("paused_until", r.PausedUntil)
 		d.Set("created", r.Created.Format(time.RFC3339))
@@ -184,7 +177,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	domain := &myrasec.Domain{
 		Name:       d.Get("name").(string),
 		AutoUpdate: d.Get("auto_update").(bool),
-		AutoDNS:    d.Get("auto_dns").(bool),
+		AutoDNS:    false,
 		Paused:     d.Get("paused").(bool),
 	}
 
