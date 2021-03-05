@@ -2,7 +2,7 @@
 
 Provides a Myra Security DNS record resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a DNS record
@@ -21,9 +21,6 @@ resource "myrasec_dns_record" "www" {
         max_fails = 100
         weight = 1
     }
-    depends_on = [ 
-        myrasec_domain.example
-    ]
 }
 ```
 

@@ -2,7 +2,7 @@
 
 Provides a Myra Security redirect resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a new redirect

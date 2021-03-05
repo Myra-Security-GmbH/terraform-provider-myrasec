@@ -2,7 +2,7 @@
 
 Provides a Myra Security cache setting resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a new cache setting

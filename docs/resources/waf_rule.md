@@ -2,7 +2,7 @@
 
 Provides a Myra Security WAF rule resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a new WAF rule

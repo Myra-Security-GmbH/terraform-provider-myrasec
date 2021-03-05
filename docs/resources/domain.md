@@ -2,7 +2,7 @@
 
 Provides a Myra Security domain resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a domain

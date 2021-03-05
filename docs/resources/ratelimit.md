@@ -2,7 +2,7 @@
 
 Provides a Myra Security rate limit resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a new rate limit setting
