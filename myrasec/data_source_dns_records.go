@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceDNSRecords ...
+// dataSourceMyrasecDNSRecords ...
 //
-func dataSourceDNSRecords() *schema.Resource {
+func dataSourceMyrasecDNSRecords() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDNSRecordsRead,
+		Read: dataSourceMyrasecDNSRecordsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -140,9 +140,9 @@ func dataSourceDNSRecords() *schema.Resource {
 }
 
 //
-// dataSourceDNSRecordsRead ...
+// dataSourceMyrasecDNSRecordsRead ...
 //
-func dataSourceDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	f := parseDNSRecordFilter(d.Get("filter"))

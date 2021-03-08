@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceWAFActions ...
+// dataSourceMyrasecWAFActions ...
 //
-func dataSourceWAFActions() *schema.Resource {
+func dataSourceMyrasecWAFActions() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceWAFActionsRead,
+		Read: dataSourceMyrasecWAFActionsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -78,9 +78,9 @@ func dataSourceWAFActions() *schema.Resource {
 }
 
 //
-// dataSourceWAFActionsRead ...
+// dataSourceMyrasecWAFActionsRead ...
 //
-func dataSourceWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	actions, err := client.ListWAFActions()

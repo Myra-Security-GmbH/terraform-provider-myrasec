@@ -1,0 +1,41 @@
+# myrasec_ip_filters
+
+Use this data source to look up IP filters.
+
+## Example usage
+
+```hcl
+# Look for a rate limit setting
+data "myrasec_ip_filters" "ipfilter" {
+  filter {
+    subdomain_name = "www.example.com"
+    search = "127.0.0.1"
+    type = "WHITELIST"
+  }
+}
+```
+
+## Argument Reference
+
+The following arguments are supported:
+
+* `filter` (Required) One or more values to filter the domains.
+
+### filter
+* `subdomain_name` (Required) The subdomain name from the rate limit.
+* `search` (Optional) A search string to filter the IP filters. Filers on the `value` field.
+* `type` (Optional) Specify the filter type.
+
+
+## Attributes Reference
+* `ipfilters` A list of rate limit settings.
+
+### redirects
+* `id` The ID of the redirect.
+* `created` Date of creation.
+* `modified` Date of last modification.
+* `type` Type of the IP filter.
+* `value` The IP you want to whitelist or blacklist.
+* `enabled` Enable or disable a filter.
+* `expire_date` Expire date schedules the deaktivation of the filter.
+* `comment` A comment to describe this IP filter.

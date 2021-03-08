@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceWAFConditions ...
+// dataSourceMyrasecWAFConditions ...
 //
-func dataSourceWAFConditions() *schema.Resource {
+func dataSourceMyrasecWAFConditions() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceWAFConditionsRead,
+		Read: dataSourceMyrasecWAFConditionsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -86,9 +86,9 @@ func dataSourceWAFConditions() *schema.Resource {
 }
 
 //
-// dataSourceWAFConditionsRead ...
+// dataSourceMyrasecWAFConditionsRead ...
 //
-func dataSourceWAFConditionsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecWAFConditionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	conditions, err := client.ListWAFConditions()

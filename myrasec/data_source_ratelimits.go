@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceRateLimits ...
+// dataSourceMyrasecRateLimits ...
 //
-func dataSourceRateLimits() *schema.Resource {
+func dataSourceMyrasecRateLimits() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceRateLimitsRead,
+		Read: dataSourceMyrasecRateLimitsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -82,9 +82,9 @@ func dataSourceRateLimits() *schema.Resource {
 }
 
 //
-// dataSourceRateLimitsRead ...
+// dataSourceMyrasecRateLimitsRead ...
 //
-func dataSourceRateLimitsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	f := parseRedirectsFilter(d.Get("filter"))

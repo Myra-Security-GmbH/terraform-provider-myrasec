@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceMyrasecRedirects ...
+// dataSourceMyrasecIPFilters ...
 //
-func dataSourceMyrasecRedirects() *schema.Resource {
+func dataSourceMyrasecIPFilters() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecRedirectsRead,
+		Read: dataSourceMyrasecIPFiltersRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -30,10 +30,14 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 			},
-			"redirects": {
+			"ipfilters": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -50,32 +54,24 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"matching_type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"subdomain_name": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"source": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"destination": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"type": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"enabled": {
-							Type:     schema.TypeBool,
+						"value": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"sort": {
-							Type:     schema.TypeInt,
+						"expire_date": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"enabled": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"comment": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
 					},
@@ -86,9 +82,9 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 }
 
 //
-// dataSourceMyrasecRedirectsRead ...
+// dataSourceMyrasecIPFiltersRead ...
 //
-func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecIPFiltersRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	f := parseRedirectsFilter(d.Get("filter"))
@@ -98,28 +94,31 @@ func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) er
 		params["search"] = f.search
 	}
 
-	redirects, err := client.ListRedirects(f.subDomainName, params)
+	filters, err := client.ListIPFilters(f.subDomainName, params)
 	if err != nil {
-		return fmt.Errorf("Error fetching redirects: %s", err)
+		return fmt.Errorf("Error fetching rate limits: %s", err)
 	}
 
-	redirectData := make([]interface{}, 0)
-	for _, r := range redirects {
-		redirectData = append(redirectData, map[string]interface{}{
-			"id":             r.ID,
-			"created":        r.Created.Format(time.RFC3339),
-			"modified":       r.Modified.Format(time.RFC3339),
-			"type":           r.Type,
-			"sort":           r.Sort,
-			"enabled":        r.Enabled,
-			"matching_type":  r.MatchingType,
-			"subdomain_name": r.SubDomainName,
-			"source":         r.Source,
-			"destination":    r.Destination,
-		})
+	ipFilterData := make([]interface{}, 0)
+	for _, r := range filters {
+		data := map[string]interface{}{
+			"id":       r.ID,
+			"created":  r.Created.Format(time.RFC3339),
+			"modified": r.Modified.Format(time.RFC3339),
+			"type":     r.Type,
+			"value":    r.Value,
+			"enabled":  r.Enabled,
+			"comment":  r.Comment,
+		}
+
+		if r.ExpireDate != nil {
+			data["expire_date"] = r.ExpireDate.Format(time.RFC3339)
+		}
+
+		ipFilterData = append(ipFilterData, data)
 	}
 
-	if err := d.Set("redirects", redirectData); err != nil {
+	if err := d.Set("ipfilters", ipFilterData); err != nil {
 		return err
 	}
 
@@ -130,11 +129,11 @@ func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) er
 }
 
 //
-// parseRedirectsFilter converts the filter data to a redirectFilter struct
+// parseRateLimitFilter converts the filter data to a rateLimitFilter struct
 //
-func parseRedirectsFilter(d interface{}) *redirectFilter {
+func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 	cfg := d.([]interface{})
-	f := &redirectFilter{}
+	f := &ipFilterFilter{}
 
 	m := cfg[0].(map[string]interface{})
 
@@ -152,9 +151,9 @@ func parseRedirectsFilter(d interface{}) *redirectFilter {
 }
 
 //
-// redirectFilter struct ...
+// ipFilterFilter struct ...
 //
-type redirectFilter struct {
+type ipFilterFilter struct {
 	subDomainName string
 	search        string
 }

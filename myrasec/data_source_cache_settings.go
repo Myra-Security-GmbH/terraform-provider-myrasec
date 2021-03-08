@@ -10,11 +10,11 @@ import (
 )
 
 //
-// dataSourceCacheSettings ...
+// dataSourceMyrasecCacheSettings ...
 //
-func dataSourceCacheSettings() *schema.Resource {
+func dataSourceMyrasecCacheSettings() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceCacheSettingsRead,
+		Read: dataSourceMyrasecCacheSettingsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -86,9 +86,9 @@ func dataSourceCacheSettings() *schema.Resource {
 }
 
 //
-// dataSourceCacheSettingsRead ...
+// dataSourceMyrasecCacheSettingsRead ...
 //
-func dataSourceCacheSettingsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
 	f := parseCacheSettingFilter(d.Get("filter"))
