@@ -108,12 +108,11 @@ func dataSourceWAFConditionsRead(d *schema.ResourceData, meta interface{}) error
 		if len(filter) > 0 && r.Name != filter {
 			continue
 		}
-		created := r.Created.Format(time.RFC3339)
-		modified := r.Modified.Format(time.RFC3339)
+
 		wafConditionData = append(wafConditionData, map[string]interface{}{
 			"id":                  r.ID,
-			"created":             created,
-			"modified":            modified,
+			"created":             r.Created.Format(time.RFC3339),
+			"modified":            r.Modified.Format(time.RFC3339),
 			"name":                r.Name,
 			"matching_type":       r.MatchingType,
 			"alias":               r.Alias,

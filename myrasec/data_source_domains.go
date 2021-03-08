@@ -97,12 +97,10 @@ func dataSourceDomainsRead(d *schema.ResourceData, meta interface{}) error {
 			continue
 		}
 
-		created := r.Created.Format(time.RFC3339)
-		modified := r.Modified.Format(time.RFC3339)
 		domainData = append(domainData, map[string]interface{}{
 			"id":           r.ID,
-			"created":      created,
-			"modified":     modified,
+			"created":      r.Created.Format(time.RFC3339),
+			"modified":     r.Modified.Format(time.RFC3339),
 			"name":         r.Name,
 			"auto_update":  r.AutoUpdate,
 			"paused":       r.Paused,

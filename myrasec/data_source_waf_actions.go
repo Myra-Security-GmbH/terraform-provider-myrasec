@@ -101,12 +101,11 @@ func dataSourceWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
 		if len(filter) > 0 && r.Type != filter {
 			continue
 		}
-		created := r.Created.Format(time.RFC3339)
-		modified := r.Modified.Format(time.RFC3339)
+
 		wafActionData = append(wafActionData, map[string]interface{}{
 			"id":                  r.ID,
-			"created":             created,
-			"modified":            modified,
+			"created":             r.Created.Format(time.RFC3339),
+			"modified":            r.Modified.Format(time.RFC3339),
 			"name":                r.Name,
 			"available_phases":    r.AvailablePhases,
 			"custom_key":          r.CustomKey,

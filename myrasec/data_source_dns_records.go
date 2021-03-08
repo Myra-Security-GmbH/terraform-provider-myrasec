@@ -29,6 +29,7 @@ func dataSourceDNSRecords() *schema.Resource {
 						"name": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Default:  "",
 						},
 					},
 				},
@@ -159,16 +160,12 @@ func dataSourceDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	recordData := make([]interface{}, 0)
-	for _, r := range records {
-		created := r.Created.Format(time.RFC3339)
-		modified := r.Modified.Format(time.RFC3339)
 
-		upstreamCreated := r.Created.Format(time.RFC3339)
-		upstreamModified := r.Modified.Format(time.RFC3339)
-		recordData = append(recordData, map[string]interface{}{
+	for _, r := range records {
+		data := map[string]interface{}{
 			"id":                r.ID,
-			"created":           created,
-			"modified":          modified,
+			"created":           r.Created.Format(time.RFC3339),
+			"modified":          r.Modified.Format(time.RFC3339),
 			"name":              r.Name,
 			"record_type":       r.RecordType,
 			"value":             r.Value,
@@ -179,17 +176,24 @@ func dataSourceDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
 			"priority":          r.Priority,
 			"port":              r.Port,
 			"comment":           r.Comment,
-			"upstream_options": map[string]interface{}{
-				"upstream_id":  r.UpstreamOptions.ID,
-				"created":      upstreamCreated,
-				"modified":     upstreamModified,
-				"backup":       r.UpstreamOptions.Backup,
-				"down":         r.UpstreamOptions.Down,
-				"fail_timeout": r.UpstreamOptions.FailTimeout,
-				"max_fails":    r.UpstreamOptions.MaxFails,
-				"weight":       r.UpstreamOptions.Weight,
-			},
-		})
+		}
+
+		if r.UpstreamOptions != nil && r.UpstreamOptions.ID != 0 {
+			data["upstream_options"] = []map[string]interface{}{
+				{
+					"upstream_id":  r.UpstreamOptions.ID,
+					"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
+					"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
+					"backup":       r.UpstreamOptions.Backup,
+					"down":         r.UpstreamOptions.Down,
+					"fail_timeout": r.UpstreamOptions.FailTimeout,
+					"max_fails":    r.UpstreamOptions.MaxFails,
+					"weight":       r.UpstreamOptions.Weight,
+				},
+			}
+		}
+
+		recordData = append(recordData, data)
 	}
 
 	if err := d.Set("records", recordData); err != nil {
