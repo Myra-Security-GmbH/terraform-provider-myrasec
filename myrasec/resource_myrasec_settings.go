@@ -66,6 +66,9 @@ func resourceMyrasecSettings() *schema.Resource {
 		Create: resourceMyrasecSettingsCreate,
 		Read:   resourceMyrasecSettingsRead,
 		Delete: resourceMyrasecSettingsDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

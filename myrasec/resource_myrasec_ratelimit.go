@@ -21,6 +21,9 @@ func resourceMyrasecRateLimit() *schema.Resource {
 		Create: resourceMyrasecRateLimitCreate,
 		Read:   resourceMyrasecRateLimitRead,
 		Delete: resourceMyrasecRateLimitDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
