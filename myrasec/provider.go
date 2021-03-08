@@ -37,6 +37,10 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"myrasec_domains":        dataSourceDomains(),
+			"myrasec_dns_records":    dataSourceDNSRecords(),
+			"myrasec_cache_settings": dataSourceCacheSettings(),
+			"myrasec_redirects":      dataSourceRedirects(),
+			"myrasec_ratelimits":     dataSourceRateLimits(),
 			"myrasec_waf_conditions": dataSourceWAFConditions(),
 			"myrasec_waf_actions":    dataSourceWAFActions(),
 		},

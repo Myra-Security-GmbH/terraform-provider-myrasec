@@ -2,7 +2,7 @@
 
 Provides a Myra Security IP filter resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Create a new IP filter

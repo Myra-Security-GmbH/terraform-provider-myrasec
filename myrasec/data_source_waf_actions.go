@@ -16,6 +16,19 @@ func dataSourceWAFActions() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceWAFActionsRead,
 		Schema: map[string]*schema.Schema{
+			"filter": {
+				Type:     schema.TypeList,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
+				},
+			},
 			"waf_actions": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -75,7 +88,34 @@ func dataSourceWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error fetching WAF actions: %s", err)
 	}
 
-	if err := d.Set("waf_actions", actions); err != nil {
+	var filter string
+	cfg := d.Get("filter").([]interface{})
+	m := cfg[0].(map[string]interface{})
+	actionType, ok := m["type"]
+	if ok {
+		filter = actionType.(string)
+	}
+
+	wafActionData := make([]interface{}, 0)
+	for _, r := range actions {
+		if len(filter) > 0 && r.Type != filter {
+			continue
+		}
+
+		wafActionData = append(wafActionData, map[string]interface{}{
+			"id":                  r.ID,
+			"created":             r.Created.Format(time.RFC3339),
+			"modified":            r.Modified.Format(time.RFC3339),
+			"name":                r.Name,
+			"available_phases":    r.AvailablePhases,
+			"custom_key":          r.CustomKey,
+			"force_custom_values": r.ForceCustomValues,
+			"type":                r.Type,
+			"value":               r.Value,
+		})
+	}
+
+	if err := d.Set("waf_actions", wafActionData); err != nil {
 		return err
 	}
 

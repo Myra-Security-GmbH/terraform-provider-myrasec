@@ -2,7 +2,7 @@
 
 Provides a Myra Security settings resource.
 
-## Example Usage
+## Example usage
 
 ```hcl
 # Configure settings for a subdomain
