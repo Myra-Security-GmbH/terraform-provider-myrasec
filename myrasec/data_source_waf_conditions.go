@@ -130,7 +130,7 @@ func dataSourceMyrasecWAFConditionsRead(d *schema.ResourceData, meta interface{}
 }
 
 //
-// prepareRedirectFilter ...
+// prepareRedirectFilter fetches the panic that can happen in parseWAFConditionFilter
 //
 func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
 	defer func() {
@@ -160,7 +160,7 @@ func parseWAFConditionFilter(d interface{}) *wafConditionFilter {
 }
 
 //
-// wafConditionFilter ...
+// wafConditionFilter struct...
 //
 type wafConditionFilter struct {
 	name string

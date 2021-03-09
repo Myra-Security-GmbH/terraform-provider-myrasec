@@ -120,7 +120,7 @@ func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) e
 }
 
 //
-// prepareRedirectFilter ...
+// prepareWAFActionFilter fetches the panic that can happen in parseWAFActionFilter
 //
 func prepareWAFActionFilter(d interface{}) *wafActionFilter {
 	defer func() {
@@ -150,7 +150,7 @@ func parseWAFActionFilter(d interface{}) *wafActionFilter {
 }
 
 //
-// wafActionFilter ...
+// wafActionFilter struct ...
 //
 type wafActionFilter struct {
 	actionType string

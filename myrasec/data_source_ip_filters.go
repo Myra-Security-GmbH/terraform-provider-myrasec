@@ -133,7 +133,7 @@ func dataSourceMyrasecIPFiltersRead(d *schema.ResourceData, meta interface{}) er
 }
 
 //
-// prepareIPFilterFilter ...
+// prepareIPFilterFilter fetches the panic that can happen in parseIPFilterFilter
 //
 func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
 	defer func() {

@@ -133,7 +133,7 @@ func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) er
 }
 
 //
-// prepareRedirectFilter ...
+// prepareRedirectFilter fetches the panic that can happen in parseRedirectFilter
 //
 func prepareRedirectFilter(d interface{}) *redirectFilter {
 	defer func() {

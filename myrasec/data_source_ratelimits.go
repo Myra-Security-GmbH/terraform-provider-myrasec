@@ -131,7 +131,7 @@ func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) e
 }
 
 //
-// prepareRateLimitFilter ...
+// prepareRateLimitFilter fetches the panic that can happen in parseRateLimitFilter
 //
 func prepareRateLimitFilter(d interface{}) *rateLimitFilter {
 	defer func() {

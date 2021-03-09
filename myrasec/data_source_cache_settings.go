@@ -134,7 +134,7 @@ func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}
 }
 
 //
-// prepareCacheSettingFilter ...
+// prepareCacheSettingFilter fetches the panic that can happen in parseCacheSettingFilter
 //
 func prepareCacheSettingFilter(d interface{}) *cacheSettingFilter {
 	defer func() {

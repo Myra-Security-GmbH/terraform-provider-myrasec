@@ -143,7 +143,7 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 }
 
 //
-// prepareDomainFilter ...
+// prepareDomainFilter fetches the panic that can happen in parseDomainFilter
 //
 func prepareDomainFilter(d interface{}) *domainFilter {
 	defer func() {

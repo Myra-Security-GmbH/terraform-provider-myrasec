@@ -242,7 +242,7 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 }
 
 //
-// prepareDomainFilter ...
+// prepareDNSRecordFilter fetches the panic that can happen in parseDNSRecordFilter
 //
 func prepareDNSRecordFilter(d interface{}) *recordFilter {
 	defer func() {
