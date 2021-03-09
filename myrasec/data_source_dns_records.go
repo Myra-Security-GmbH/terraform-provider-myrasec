@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"time"
@@ -258,8 +259,15 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 
 	match, ok := m["match"]
 	if ok {
-		f.regex = regexp.MustCompile(match.(string))
+		regex, err := regexp.Compile(match.(string))
+		if err != nil {
+			log.Println("[WARN] The passed regex is not valid", err.Error())
+
+			return f
+		}
+		f.regex = regex
 	}
+
 	return f
 }
 
