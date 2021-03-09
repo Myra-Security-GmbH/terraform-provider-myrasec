@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -83,22 +84,16 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
+	f := prepareWAFActionFilter(d.Get("filter"))
+
 	actions, err := client.ListWAFActions()
 	if err != nil {
 		return fmt.Errorf("Error fetching WAF actions: %s", err)
 	}
 
-	var filter string
-	cfg := d.Get("filter").([]interface{})
-	m := cfg[0].(map[string]interface{})
-	actionType, ok := m["type"]
-	if ok {
-		filter = actionType.(string)
-	}
-
 	wafActionData := make([]interface{}, 0)
 	for _, r := range actions {
-		if len(filter) > 0 && r.Type != filter {
+		if f != nil && r.Type != f.actionType {
 			continue
 		}
 
@@ -122,4 +117,41 @@ func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) e
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
+}
+
+//
+// prepareRedirectFilter ...
+//
+func prepareWAFActionFilter(d interface{}) *wafActionFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareWAFActionFilter", r)
+		}
+	}()
+
+	return parseWAFActionFilter(d)
+}
+
+//
+// parseWAFActionFilter ...
+//
+func parseWAFActionFilter(d interface{}) *wafActionFilter {
+	cfg := d.([]interface{})
+	f := &wafActionFilter{}
+
+	m := cfg[0].(map[string]interface{})
+
+	actionType, ok := m["type"]
+	if ok {
+		f.actionType = actionType.(string)
+	}
+
+	return f
+}
+
+//
+// wafActionFilter ...
+//
+type wafActionFilter struct {
+	actionType string
 }

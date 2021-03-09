@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -91,7 +92,10 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseRedirectsFilter(d.Get("filter"))
+	f := prepareRedirectFilter(d.Get("filter"))
+	if f == nil {
+		f = &redirectFilter{}
+	}
 
 	params := map[string]string{}
 	if len(f.search) > 0 {
@@ -126,13 +130,25 @@ func dataSourceMyrasecRedirectsRead(d *schema.ResourceData, meta interface{}) er
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
-
 }
 
 //
-// parseRedirectsFilter converts the filter data to a redirectFilter struct
+// prepareRedirectFilter ...
 //
-func parseRedirectsFilter(d interface{}) *redirectFilter {
+func prepareRedirectFilter(d interface{}) *redirectFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareRedirectFilter", r)
+		}
+	}()
+
+	return parseRedirectFilter(d)
+}
+
+//
+// parseRedirectFilter converts the filter data to a redirectFilter struct
+//
+func parseRedirectFilter(d interface{}) *redirectFilter {
 	cfg := d.([]interface{})
 	f := &redirectFilter{}
 

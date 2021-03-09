@@ -151,7 +151,10 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseDNSRecordFilter(d.Get("filter"))
+	f := prepareDNSRecordFilter(d.Get("filter"))
+	if f == nil {
+		f = &recordFilter{}
+	}
 
 	params := map[string]string{
 		"loadbalancer": "true",
@@ -236,6 +239,19 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
+}
+
+//
+// prepareDomainFilter ...
+//
+func prepareDNSRecordFilter(d interface{}) *recordFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareDNSRecordFilter", r)
+		}
+	}()
+
+	return parseDNSRecordFilter(d)
 }
 
 //

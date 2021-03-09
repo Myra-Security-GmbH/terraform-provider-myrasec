@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -91,7 +92,10 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseCacheSettingFilter(d.Get("filter"))
+	f := prepareCacheSettingFilter(d.Get("filter"))
+	if f == nil {
+		f = &cacheSettingFilter{}
+	}
 
 	params := map[string]string{}
 	if len(f.path) > 0 {
@@ -127,6 +131,19 @@ func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}
 
 	return nil
 
+}
+
+//
+// prepareCacheSettingFilter ...
+//
+func prepareCacheSettingFilter(d interface{}) *cacheSettingFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareCacheSettingFilter", r)
+		}
+	}()
+
+	return parseCacheSettingFilter(d)
 }
 
 //

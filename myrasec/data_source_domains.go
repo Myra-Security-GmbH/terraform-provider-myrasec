@@ -85,7 +85,10 @@ func dataSourceMyrasecDomains() *schema.Resource {
 func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseDomainFilter(d.Get("filter"))
+	f := prepareDomainFilter(d.Get("filter"))
+	if f == nil {
+		f = &domainFilter{}
+	}
 
 	params := map[string]string{}
 
@@ -140,9 +143,23 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 }
 
 //
+// prepareDomainFilter ...
+//
+func prepareDomainFilter(d interface{}) *domainFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareDomainFilter", r)
+		}
+	}()
+
+	return parseDomainFilter(d)
+}
+
+//
 // parseDomainFilter converts the filter data to a domainFilter struct
 //
 func parseDomainFilter(d interface{}) *domainFilter {
+
 	cfg := d.([]interface{})
 	f := &domainFilter{}
 

@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -87,7 +88,10 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 func dataSourceMyrasecIPFiltersRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseRedirectsFilter(d.Get("filter"))
+	f := prepareIPFilterFilter(d.Get("filter"))
+	if f == nil {
+		f = &ipFilterFilter{}
+	}
 
 	params := map[string]string{}
 	if len(f.search) > 0 {
@@ -126,6 +130,19 @@ func dataSourceMyrasecIPFiltersRead(d *schema.ResourceData, meta interface{}) er
 
 	return nil
 
+}
+
+//
+// prepareIPFilterFilter ...
+//
+func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareIPFilterFilter", r)
+		}
+	}()
+
+	return parseIPFilterFilter(d)
 }
 
 //

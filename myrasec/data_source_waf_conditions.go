@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -91,21 +92,16 @@ func dataSourceMyrasecWAFConditions() *schema.Resource {
 func dataSourceMyrasecWAFConditionsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
+	f := prepareWAFConditionFilter(d.Get("filter"))
+
 	conditions, err := client.ListWAFConditions()
 	if err != nil {
 		return fmt.Errorf("Error fetching WAF conditions: %s", err)
 	}
-	var filter string
-	cfg := d.Get("filter").([]interface{})
-	m := cfg[0].(map[string]interface{})
-	name, ok := m["name"]
-	if ok {
-		filter = name.(string)
-	}
 
 	wafConditionData := make([]interface{}, 0)
 	for _, r := range conditions {
-		if len(filter) > 0 && r.Name != filter {
+		if f != nil && r.Name != f.name {
 			continue
 		}
 
@@ -131,4 +127,41 @@ func dataSourceMyrasecWAFConditionsRead(d *schema.ResourceData, meta interface{}
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
+}
+
+//
+// prepareRedirectFilter ...
+//
+func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareWAFConditionFilter", r)
+		}
+	}()
+
+	return parseWAFConditionFilter(d)
+}
+
+//
+// parseWAFConditionFilter ...
+//
+func parseWAFConditionFilter(d interface{}) *wafConditionFilter {
+	cfg := d.([]interface{})
+	f := &wafConditionFilter{}
+
+	m := cfg[0].(map[string]interface{})
+
+	name, ok := m["name"]
+	if ok {
+		f.name = name.(string)
+	}
+
+	return f
+}
+
+//
+// wafConditionFilter ...
+//
+type wafConditionFilter struct {
+	name string
 }

@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -87,7 +88,10 @@ func dataSourceMyrasecRateLimits() *schema.Resource {
 func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*myrasec.API)
 
-	f := parseRedirectsFilter(d.Get("filter"))
+	f := prepareRateLimitFilter(d.Get("filter"))
+	if f == nil {
+		f = &rateLimitFilter{}
+	}
 
 	params := map[string]string{
 		"subDomainName": f.subDomainName,
@@ -124,6 +128,19 @@ func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) e
 
 	return nil
 
+}
+
+//
+// prepareRateLimitFilter ...
+//
+func prepareRateLimitFilter(d interface{}) *rateLimitFilter {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("[DEBUG] recovered in prepareRateLimitFilter", r)
+		}
+	}()
+
+	return parseRateLimitFilter(d)
 }
 
 //
