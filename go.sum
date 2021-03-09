@@ -52,6 +52,10 @@ github.com/Myra-Security-GmbH/myrasec-go v1.3.0 h1:IbEj5RLy7M6dxA5PGQ8XB/tFeScB2
 github.com/Myra-Security-GmbH/myrasec-go v1.3.0/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
 github.com/Myra-Security-GmbH/myrasec-go v1.3.1 h1:ZlOR46n1Uv4U8RHoxLTWr9s2Z1H8IYvV7ye2NTpbLRg=
 github.com/Myra-Security-GmbH/myrasec-go v1.3.1/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
+github.com/Myra-Security-GmbH/myrasec-go v1.3.2 h1:BztEjyysPZ22oLTMmQHiOClRGIqR5n0G7plNBf/3OWA=
+github.com/Myra-Security-GmbH/myrasec-go v1.3.2/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
+github.com/Myra-Security-GmbH/myrasec-go v1.3.3 h1:hCm00fwIZia1Zl98TefYvpSBq8vIxUAKGrfJzpe6YUE=
+github.com/Myra-Security-GmbH/myrasec-go v1.3.3/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036 h1:jHbXQ2rGSiuKhYDro1/xQnX4ajVqrxLlCBXuFyrslOY=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036/go.mod h1:2BZfINKNAlgIONp1zeT56ZAxDxjl4qOHz+JMdmYQuYE=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
@@ -151,6 +155,8 @@ github.com/google/go-cmp v0.5.2 h1:X2ev0eStA3AbceY54o37/0PQ/UWqKEiiO2dKL5OPaFM=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.4 h1:L8R9j+yAqZuZjsqh/z+F1NCffTKKLShY6zXTItVIZ8M=
 github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/go-cmp v0.5.5 h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=
+github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/martian v2.1.0+incompatible/go.mod h1:9I4somxYTbIHy5NJKHRl3wXiIaQGbYVAs8BPL6v8lEs=
 github.com/google/martian/v3 v3.0.0/go.mod h1:y5Zk1BBys9G+gd6Jrk0W3cC1+ELVxBWuIGO+w/tUAp0=
 github.com/google/pprof v0.0.0-20181206194817-3ea8567a2e57/go.mod h1:zfwlbNMJ+OItoe0UupaVj+oy1omPYYDuagoSzA8v9mc=
@@ -449,6 +455,8 @@ golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46 h1:V066+OYJ66oTjnhm4Yrn7SXIw
 golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b h1:kHlr0tATeLRMEiZJu5CknOw/E8V6h69sXXQFGoPtjcc=
 golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 h1:46ULzRKLh1CwgRq2dC5SlBzEqqNCi8rreOZnNrbqcIY=
+golang.org/x/sys v0.0.0-20210309074719-68d13333faf2/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
@@ -562,6 +570,8 @@ google.golang.org/genproto v0.0.0-20210225212918-ad91960f0274 h1:FuPOK/iY40x3uIB
 google.golang.org/genproto v0.0.0-20210225212918-ad91960f0274/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/genproto v0.0.0-20210226172003-ab064af71705 h1:PYBmACG+YEv8uQPW0r1kJj8tR+gkF0UWq7iFdUezwEw=
 google.golang.org/genproto v0.0.0-20210226172003-ab064af71705/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
+google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb h1:hcskBH5qZCOa7WpTUFUFvoebnSFZBYpjykLtjIp9DVk=
+google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/grpc v1.8.0/go.mod h1:yo6s7OP7yaDglbqo1J04qKzAhqBH6lvTonzMVmEdcZw=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.20.1/go.mod h1:10oTOabMzJvdu6/UiuZezV6QK5dSlG84ov/aaiqXj38=

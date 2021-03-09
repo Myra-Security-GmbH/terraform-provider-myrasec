@@ -23,6 +23,7 @@ The following arguments are supported:
 ### filter
 * `domain_name` (Required) The domain name to filter the DNS records.
 * `name` (Optional) The record name to filter for.
+* `match` (Optional) A regex to filter DNS records. The regex is applied on the name field. NOTE: If you specify a match/regex, the `name` filter has no effect!
 
 ## Attributes Reference
 * `records` A list of DNS records.

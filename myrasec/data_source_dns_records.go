@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -30,6 +31,10 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "",
+						},
+						"match": {
+							Type:     schema.TypeString,
+							Optional: true,
 						},
 					},
 				},
@@ -150,7 +155,8 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	params := map[string]string{
 		"loadbalancer": "true",
 	}
-	if len(f.name) > 0 {
+
+	if f.regex == nil && len(f.name) > 0 {
 		params["search"] = f.name
 	}
 
@@ -162,10 +168,25 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	recordData := make([]interface{}, 0)
 
 	for _, r := range records {
+
+		if f.regex != nil && !f.regex.MatchString(r.Name) {
+			continue
+		}
+
+		var created string
+		if r.Created != nil {
+			created = r.Created.Format(time.RFC3339)
+		}
+
+		var modified string
+		if r.Created != nil {
+			modified = r.Modified.Format(time.RFC3339)
+		}
+
 		data := map[string]interface{}{
 			"id":                r.ID,
-			"created":           r.Created.Format(time.RFC3339),
-			"modified":          r.Modified.Format(time.RFC3339),
+			"created":           created,
+			"modified":          modified,
 			"name":              r.Name,
 			"record_type":       r.RecordType,
 			"value":             r.Value,
@@ -179,11 +200,22 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 		}
 
 		if r.UpstreamOptions != nil && r.UpstreamOptions.ID != 0 {
+
+			var upstreamCreated string
+			if r.Created != nil {
+				upstreamCreated = r.UpstreamOptions.Created.Format(time.RFC3339)
+			}
+
+			var upstreamModified string
+			if r.Created != nil {
+				upstreamModified = r.UpstreamOptions.Modified.Format(time.RFC3339)
+			}
+
 			data["upstream_options"] = []map[string]interface{}{
 				{
 					"upstream_id":  r.UpstreamOptions.ID,
-					"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
-					"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
+					"created":      upstreamCreated,
+					"modified":     upstreamModified,
 					"backup":       r.UpstreamOptions.Backup,
 					"down":         r.UpstreamOptions.Down,
 					"fail_timeout": r.UpstreamOptions.FailTimeout,
@@ -224,6 +256,10 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 		f.name = name.(string)
 	}
 
+	match, ok := m["match"]
+	if ok {
+		f.regex = regexp.MustCompile(match.(string))
+	}
 	return f
 }
 
@@ -233,4 +269,5 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 type recordFilter struct {
 	domainName string
 	name       string
+	regex      *regexp.Regexp
 }

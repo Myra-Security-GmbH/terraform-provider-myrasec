@@ -22,6 +22,7 @@ The following arguments are supported:
 ### filter
 * `id` (Optional) The ID of the domain filter for.
 * `name` (Optional) The domain name to filter for.
+* `match` (Optional) A regex to filter domains. The regex is applied on the domain name. NOTE: If you specify a match/regex, the `name` filter has no effect!
 
 ## Attributes Reference
 * `domains` A list of domains.

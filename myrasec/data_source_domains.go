@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -27,6 +28,10 @@ func dataSourceMyrasecDomains() *schema.Resource {
 							Optional: true,
 						},
 						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"match": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -82,7 +87,8 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 	f := parseDomainFilter(d.Get("filter"))
 
 	params := map[string]string{}
-	if len(f.name) > 0 {
+
+	if f.regex == nil && len(f.name) > 0 {
 		params["search"] = f.name
 	}
 
@@ -93,14 +99,29 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 
 	domainData := make([]interface{}, 0)
 	for _, r := range domains {
+
+		if f.regex != nil && !f.regex.MatchString(r.Name) {
+			continue
+		}
+
 		if f.id != 0 && r.ID != f.id {
 			continue
 		}
 
+		var created string
+		if r.Created != nil {
+			created = r.Created.Format(time.RFC3339)
+		}
+
+		var modified string
+		if r.Created != nil {
+			modified = r.Modified.Format(time.RFC3339)
+		}
+
 		domainData = append(domainData, map[string]interface{}{
 			"id":           r.ID,
-			"created":      r.Created.Format(time.RFC3339),
-			"modified":     r.Modified.Format(time.RFC3339),
+			"created":      created,
+			"modified":     modified,
 			"name":         r.Name,
 			"auto_update":  r.AutoUpdate,
 			"paused":       r.Paused,
@@ -125,14 +146,20 @@ func parseDomainFilter(d interface{}) *domainFilter {
 	f := &domainFilter{}
 
 	m := cfg[0].(map[string]interface{})
+
+	id, ok := m["id"]
+	if ok {
+		f.id = id.(int)
+	}
+
 	name, ok := m["name"]
 	if ok {
 		f.name = name.(string)
 	}
 
-	id, ok := m["id"]
+	match, ok := m["match"]
 	if ok {
-		f.id = id.(int)
+		f.regex = regexp.MustCompile(match.(string))
 	}
 
 	return f
@@ -142,6 +169,7 @@ func parseDomainFilter(d interface{}) *domainFilter {
 // domainFilter struct ...
 //
 type domainFilter struct {
-	id   int
-	name string
+	id    int
+	name  string
+	regex *regexp.Regexp
 }
