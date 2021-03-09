@@ -21,6 +21,9 @@ func resourceMyrasecRedirect() *schema.Resource {
 		Create: resourceMyrasecRedirectCreate,
 		Read:   resourceMyrasecRedirectRead,
 		Delete: resourceMyrasecRedirectDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

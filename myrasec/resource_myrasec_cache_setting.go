@@ -21,6 +21,9 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 		Create: resourceMyrasecCacheSettingCreate,
 		Read:   resourceMyrasecCacheSettingRead,
 		Delete: resourceMyrasecCacheSettingDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

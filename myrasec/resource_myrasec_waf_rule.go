@@ -18,6 +18,9 @@ func resourceMyrasecWAFRule() *schema.Resource {
 		Create: resourceMyrasecWAFRuleCreate,
 		Read:   resourceMyrasecWAFRuleRead,
 		Delete: resourceMyrasecWAFRuleDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

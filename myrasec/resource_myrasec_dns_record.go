@@ -21,6 +21,9 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 		Create: resourceMyrasecDNSRecordCreate,
 		Read:   resourceMyrasecDNSRecordRead,
 		Delete: resourceMyrasecDNSRecordDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

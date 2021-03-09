@@ -21,6 +21,9 @@ func resourceMyrasecIPFilter() *schema.Resource {
 		Create: resourceMyrasecIPFilterCreate,
 		Read:   resourceMyrasecIPFilterRead,
 		Delete: resourceMyrasecIPFilterDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

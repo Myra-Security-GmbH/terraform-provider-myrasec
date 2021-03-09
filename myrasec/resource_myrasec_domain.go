@@ -21,6 +21,9 @@ func resourceMyrasecDomain() *schema.Resource {
 		Read:   resourceMyrasecDomainRead,
 		Update: resourceMyrasecDomainUpdate,
 		Delete: resourceMyrasecDomainDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
