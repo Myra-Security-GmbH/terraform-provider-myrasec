@@ -328,48 +328,63 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 	if !ok {
 		return record, nil
 	}
-	record.UpstreamOptions = &myrasec.UpstreamOptions{}
 
 	for _, upstream := range options.([]interface{}) {
-		for key, val := range upstream.(map[string]interface{}) {
-			switch key {
-			case "upstream_id":
-				record.UpstreamOptions.ID = val.(int)
-			case "modified":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				modified, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				record.UpstreamOptions.Modified = &types.DateTime{
-					Time: modified,
-				}
-			case "created":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				created, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				record.UpstreamOptions.Created = &types.DateTime{
-					Time: created,
-				}
-			case "backup":
-				record.UpstreamOptions.Backup = val.(bool)
-			case "down":
-				record.UpstreamOptions.Down = val.(bool)
-			case "fail_timeout":
-				record.UpstreamOptions.FailTimeout = val.(int)
-			case "max_fails":
-				record.UpstreamOptions.MaxFails = val.(int)
-			case "weight":
-				record.UpstreamOptions.Weight = val.(int)
-			}
+		opts, err := buildUpstreamOptions(upstream)
+		if err != nil {
+			return nil, err
 		}
+
+		record.UpstreamOptions = opts
 	}
 
 	return record, nil
+}
+
+//
+// buildUpstreamOptions ...
+//
+func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error) {
+	options := &myrasec.UpstreamOptions{}
+
+	for key, val := range upstream.(map[string]interface{}) {
+		switch key {
+		case "upstream_id":
+			options.ID = val.(int)
+		case "modified":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			modified, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			options.Modified = &types.DateTime{
+				Time: modified,
+			}
+		case "created":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			created, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			options.Created = &types.DateTime{
+				Time: created,
+			}
+		case "backup":
+			options.Backup = val.(bool)
+		case "down":
+			options.Down = val.(bool)
+		case "fail_timeout":
+			options.FailTimeout = val.(int)
+		case "max_fails":
+			options.MaxFails = val.(int)
+		case "weight":
+			options.Weight = val.(int)
+		}
+	}
+
+	return options, nil
 }
