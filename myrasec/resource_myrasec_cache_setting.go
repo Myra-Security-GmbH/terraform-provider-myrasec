@@ -204,26 +204,17 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 		setting.ID = d.Get("setting_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		setting.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	setting.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-		setting.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	setting.Modified = modified
 
 	return setting, nil
 }

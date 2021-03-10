@@ -387,26 +387,17 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		rule.ID = d.Get("rule_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		rule.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	rule.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-		rule.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	rule.Modified = modified
 
 	conditions, ok := d.GetOk("conditions")
 	if !ok {
@@ -448,27 +439,17 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 		case "condition_id":
 			c.ID = val.(int)
 		case "modified":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			modified, err := time.Parse(time.RFC3339, val.(string))
+			modified, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			c.Modified = &types.DateTime{
-				Time: modified,
-			}
+			c.Modified = modified
 		case "created":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			created, err := time.Parse(time.RFC3339, val.(string))
+			created, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			c.Created = &types.DateTime{
-				Time: created,
-			}
+			c.Created = created
 		case "force_custom_values":
 			c.ForceCustomValues = val.(bool)
 		case "alias":
@@ -501,27 +482,17 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 		case "action_id":
 			a.ID = val.(int)
 		case "modified":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			modified, err := time.Parse(time.RFC3339, val.(string))
+			modified, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			a.Modified = &types.DateTime{
-				Time: modified,
-			}
+			a.Modified = modified
 		case "created":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			created, err := time.Parse(time.RFC3339, val.(string))
+			created, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			a.Created = &types.DateTime{
-				Time: created,
-			}
+			a.Created = created
 		case "name":
 			a.Name = val.(string)
 		case "type":

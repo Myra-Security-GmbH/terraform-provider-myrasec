@@ -303,26 +303,17 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 		record.ID = d.Get("record_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		record.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	record.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-		record.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	record.Modified = modified
 
 	options, ok := d.GetOk("upstream_options")
 	if !ok {
@@ -352,27 +343,17 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 		case "upstream_id":
 			options.ID = val.(int)
 		case "modified":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			modified, err := time.Parse(time.RFC3339, val.(string))
+			modified, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			options.Modified = &types.DateTime{
-				Time: modified,
-			}
+			options.Modified = modified
 		case "created":
-			if len(val.(string)) <= 0 {
-				continue
-			}
-			created, err := time.Parse(time.RFC3339, val.(string))
+			created, err := types.ParseDate(val.(string))
 			if err != nil {
 				return nil, err
 			}
-			options.Created = &types.DateTime{
-				Time: created,
-			}
+			options.Created = created
 		case "backup":
 			options.Backup = val.(bool)
 		case "down":
