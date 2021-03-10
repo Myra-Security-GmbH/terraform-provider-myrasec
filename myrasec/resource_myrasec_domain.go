@@ -188,38 +188,23 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 		domain.ID = d.Get("domain_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		domain.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	domain.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		domain.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	domain.Modified = modified
 
-	if len(d.Get("paused_until").(string)) > 0 {
-		pausedUntil, err := time.Parse(time.RFC3339, d.Get("paused_until").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		domain.PausedUntil = &types.DateTime{
-			Time: pausedUntil,
-		}
+	pausedUntil, err := types.ParseDate(d.Get("paused_until").(string))
+	if err != nil {
+		return nil, err
 	}
+	domain.PausedUntil = pausedUntil
 
 	return domain, nil
 }

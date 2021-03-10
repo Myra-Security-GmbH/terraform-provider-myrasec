@@ -194,26 +194,17 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 		ratelimit.ID = d.Get("ratelimit_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		ratelimit.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	ratelimit.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-		ratelimit.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	ratelimit.Modified = modified
 
 	return ratelimit, nil
 }

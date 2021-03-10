@@ -194,36 +194,23 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 		filter.ID = d.Get("filter_id").(int)
 	}
 
-	if len(d.Get("created").(string)) > 0 {
-		created, err := time.Parse(time.RFC3339, d.Get("created").(string))
-		if err != nil {
-			return nil, err
-		}
-
-		filter.Created = &types.DateTime{
-			Time: created,
-		}
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
 	}
+	filter.Created = created
 
-	if len(d.Get("modified").(string)) > 0 {
-		modified, err := time.Parse(time.RFC3339, d.Get("modified").(string))
-		if err != nil {
-			return nil, err
-		}
-		filter.Modified = &types.DateTime{
-			Time: modified,
-		}
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
 	}
+	filter.Modified = modified
 
-	if len(d.Get("expire_date").(string)) > 0 {
-		expireDate, err := time.Parse(time.RFC3339, d.Get("expire_date").(string))
-		if err != nil {
-			return nil, err
-		}
-		filter.ExpireDate = &types.DateTime{
-			Time: expireDate,
-		}
+	expireDate, err := types.ParseDate(d.Get("expire_date").(string))
+	if err != nil {
+		return nil, err
 	}
+	filter.ExpireDate = expireDate
 
 	return filter, nil
 }
