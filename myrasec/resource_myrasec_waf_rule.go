@@ -414,50 +414,9 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 	}
 
 	for _, condition := range conditions.([]interface{}) {
-		c := &myrasec.WAFCondition{}
-		for key, val := range condition.(map[string]interface{}) {
-			switch key {
-			case "condition_id":
-				c.ID = val.(int)
-			case "modified":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				modified, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				c.Modified = &types.DateTime{
-					Time: modified,
-				}
-			case "created":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				created, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				c.Created = &types.DateTime{
-					Time: created,
-				}
-			case "force_custom_values":
-				c.ForceCustomValues = val.(bool)
-			case "alias":
-				c.Alias = val.(string)
-			case "available_phases":
-				c.AvailablePhases = val.(int)
-			case "category":
-				c.Category = val.(string)
-			case "matching_type":
-				c.MatchingType = val.(string)
-			case "name":
-				c.Name = val.(string)
-			case "value":
-				c.Value = val.(string)
-			case "key":
-				c.Key = val.(string)
-			}
+		c, err := buildWAFCondition(condition)
+		if err != nil {
+			return nil, err
 		}
 		rule.Conditions = append(rule.Conditions, c)
 	}
@@ -468,47 +427,113 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 	}
 
 	for _, action := range actions.([]interface{}) {
-		a := &myrasec.WAFAction{}
-		for key, val := range action.(map[string]interface{}) {
-			switch key {
-			case "action_id":
-				a.ID = val.(int)
-			case "modified":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				modified, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				a.Modified = &types.DateTime{
-					Time: modified,
-				}
-			case "created":
-				if len(val.(string)) <= 0 {
-					continue
-				}
-				created, err := time.Parse(time.RFC3339, val.(string))
-				if err != nil {
-					return nil, err
-				}
-				a.Created = &types.DateTime{
-					Time: created,
-				}
-			case "name":
-				a.Name = val.(string)
-			case "type":
-				a.Type = val.(string)
-			case "available_phases":
-				a.AvailablePhases = val.(int)
-			case "custom_key":
-				a.CustomKey = val.(string)
-			case "value":
-				a.Value = val.(string)
-			}
+		a, err := buildWAFAction(action)
+		if err != nil {
+			return nil, err
 		}
 		rule.Actions = append(rule.Actions, a)
+
 	}
 
 	return rule, nil
+}
+
+//
+// buildWAFCondition ...
+//
+func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
+	c := &myrasec.WAFCondition{}
+	for key, val := range condition.(map[string]interface{}) {
+		switch key {
+		case "condition_id":
+			c.ID = val.(int)
+		case "modified":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			modified, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			c.Modified = &types.DateTime{
+				Time: modified,
+			}
+		case "created":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			created, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			c.Created = &types.DateTime{
+				Time: created,
+			}
+		case "force_custom_values":
+			c.ForceCustomValues = val.(bool)
+		case "alias":
+			c.Alias = val.(string)
+		case "available_phases":
+			c.AvailablePhases = val.(int)
+		case "category":
+			c.Category = val.(string)
+		case "matching_type":
+			c.MatchingType = val.(string)
+		case "name":
+			c.Name = val.(string)
+		case "value":
+			c.Value = val.(string)
+		case "key":
+			c.Key = val.(string)
+		}
+	}
+
+	return c, nil
+}
+
+//
+// buildWAFAction ...
+//
+func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
+	a := &myrasec.WAFAction{}
+	for key, val := range action.(map[string]interface{}) {
+		switch key {
+		case "action_id":
+			a.ID = val.(int)
+		case "modified":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			modified, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			a.Modified = &types.DateTime{
+				Time: modified,
+			}
+		case "created":
+			if len(val.(string)) <= 0 {
+				continue
+			}
+			created, err := time.Parse(time.RFC3339, val.(string))
+			if err != nil {
+				return nil, err
+			}
+			a.Created = &types.DateTime{
+				Time: created,
+			}
+		case "name":
+			a.Name = val.(string)
+		case "type":
+			a.Type = val.(string)
+		case "available_phases":
+			a.AvailablePhases = val.(int)
+		case "custom_key":
+			a.CustomKey = val.(string)
+		case "value":
+			a.Value = val.(string)
+		}
+	}
+
+	return a, nil
 }
