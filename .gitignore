@@ -1,3 +1,4 @@
 terraform-provider-myrasec*
 terraform.tfstate
 vendor
+.idea/

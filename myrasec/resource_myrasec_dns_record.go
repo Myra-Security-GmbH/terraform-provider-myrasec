@@ -213,12 +213,21 @@ func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) erro
 
 	recordID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing record id: %s", err)
+		return fmt.Errorf("error parsing record id: %s", err)
 	}
 
-	records, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
+	var records []myrasec.DNSRecord
+	//output, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
+	//records = output.Elements
+	// records, err = getAllRecords(client, d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
+	output, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
+
+	for _, o := range output.Elements {
+		records = append(records, o.(myrasec.DNSRecord))
+	}
+
 	if err != nil {
-		return fmt.Errorf("Error fetching DNS records: %s", err)
+		return fmt.Errorf("error fetching DNS records: %s", err)
 	}
 
 	for _, r := range records {
