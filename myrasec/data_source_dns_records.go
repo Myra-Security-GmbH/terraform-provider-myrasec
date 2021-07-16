@@ -1,8 +1,11 @@
 package myrasec
 
+// myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+
 import (
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -164,9 +167,10 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 		params["search"] = f.name
 	}
 
-	records, err := client.ListDNSRecords(f.domainName, params)
+	records, err := getAllRecords(client, f.domainName, params)
+
 	if err != nil {
-		return fmt.Errorf("Error fetching DNS records: %s", err)
+		return fmt.Errorf("error fetching DNS records: %s", err)
 	}
 
 	recordData := make([]interface{}, 0)
@@ -239,6 +243,33 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
+}
+
+func getAllRecords(api *myrasec.API, domainName string, params map[string]string) ([]myrasec.DNSRecord, error) {
+
+	response, err := api.ListDNSRecords(domainName, params)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching DNS records: %s", err)
+	}
+
+	var records []myrasec.DNSRecord
+
+	amountOfPages := int(math.Ceil(float64(response.Count) / float64(response.PageSize)))
+
+	for _, o := range response.Elements {
+		records = append(records, o.(myrasec.DNSRecord))
+	}
+	var counter int = 1
+	for counter < amountOfPages {
+		counter ++
+		params["pageNumber"] = fmt.Sprintf("%d", counter)
+		response, err = api.ListDNSRecords(domainName, params)
+		for _, o := range response.Elements {
+			records = append(records, o.(myrasec.DNSRecord))
+		}
+	}
+
+	return records, err
 }
 
 //
