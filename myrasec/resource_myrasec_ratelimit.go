@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,14 +20,12 @@ import (
 //
 func resourceMyrasecRateLimit() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecRateLimitCreate,
-		Read:   resourceMyrasecRateLimitRead,
-		Delete: resourceMyrasecRateLimitDelete,
+		CreateContext: resourceMyrasecRateLimitCreate,
+		ReadContext:   resourceMyrasecRateLimitRead,
+		DeleteContext: resourceMyrasecRateLimitDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
 				Type:     schema.TypeString,
@@ -99,37 +99,61 @@ func resourceMyrasecRateLimit() *schema.Resource {
 //
 // resourceMyrasecRateLimitCreate ...
 //
-func resourceMyrasecRateLimitCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	ratelimit, err := buildRateLimit(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building rate limit: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building rate limit",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateRateLimit(ratelimit)
 	if err != nil {
-		return fmt.Errorf("Error creating rate limit setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating rate limit setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecRateLimitRead(d, meta)
+	return resourceMyrasecRateLimitRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecRateLimitRead ...
 //
-func resourceMyrasecRateLimitRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	rateLimitID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	subDomainName, rateLimitID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing rate limit id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
-	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": d.Get("subdomain_name").(string)})
+	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": subDomainName})
 	if err != nil {
-		return fmt.Errorf("Error fetching rate limit settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching rate limit settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range ratelimits {
@@ -149,32 +173,49 @@ func resourceMyrasecRateLimitRead(d *schema.ResourceData, meta interface{}) erro
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecRateLimitDelete ...
 //
-func resourceMyrasecRateLimitDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	rateLimitID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing rate limit id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing rate limit id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting rate limit setting: %v", rateLimitID)
 
 	ratelimit, err := buildRateLimit(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building rate limit: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building rate limit",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteRateLimit(ratelimit)
 	if err != nil {
-		return fmt.Errorf("Error deleting rate limit setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting rate limit setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

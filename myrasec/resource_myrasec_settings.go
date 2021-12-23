@@ -1,13 +1,14 @@
 package myrasec
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -63,14 +64,12 @@ const (
 //
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecSettingsCreate,
-		Read:   resourceMyrasecSettingsRead,
-		Delete: resourceMyrasecSettingsDelete,
+		CreateContext: resourceMyrasecSettingsCreate,
+		ReadContext:   resourceMyrasecSettingsRead,
+		DeleteContext: resourceMyrasecSettingsDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
 				Type:     schema.TypeString,
@@ -492,33 +491,52 @@ func resourceMyrasecSettings() *schema.Resource {
 //
 // resourceMyrasecSettingsCreate ...
 //
-func resourceMyrasecSettingsCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	settings, err := buildSettings(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error creating cache setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	return resourceMyrasecSettingsRead(d, meta)
+	return resourceMyrasecSettingsRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecSettingsRead ...
 //
-func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	settings, err := client.ListSettings(d.Get("subdomain_name").(string), nil)
 	if err != nil {
-		return fmt.Errorf("Error fetching settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.Set("access_log", settings.AccessLog)
@@ -570,32 +588,49 @@ func resourceMyrasecSettingsRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("waf_levels_enable", settings.WAFLevelsEnable)
 	d.Set("waf_policy", settings.WAFPolicy)
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecSettingsDelete restores the default setting values
 //
-func resourceMyrasecSettingsDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	settingID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing setting id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing setting id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting settings: %v", settingID)
 
 	settings, err := buildDefaultSettings(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error deleting settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

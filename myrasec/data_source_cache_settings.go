@@ -1,12 +1,13 @@
 package myrasec
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -15,7 +16,7 @@ import (
 //
 func dataSourceMyrasecCacheSettings() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecCacheSettingsRead,
+		ReadContext: dataSourceMyrasecCacheSettingsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -83,14 +84,20 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // dataSourceMyrasecCacheSettingsRead ...
 //
-func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	f := prepareCacheSettingFilter(d.Get("filter"))
 	if f == nil {
@@ -104,7 +111,12 @@ func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}
 
 	settings, err := client.ListCacheSettings(f.subDomainName, params)
 	if err != nil {
-		return fmt.Errorf("Error fetching cache settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching cache settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	settingData := make([]interface{}, 0)
@@ -124,7 +136,7 @@ func dataSourceMyrasecCacheSettingsRead(d *schema.ResourceData, meta interface{}
 	}
 
 	if err := d.Set("settings", settingData); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))

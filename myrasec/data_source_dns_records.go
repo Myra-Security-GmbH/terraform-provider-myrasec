@@ -3,6 +3,7 @@ package myrasec
 // myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -19,7 +21,7 @@ import (
 //
 func dataSourceMyrasecDNSRecords() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecDNSRecordsRead,
+		ReadContext: dataSourceMyrasecDNSRecordsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -145,14 +147,20 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // dataSourceMyrasecDNSRecordsRead ...
 //
-func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	f := prepareDNSRecordFilter(d.Get("filter"))
 	if f == nil {
@@ -170,7 +178,12 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	records, err := getAllRecords(client, f.domainName, params)
 
 	if err != nil {
-		return fmt.Errorf("error fetching DNS records: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching DNS records",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	recordData := make([]interface{}, 0)
@@ -237,7 +250,7 @@ func dataSourceMyrasecDNSRecordsRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if err := d.Set("records", recordData); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
@@ -261,7 +274,7 @@ func getAllRecords(api *myrasec.API, domainName string, params map[string]string
 	}
 	var counter int = 1
 	for counter < amountOfPages {
-		counter ++
+		counter++
 		params["pageNumber"] = fmt.Sprintf("%d", counter)
 		response, err = api.ListDNSRecords(domainName, params)
 		for _, o := range response.Elements {

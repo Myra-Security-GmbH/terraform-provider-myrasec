@@ -1,12 +1,13 @@
 package myrasec
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -15,7 +16,7 @@ import (
 //
 func dataSourceMyrasecWAFActions() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecWAFActionsRead,
+		ReadContext: dataSourceMyrasecWAFActionsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -75,20 +76,31 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // dataSourceMyrasecWAFActionsRead ...
 //
-func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	f := prepareWAFActionFilter(d.Get("filter"))
 
 	actions, err := client.ListWAFActions()
 	if err != nil {
-		return fmt.Errorf("Error fetching WAF actions: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching WAF actions",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	wafActionData := make([]interface{}, 0)
@@ -111,12 +123,12 @@ func dataSourceMyrasecWAFActionsRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if err := d.Set("waf_actions", wafActionData); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	return nil
+	return diags
 }
 
 //

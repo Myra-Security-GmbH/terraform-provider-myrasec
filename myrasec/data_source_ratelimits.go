@@ -1,12 +1,13 @@
 package myrasec
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"strconv"
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -15,7 +16,7 @@ import (
 //
 func dataSourceMyrasecRateLimits() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecRateLimitsRead,
+		ReadContext: dataSourceMyrasecRateLimitsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -79,14 +80,20 @@ func dataSourceMyrasecRateLimits() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // dataSourceMyrasecRateLimitsRead ...
 //
-func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	f := prepareRateLimitFilter(d.Get("filter"))
 	if f == nil {
@@ -102,7 +109,12 @@ func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) e
 
 	redirects, err := client.ListRateLimits("dns", params)
 	if err != nil {
-		return fmt.Errorf("Error fetching rate limits: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching rate limits",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	rateLimitData := make([]interface{}, 0)
@@ -121,12 +133,12 @@ func dataSourceMyrasecRateLimitsRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if err := d.Set("ratelimits", rateLimitData); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	return nil
+	return diags
 
 }
 

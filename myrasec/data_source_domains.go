@@ -1,13 +1,14 @@
 package myrasec
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"regexp"
 	"strconv"
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -16,7 +17,7 @@ import (
 //
 func dataSourceMyrasecDomains() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceMyrasecDomainsRead,
+		ReadContext: dataSourceMyrasecDomainsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -76,14 +77,20 @@ func dataSourceMyrasecDomains() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // dataSourceMyrasecDomainsRead ...
 //
-func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	f := prepareDomainFilter(d.Get("filter"))
 	if f == nil {
@@ -98,7 +105,12 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 
 	domains, err := client.ListDomains(params)
 	if err != nil {
-		return fmt.Errorf("Error fetching domains: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domains",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	domainData := make([]interface{}, 0)
@@ -134,7 +146,7 @@ func dataSourceMyrasecDomainsRead(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	if err := d.Set("domains", domainData); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))

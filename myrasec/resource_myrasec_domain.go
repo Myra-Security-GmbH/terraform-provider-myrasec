@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,15 +19,13 @@ import (
 //
 func resourceMyrasecDomain() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecDomainCreate,
-		Read:   resourceMyrasecDomainRead,
-		Update: resourceMyrasecDomainUpdate,
-		Delete: resourceMyrasecDomainDelete,
+		CreateContext: resourceMyrasecDomainCreate,
+		ReadContext:   resourceMyrasecDomainRead,
+		UpdateContext: resourceMyrasecDomainUpdate,
+		DeleteContext: resourceMyrasecDomainDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"domain_id": {
 				Type:        schema.TypeInt,
@@ -78,37 +78,61 @@ func resourceMyrasecDomain() *schema.Resource {
 //
 // resourceMyrasecDomainCreate ...
 //
-func resourceMyrasecDomainCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	domain, err := buildDomain(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateDomain(domain)
 	if err != nil {
-		return fmt.Errorf("Error creating domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecDomainRead(d, meta)
+	return resourceMyrasecDomainRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecDomainRead ...
 //
-func resourceMyrasecDomainRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	domainID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing domain id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing domain ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	domains, err := client.ListDomains(nil)
 	if err != nil {
-		return fmt.Errorf("Error fetching domains: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domains",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range domains {
@@ -125,52 +149,81 @@ func resourceMyrasecDomainRead(d *schema.ResourceData, meta interface{}) error {
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecDomainUpdate ...
 //
-func resourceMyrasecDomainUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	domain, err := buildDomain(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.UpdateDomain(domain)
 	if err != nil {
-		return fmt.Errorf("Error updating domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecDomainRead(d, meta)
+	return resourceMyrasecDomainRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecDomainDelete ...
 //
-func resourceMyrasecDomainDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	domainID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing domain id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing domain id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting Domain: %v", domainID)
 
 	domain, err := buildDomain(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteDomain(domain)
 	if err != nil {
-		return fmt.Errorf("Error deleting domain: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting domain",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

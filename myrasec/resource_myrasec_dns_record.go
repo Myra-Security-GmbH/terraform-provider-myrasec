@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,14 +20,12 @@ import (
 //
 func resourceMyrasecDNSRecord() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecDNSRecordCreate,
-		Read:   resourceMyrasecDNSRecordRead,
-		Delete: resourceMyrasecDNSRecordDelete,
+		CreateContext: resourceMyrasecDNSRecordCreate,
+		ReadContext:   resourceMyrasecDNSRecordRead,
+		DeleteContext: resourceMyrasecDNSRecordDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
 				Type:     schema.TypeString,
@@ -188,46 +188,66 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 //
 // resourceMyrasecDNSRecordCreate ...
 //
-func resourceMyrasecDNSRecordCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	record, err := buildDNSRecord(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building DNS record: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-
 	resp, err := client.CreateDNSRecord(record, d.Get("domain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error creating DNS record: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecDNSRecordRead(d, meta)
+	return resourceMyrasecDNSRecordRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecDNSRecordRead ...
 //
-func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	recordID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	domainName, recordID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("error parsing record id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	var records []myrasec.DNSRecord
-	//output, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
-	//records = output.Elements
-	// records, err = getAllRecords(client, d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
-	output, err := client.ListDNSRecords(d.Get("domain_name").(string), map[string]string{"loadbalancer": "true"})
+	output, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true"})
 
 	for _, o := range output.Elements {
 		records = append(records, o.(myrasec.DNSRecord))
 	}
 
 	if err != nil {
-		return fmt.Errorf("error fetching DNS records: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching DNS records",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range records {
@@ -263,32 +283,49 @@ func resourceMyrasecDNSRecordRead(d *schema.ResourceData, meta interface{}) erro
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecDNSRecordDelete ...
 //
-func resourceMyrasecDNSRecordDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	recordID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing record id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing record id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting DNS record: %v", recordID)
 
 	record, err := buildDNSRecord(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building DNS record: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteDNSRecord(record, d.Get("domain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error deleting DNS record: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return nil
+	return diags
 }
 
 //

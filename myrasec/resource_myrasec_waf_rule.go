@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,20 +10,19 @@ import (
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMyrasecWAFRule() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecWAFRuleCreate,
-		Read:   resourceMyrasecWAFRuleRead,
-		Delete: resourceMyrasecWAFRuleDelete,
+		CreateContext: resourceMyrasecWAFRuleCreate,
+		ReadContext:   resourceMyrasecWAFRuleRead,
+		DeleteContext: resourceMyrasecWAFRuleDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
 				Type:     schema.TypeString,
@@ -229,43 +229,71 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				},
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+		},
 	}
 }
 
 //
 // resourceMyrasecWAFRuleCreate ...
 //
-func resourceMyrasecWAFRuleCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	rule, err := buildWAFRule(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building WAF rule: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateWAFRule(rule)
 	if err != nil {
-		return fmt.Errorf("Error creating WAF rule: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecWAFRuleRead(d, meta)
+	return resourceMyrasecWAFRuleRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecWAFRuleRead ...
 //
-func resourceMyrasecWAFRuleRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	ruleID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing WAF rule id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
-	rules, err := client.ListWAFRules("domain", map[string]string{"subDomain": d.Get("subdomain_name").(string)})
+	rules, err := client.ListWAFRules("domain", map[string]string{"subDomain": subDomainName})
 	if err != nil {
-		return fmt.Errorf("Error fetching WAF rule: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range rules {
@@ -338,32 +366,49 @@ func resourceMyrasecWAFRuleRead(d *schema.ResourceData, meta interface{}) error 
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecWAFRuleDelete ...
 //
-func resourceMyrasecWAFRuleDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	ruleID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing WAF rule id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing WAF rule id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting WAF rule: %v", ruleID)
 
 	rule, err := buildWAFRule(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building WAF rule: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteWAFRule(rule)
 	if err != nil {
-		return fmt.Errorf("Error deleting WAF rule: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

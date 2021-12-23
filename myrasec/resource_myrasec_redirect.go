@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,14 +20,12 @@ import (
 //
 func resourceMyrasecRedirect() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecRedirectCreate,
-		Read:   resourceMyrasecRedirectRead,
-		Delete: resourceMyrasecRedirectDelete,
+		CreateContext: resourceMyrasecRedirectCreate,
+		ReadContext:   resourceMyrasecRedirectRead,
+		DeleteContext: resourceMyrasecRedirectDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"redirect_id": {
 				Type:        schema.TypeInt,
@@ -102,37 +102,61 @@ func resourceMyrasecRedirect() *schema.Resource {
 //
 // resourceMyrasecRedirectCreate ...
 //
-func resourceMyrasecRedirectCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	redirect, err := buildRedirect(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building redirect: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building redirect",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateRedirect(redirect, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error creating redirect: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating redirect",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecRedirectRead(d, meta)
+	return resourceMyrasecRedirectRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecRedirectRead ...
 //
-func resourceMyrasecRedirectRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	redirectID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing redirect id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
-	redirects, err := client.ListRedirects(d.Get("subdomain_name").(string), nil)
+	redirects, err := client.ListRedirects(subDomainName, nil)
 	if err != nil {
-		return fmt.Errorf("Error fetching redirects: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching redirects",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range redirects {
@@ -152,32 +176,49 @@ func resourceMyrasecRedirectRead(d *schema.ResourceData, meta interface{}) error
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecRedirectDelete ...
 //
-func resourceMyrasecRedirectDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	redirectID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing redirect id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing redirect id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting redirect: %v", redirectID)
 
 	redirect, err := buildRedirect(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building redirect: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building redirect",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteRedirect(redirect, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error deleting redirect: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting redirect",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

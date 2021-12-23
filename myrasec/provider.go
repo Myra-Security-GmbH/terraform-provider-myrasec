@@ -1,6 +1,9 @@
 package myrasec
 
 import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -54,14 +57,14 @@ func Provider() *schema.Provider {
 			"myrasec_ratelimit":     resourceMyrasecRateLimit(),
 			"myrasec_waf_rule":      resourceMyrasecWAFRule(),
 		},
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
 //
 // providerConfigure ...
 //
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := Config{
 		APIKey:     d.Get("api_key").(string),
 		Secret:     d.Get("secret").(string),
@@ -69,14 +72,26 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		APIBaseURL: d.Get("api_base_url").(string),
 	}
 
+	var diags diag.Diagnostics
+
 	if err := config.validate(); err != nil {
-		return nil, err
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Configuration not valid",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
 
 	client, err := config.Client()
 	if err != nil {
-		return nil, err
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unable to create API client",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
 
-	return client, nil
+	return client, diags
 }

@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,14 +20,12 @@ import (
 //
 func resourceMyrasecCacheSetting() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecCacheSettingCreate,
-		Read:   resourceMyrasecCacheSettingRead,
-		Delete: resourceMyrasecCacheSettingDelete,
+		CreateContext: resourceMyrasecCacheSettingCreate,
+		ReadContext:   resourceMyrasecCacheSettingRead,
+		DeleteContext: resourceMyrasecCacheSettingDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
 				Type:     schema.TypeString,
@@ -108,37 +108,61 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 //
 // resourceMyrasecCacheSettingCreate ...
 //
-func resourceMyrasecCacheSettingCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	setting, err := buildCacheSetting(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building cache setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateCacheSetting(setting, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error creating cache setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecCacheSettingRead(d, meta)
+	return resourceMyrasecCacheSettingRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecCacheSettingRead ...
 //
-func resourceMyrasecCacheSettingRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	settingID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	subDomainName, settingID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing setting id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
-	settings, err := client.ListCacheSettings(d.Get("subdomain_name").(string), nil)
+	settings, err := client.ListCacheSettings(subDomainName, nil)
 	if err != nil {
-		return fmt.Errorf("Error fetching cache settings: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching cache settings",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, s := range settings {
@@ -158,32 +182,49 @@ func resourceMyrasecCacheSettingRead(d *schema.ResourceData, meta interface{}) e
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecCacheSettingDelete ...
 //
-func resourceMyrasecCacheSettingDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	settingID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing setting id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing setting id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting cache setting: %v", settingID)
 
 	setting, err := buildCacheSetting(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building cache setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteCacheSetting(setting, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error deleting cache setting: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //

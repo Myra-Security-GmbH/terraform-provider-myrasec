@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,14 +20,12 @@ import (
 //
 func resourceMyrasecIPFilter() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMyrasecIPFilterCreate,
-		Read:   resourceMyrasecIPFilterRead,
-		Delete: resourceMyrasecIPFilterDelete,
+		CreateContext: resourceMyrasecIPFilterCreate,
+		ReadContext:   resourceMyrasecIPFilterRead,
+		DeleteContext: resourceMyrasecIPFilterDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
-
-		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
 				Type:     schema.TypeString,
@@ -101,37 +101,61 @@ func resourceMyrasecIPFilter() *schema.Resource {
 //
 // resourceMyrasecIPFilterCreate ...
 //
-func resourceMyrasecIPFilterCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	filter, err := buildIPFilter(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building ip filter: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building ip filter",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	resp, err := client.CreateIPFilter(filter, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error creating filter: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating filter",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecIPFilterRead(d, meta)
+	return resourceMyrasecIPFilterRead(ctx, d, meta)
 }
 
 //
 // resourceMyrasecIPFilterRead ...
 //
-func resourceMyrasecIPFilterRead(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
-	filterID, err := strconv.Atoi(d.Id())
+	var diags diag.Diagnostics
+
+	subDomainName, filterID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing filter id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
-	filters, err := client.ListIPFilters(d.Get("subdomain_name").(string), nil)
+	filters, err := client.ListIPFilters(subDomainName, nil)
 	if err != nil {
-		return fmt.Errorf("Error fetching filters: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching filters",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	for _, r := range filters {
@@ -151,32 +175,49 @@ func resourceMyrasecIPFilterRead(d *schema.ResourceData, meta interface{}) error
 		break
 	}
 
-	return nil
+	return diags
 }
 
 //
 // resourceMyrasecIPFilterDelete ...
 //
-func resourceMyrasecIPFilterDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
 
 	filterID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error parsing filter id: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing filter id",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	log.Printf("[INFO] Deleting ip filter: %v", filterID)
 
 	filter, err := buildIPFilter(d, meta)
 	if err != nil {
-		return fmt.Errorf("Error building ip filter: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building ip filter",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	_, err = client.DeleteIPFilter(filter, d.Get("subdomain_name").(string))
 	if err != nil {
-		return fmt.Errorf("Error deleting ip filter: %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error deleting ip filter",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
-	return err
+	return diags
 }
 
 //
