@@ -239,6 +239,11 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 
 	if d.Get("domain_id").(int) > 0 {
 		domain.ID = d.Get("domain_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			domain.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

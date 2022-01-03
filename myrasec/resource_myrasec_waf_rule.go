@@ -275,15 +275,33 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
+	var subDomainName string
+	var ruleID int
+	var err error
 
-	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+		ruleID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		subDomainName, ruleID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	rules, err := client.ListWAFRules("domain", map[string]string{"subDomain": subDomainName})
@@ -430,6 +448,11 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 
 	if d.Get("rule_id").(int) > 0 {
 		rule.ID = d.Get("rule_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			rule.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

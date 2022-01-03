@@ -223,15 +223,33 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
+	var domainName string
+	var recordID int
+	var err error
 
-	domainName, recordID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	name, ok := d.GetOk("domain_name")
+	if ok {
+		domainName = name.(string)
+		recordID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		domainName, recordID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	var records []myrasec.DNSRecord
@@ -347,6 +365,11 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 
 	if d.Get("record_id").(int) > 0 {
 		record.ID = d.Get("record_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			record.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

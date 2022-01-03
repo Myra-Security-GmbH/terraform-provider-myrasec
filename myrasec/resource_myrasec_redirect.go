@@ -138,15 +138,33 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
+	var subDomainName string
+	var redirectID int
+	var err error
 
-	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+		redirectID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		subDomainName, redirectID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	redirects, err := client.ListRedirects(subDomainName, nil)
@@ -191,7 +209,7 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing redirect id",
+			Summary:  "Error parsing redirect ID",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -237,6 +255,11 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 
 	if d.Get("redirect_id").(int) > 0 {
 		redirect.ID = d.Get("redirect_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			redirect.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

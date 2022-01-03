@@ -144,15 +144,33 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
+	var subDomainName string
+	var settingID int
+	var err error
 
-	subDomainName, settingID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+		settingID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		subDomainName, settingID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	settings, err := client.ListCacheSettings(subDomainName, nil)
@@ -243,6 +261,11 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 
 	if d.Get("setting_id").(int) > 0 {
 		setting.ID = d.Get("setting_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			setting.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

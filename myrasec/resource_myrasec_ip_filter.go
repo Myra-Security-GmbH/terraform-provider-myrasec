@@ -138,14 +138,33 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 
 	var diags diag.Diagnostics
 
-	subDomainName, filterID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	var subDomainName string
+	var filterID int
+	var err error
+
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+		filterID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		subDomainName, filterID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	filters, err := client.ListIPFilters(subDomainName, nil)
@@ -233,6 +252,11 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 
 	if d.Get("filter_id").(int) > 0 {
 		filter.ID = d.Get("filter_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			filter.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))

@@ -136,14 +136,33 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 
 	var diags diag.Diagnostics
 
-	subDomainName, rateLimitID, err := parseResourceServiceID(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing ID",
-			Detail:   err.Error(),
-		})
-		return diags
+	var subDomainName string
+	var rateLimitID int
+	var err error
+
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+		rateLimitID, err = strconv.Atoi(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
+
+	} else {
+		subDomainName, rateLimitID, err = parseResourceServiceID(d.Id())
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing ID",
+				Detail:   err.Error(),
+			})
+			return diags
+		}
 	}
 
 	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": subDomainName})
@@ -233,6 +252,11 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 
 	if d.Get("ratelimit_id").(int) > 0 {
 		ratelimit.ID = d.Get("ratelimit_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			ratelimit.ID = id
+		}
 	}
 
 	created, err := types.ParseDate(d.Get("created").(string))
