@@ -19,6 +19,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecWAFRuleCreate,
 		ReadContext:   resourceMyrasecWAFRuleRead,
+		UpdateContext: resourceMyrasecWAFRuleUpdate,
 		DeleteContext: resourceMyrasecWAFRuleDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -56,27 +57,23 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			"expire_date": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "The rule name identifies each rule.",
 			},
 			"description": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				ForceNew:    true,
 				Description: "Your notes on this rule.",
 			},
 			"log_identifier": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				ForceNew:    true,
 				Description: "A comment to identify the matching rule in the access log.",
 			},
 			"direction": {
@@ -86,48 +83,41 @@ func resourceMyrasecWAFRule() *schema.Resource {
 					return strings.ToLower(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"in", "out"}, false),
-				ForceNew:     true,
 				Description:  "Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response).",
 			},
 			"sort": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     1,
-				ForceNew:    true,
 				Description: "The order in which the rules take action.",
 			},
 			"sync": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				ForceNew:    true,
 				Description: "",
 			},
 			"template": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				ForceNew:    true,
 				Description: "",
 			},
 			"process_next": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				ForceNew:    true,
 				Description: "After a rule has been applied, the rule chain will be executed as determined.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Define wether this rule is enabled or not.",
 			},
 			"conditions": {
 				Type:     schema.TypeList,
 				Required: true,
-				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"condition_id": {
@@ -183,7 +173,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			"actions": {
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"action_id": {
@@ -280,13 +269,13 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		subDomainName = name.(string)
 		ruleID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing WAF rule ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -297,12 +286,14 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing WAF rule ID",
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
+
+	d.SetId(strconv.Itoa(ruleID))
 
 	rules, err := client.ListWAFRules("domain", map[string]string{"subDomain": subDomainName})
 	if err != nil {
@@ -388,6 +379,48 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 //
+// resourceMyrasecWAFRuleUpdate ...
+//
+func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	ruleID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing WAF rule ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating WAF rule: %v", ruleID)
+
+	rule, err := buildWAFRule(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateWAFRule(rule)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating WAF rule",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+	return diags
+}
+
+//
 // resourceMyrasecWAFRuleDelete ...
 //
 func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -399,7 +432,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing WAF rule id",
+			Summary:  "Error parsing WAF rule ID",
 			Detail:   err.Error(),
 		})
 		return diags

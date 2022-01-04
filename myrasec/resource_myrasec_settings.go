@@ -66,6 +66,7 @@ func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecSettingsCreate,
 		ReadContext:   resourceMyrasecSettingsRead,
+		UpdateContext: resourceMyrasecSettingsUpdate,
 		DeleteContext: resourceMyrasecSettingsDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -74,7 +75,6 @@ func resourceMyrasecSettings() *schema.Resource {
 			"subdomain_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
@@ -85,7 +85,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueAccessLog,
-				ForceNew:    true,
 				Description: "Activate separated access log",
 			},
 			"antibot_post_flood": {
@@ -93,7 +92,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueAntibotPostFlood,
-				ForceNew:    true,
 				Description: "Detection of POST floods by using a JavaScript based puzzle.",
 			},
 			"antibot_post_flood_threshold": {
@@ -101,7 +99,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueAntibotPostFloodThreshold,
-				ForceNew:    true,
 				Description: "This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved.",
 			},
 			"antibot_proof_of_work": {
@@ -109,7 +106,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueAntibotProofOfWork,
-				ForceNew:    true,
 				Description: "Detection of valid clients by using a JavaScript based puzzle.",
 			},
 			"antibot_proof_of_work_threshold": {
@@ -117,7 +113,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueAntibotProofOfWorkThreshold,
-				ForceNew:    true,
 				Description: "This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved.",
 			},
 			"balancing_method": {
@@ -126,7 +121,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueBalancingMethod,
 				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn"}, false),
-				ForceNew:     true,
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
 			},
 			"block_not_whitelisted": {
@@ -134,7 +128,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueBlockNotWhitelisted,
-				ForceNew:    true,
 				Description: "Block all IPs, which are not whitelisted.",
 			},
 			"block_tor_network": {
@@ -142,7 +135,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueBlockTorNetwork,
-				ForceNew:    true,
 				Description: "Block traffic from the TOR network.",
 			},
 			"cache_enabled": {
@@ -150,7 +142,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueCacheEnabled,
-				ForceNew:    true,
 				Description: "Turn caching on or off.",
 			},
 			"cache_revalidate": {
@@ -158,7 +149,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueCacheRevalidate,
-				ForceNew:    true,
 				Description: "Enable stale cache item revalidation.",
 			},
 			"cdn": {
@@ -166,7 +156,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueCDN,
-				ForceNew:    true,
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
@@ -174,7 +163,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueClientMaxBodySize,
-				ForceNew:    true,
 				Description: "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB.",
 			},
 			"diffie_hellman_exchange": {
@@ -183,7 +171,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueDiffieHellmanExchange,
 				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
-				ForceNew:     true,
 				Description:  "The Diffie-Hellman key exchange parameter length.",
 			},
 			"enable_origin_sni": {
@@ -191,7 +178,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueEnableOriginSNI,
-				ForceNew:    true,
 				Description: "Enable or disable origin SNI.",
 			},
 			"forwarded_for_replacement": {
@@ -199,7 +185,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueForwardedForReplacement,
-				ForceNew:    true,
 				Description: "Set your own X-Forwarded-For header.",
 			},
 			"hsts": {
@@ -207,7 +192,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueHSTS,
-				ForceNew:    true,
 				Description: "HSTS Strict Transport Security (HSTS).",
 			},
 			"hsts_include_subdomains": {
@@ -215,7 +199,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueHSTSIncludeSubdomains,
-				ForceNew:    true,
 				Description: "HSTS includeSubDomains directive.",
 			},
 			"hsts_max_age": {
@@ -223,7 +206,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueHSTSMaxAge,
-				ForceNew:    true,
 				Description: "HSTS max-age.",
 			},
 			"hsts_preload": {
@@ -231,7 +213,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueHSTSPreload,
-				ForceNew:    true,
 				Description: "HSTS preload directive.",
 			},
 			"http_origin_port": {
@@ -239,7 +220,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueHTTPOriginPort,
-				ForceNew:    true,
 				Description: "Allows to set a port for communication with origin via HTTP.",
 			},
 			"ignore_nocache": {
@@ -247,7 +227,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueIgnoreNoCache,
-				ForceNew:    true,
 				Description: "If activated, no-cache headers (Cache-Control: [private|no-store|no-cache]) will be ignored.",
 			},
 			"image_optimization": {
@@ -255,7 +234,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueImageOptimization,
-				ForceNew:    true,
 				Description: "Optimization of images.",
 			},
 			"ipv6_active": {
@@ -263,7 +241,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueIPv6Active,
-				ForceNew:    true,
 				Description: "Allow connections via IPv6 to your systems.",
 			},
 			"limit_allowed_http_method": {
@@ -273,7 +250,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ForceNew:    true,
 				Description: "Not selected HTTP methods will be blocked.",
 			},
 			"limit_tls_version": {
@@ -283,7 +259,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ForceNew:    true,
 				Description: "Only selected TLS versions will be used.",
 			},
 			"log_format": {
@@ -291,7 +266,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueLogFormat,
-				ForceNew:    true,
 				Description: "Use a different log format.",
 			},
 			"monitoring_alert_threshold": {
@@ -299,7 +273,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueMonitoringAlertThreshold,
-				ForceNew:    true,
 				Description: "Errors per minute that must occur until a report is sent.",
 			},
 			"monitoring_contact_email": {
@@ -307,7 +280,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueMonitoringContactEMail,
-				ForceNew:    true,
 				Description: "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
 			},
 			"monitoring_send_alert": {
@@ -315,7 +287,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueMonitoringSendAlert,
-				ForceNew:    true,
 				Description: "Enables / disables the upstream error reporting.",
 			},
 			"myra_ssl_header": {
@@ -323,7 +294,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueMyraSSLHeader,
-				ForceNew:    true,
 				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
@@ -333,7 +303,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ForceNew:    true,
 				Description: "Specifies the error that mark the current upstream as \"down\".",
 			},
 			"only_https": {
@@ -341,7 +310,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueOnlyHTTPS,
-				ForceNew:    true,
 				Description: "Shall the origin server always be requested via HTTPS?",
 			},
 			"origin_connection_header": {
@@ -350,7 +318,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueOriginConnectionHeader,
 				ValidateFunc: validation.StringInSlice([]string{"none", "close", "upgrade"}, false),
-				ForceNew:     true,
 				Description:  "Connection header.",
 			},
 			"proxy_cache_bypass": {
@@ -358,7 +325,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueProxyCacheBypass,
-				ForceNew:    true,
 				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
 			},
 			"proxy_cache_stale": {
@@ -368,7 +334,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ForceNew:    true,
 				Description: "Determines in which cases a stale cached response can be used when an error occurs.",
 			},
 			"proxy_connect_timeout": {
@@ -376,7 +341,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueProxyConnectTimeout,
-				ForceNew:    true,
 				Description: "Timeout for establishing a connection to the upstream server.",
 			},
 			"proxy_read_timeout": {
@@ -384,7 +348,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueProxyReadTimeout,
-				ForceNew:    true,
 				Description: "Timeout for reading the upstream response.",
 			},
 			"request_limit_block": {
@@ -393,7 +356,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueRequestLimitBlock,
 				ValidateFunc: validation.StringInSlice([]string{"CAPTCHA", "HTTP429", "no"}, false),
-				ForceNew:     true,
 				Description:  "Show CAPTCHA after exceeding the configured request limit.",
 			},
 			"request_limit_level": {
@@ -401,7 +363,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueRequestLimitLevel,
-				ForceNew:    true,
 				Description: "Sets how many requests are allowed from an IP per minute.",
 			},
 			"request_limit_report": {
@@ -409,7 +370,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueRequestLimitReport,
-				ForceNew:    true,
 				Description: "If activated, an email will be send containing blocked ip addresses that exceeded the configured request limit.",
 			},
 			"request_limit_report_email": {
@@ -417,7 +377,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueRequestLimitReportEMail,
-				ForceNew:    true,
 				Description: "Email addresses, to which request limit emails should be send. Multiple addresses are separated with a space.",
 			},
 			"rewrite": {
@@ -425,7 +384,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueRewrite,
-				ForceNew:    true,
 				Description: "Enable the JavaScript optimization.",
 			},
 			"source_protocol": {
@@ -434,7 +392,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueSourceProtocol,
 				ValidateFunc: validation.StringInSlice([]string{"same", "http", "https"}, false),
-				ForceNew:     true,
 				Description:  "Protocol to query the origin server.",
 			},
 			"spdy": {
@@ -442,7 +399,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueSpdy,
-				ForceNew:    true,
 				Description: "Activates the SPDY protocol.",
 			},
 			"ssl_origin_port": {
@@ -450,7 +406,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueSSLOriginPort,
-				ForceNew:    true,
 				Description: "Allows to set a port for communication with origin via SSL.",
 			},
 			"waf_enable": {
@@ -458,7 +413,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     defaultValueWAFEnable,
-				ForceNew:    true,
 				Description: "Enables / disables the Web Application Firewall.",
 			},
 			"waf_levels_enable": {
@@ -468,7 +422,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				ForceNew:    true,
 				Description: "Level of applied WAF rules.",
 			},
 			"waf_policy": {
@@ -477,7 +430,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				Default:      defaultValueWAFPolicy,
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
-				ForceNew:     true,
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
 			},
 		},
@@ -529,7 +481,8 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 
 	var diags diag.Diagnostics
 
-	settings, err := client.ListSettings(d.Get("subdomain_name").(string), nil)
+	subDomainName := d.Get("subdomain_name").(string)
+	settings, err := client.ListSettings(subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -539,6 +492,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
+	d.Set("subdomain_name", subDomainName)
 	d.Set("access_log", settings.AccessLog)
 	d.Set("antibot_post_flood", settings.AntibotPostFlood)
 	d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
@@ -592,6 +546,40 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 //
+// resourceMyrasecSettingsUpdate ...
+//
+func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	settings, err := buildSettings(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building settings",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+	log.Printf("[INFO] Updating settings")
+
+	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating settings",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
+
+	return resourceMyrasecSettingsRead(ctx, d, meta)
+}
+
+//
 // resourceMyrasecSettingsDelete restores the default setting values
 //
 func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -603,7 +591,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing setting id",
+			Summary:  "Error parsing setting ID",
 			Detail:   err.Error(),
 		})
 		return diags

@@ -22,6 +22,7 @@ func resourceMyrasecRedirect() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecRedirectCreate,
 		ReadContext:   resourceMyrasecRedirectRead,
+		UpdateContext: resourceMyrasecRedirectUpdate,
 		DeleteContext: resourceMyrasecRedirectDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -45,14 +46,12 @@ func resourceMyrasecRedirect() *schema.Resource {
 			"matching_type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"exact", "prefix", "suffix"}, false),
 				Description:  "Type to match the redirect.",
 			},
 			"subdomain_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
@@ -61,19 +60,16 @@ func resourceMyrasecRedirect() *schema.Resource {
 			"source": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Location to match against.",
 			},
 			"destination": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Target where redirect should point to.",
 			},
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"permanent", "redirect"}, false),
 				Description:  "Type of redirection.",
 			},
@@ -81,13 +77,11 @@ func resourceMyrasecRedirect() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Define wether this redirect is enabled or not.",
 			},
 			"sort": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Default:     0,
 				Description: "The ascending order for the redirect rules.",
 			},
@@ -143,13 +137,13 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		subDomainName = name.(string)
 		redirectID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing redirect ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -160,12 +154,14 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing redirect ID",
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
+
+	d.SetId(strconv.Itoa(redirectID))
 
 	redirects, err := client.ListRedirects(subDomainName, nil)
 	if err != nil {
@@ -195,6 +191,48 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	return diags
+}
+
+//
+// resourceMyrasecRedirectUpdate ...
+//
+func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	redirectID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing redirect ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating redirect: %v", redirectID)
+
+	redirect, err := buildRedirect(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building redirect",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateRedirect(redirect, d.Get("subdomain_name").(string))
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating redirect",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+	return resourceMyrasecRedirectRead(ctx, d, meta)
 }
 
 //

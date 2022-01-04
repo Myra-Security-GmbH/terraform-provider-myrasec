@@ -22,6 +22,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecDNSRecordCreate,
 		ReadContext:   resourceMyrasecDNSRecordRead,
+		UpdateContext: resourceMyrasecDNSRecordUpdate,
 		DeleteContext: resourceMyrasecDNSRecordDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -54,7 +55,6 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
@@ -63,59 +63,51 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"ttl": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Time to live.",
 			},
 			"record_type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA"}, false),
 				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV and CAA.",
 			},
 			"alternative_cname": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Description: "The alternative CNAME that points to the record.",
 			},
 			"active": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Define wether this subdomain should be protected by Myra or not.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Define wether this DNS record is enabled or not.",
 			},
 			"comment": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				ForceNew:    true,
 				Description: "A comment to describe this DNS record.",
 			},
 			"value": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Depends on the record type. Typically an IPv4/6 address or a domain entry.",
 			},
 			"priority": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "Priority of MX records.",
 			},
 			"port": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "Port for SRV records.",
 			},
 			"upstream_options": {
@@ -143,35 +135,30 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							ForceNew:    true,
 							Description: "Marks the server as a backup server. It will be used when the primary servers are unavailable. Cannot be used in combination with \"Preserve client IP on the same upstream\".",
 						},
 						"down": {
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							ForceNew:    true,
 							Description: "Marks the server as unavailable.",
 						},
 						"fail_timeout": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     1,
-							ForceNew:    true,
 							Description: "Double usage: 1. Time period in which the max_fails must occur until the upstream is deactivated. 2. Time period the upstream is deactivated until it is reactivated. The time during which the specified number of unsuccessful attempts \"Max fails\" to communicate with the server should happen to consider the server unavailable. Also the period of time the server will be considered unavailable. Default is 10 seconds.",
 						},
 						"max_fails": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     100,
-							ForceNew:    true,
 							Description: "The number of unsuccessful attempts to communicate with the server that should happen in the duration set by \"Fail timeout\" to consider the server unavailable. Also the server is considered unavailable for the duration set by \"Fail timeout\". By default, the number of unsuccessful attempts is set to 1. Setting the value to zero disables the accounting of attempts. What is considered an unsuccessful attempt is defined by the \"Next upstream error handling\".",
 						},
 						"weight": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     1,
-							ForceNew:    true,
 							Description: "Weight defines the count of requests a upstream handles before the next upstream is selected.",
 						},
 					},
@@ -228,13 +215,13 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	var err error
 
 	name, ok := d.GetOk("domain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		domainName = name.(string)
 		recordID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing DNS record ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -245,15 +232,17 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing DNS record ID" + d.Id(),
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
 
+	d.SetId(strconv.Itoa(recordID))
+
 	var records []myrasec.DNSRecord
-	output, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true"})
+	output, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true", "pageSize": "1000"})
 
 	for _, o := range output.Elements {
 		records = append(records, o.(myrasec.DNSRecord))
@@ -285,6 +274,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		d.Set("created", r.Created.Format(time.RFC3339))
 		d.Set("modified", r.Modified.Format(time.RFC3339))
 		d.Set("comment", r.Comment)
+		d.Set("domain_name", domainName)
 
 		if r.UpstreamOptions != nil {
 			d.Set("upstream_options", map[string]interface{}{
@@ -302,6 +292,49 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	return diags
+}
+
+//
+// resourceMyrasecDNSRecordUpdate ...
+//
+func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	recordID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing record id",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating DNS record: %v", recordID)
+
+	record, err := buildDNSRecord(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateDNSRecord(record, d.Get("domain_name").(string))
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating DNS record",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	return resourceMyrasecDNSRecordRead(ctx, d, meta)
 }
 
 //

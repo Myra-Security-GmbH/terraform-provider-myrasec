@@ -22,6 +22,7 @@ func resourceMyrasecRateLimit() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecRateLimitCreate,
 		ReadContext:   resourceMyrasecRateLimitRead,
+		UpdateContext: resourceMyrasecRateLimitUpdate,
 		DeleteContext: resourceMyrasecRateLimitDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -59,7 +60,6 @@ func resourceMyrasecRateLimit() *schema.Resource {
 			"network": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
@@ -68,7 +68,6 @@ func resourceMyrasecRateLimit() *schema.Resource {
 			"value": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.IntInSlice([]int{4000, 2000, 1000, 500, 100, 60, 0}),
 				Default:      1000,
 				Description:  "Maximum amount of requests for the given network.",
@@ -76,14 +75,12 @@ func resourceMyrasecRateLimit() *schema.Resource {
 			"burst": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Default:     50,
 				Description: "Burst defines how many requests a client can make in excess of the specified rate.",
 			},
 			"timeframe": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.IntInSlice([]int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 3600}),
 				Default:      60,
 				Description:  "The affected timeframe in seconds for the rate limit.",
@@ -108,7 +105,7 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error building rate limit",
+			Summary:  "Error building rate limit setting",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -141,13 +138,13 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		subDomainName = name.(string)
 		rateLimitID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing rate limit setting ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -158,12 +155,14 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing rate limit setting ID",
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
+
+	d.SetId(strconv.Itoa(rateLimitID))
 
 	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": subDomainName})
 	if err != nil {
@@ -196,6 +195,48 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 //
+// resourceMyrasecRateLimitUpdate ...
+//
+func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	rateLimitID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing rate limit ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating rate limit setting: %v", rateLimitID)
+
+	ratelimit, err := buildRateLimit(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building rate limit setting",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateRateLimit(ratelimit)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating rate limit setting",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+	return resourceMyrasecRateLimitRead(ctx, d, meta)
+}
+
+//
 // resourceMyrasecRateLimitDelete ...
 //
 func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -207,7 +248,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing rate limit id",
+			Summary:  "Error parsing rate limit ID",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -219,7 +260,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error building rate limit",
+			Summary:  "Error building rate limit setting",
 			Detail:   err.Error(),
 		})
 		return diags

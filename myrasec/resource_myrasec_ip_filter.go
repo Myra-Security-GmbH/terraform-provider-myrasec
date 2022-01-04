@@ -22,6 +22,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecIPFilterCreate,
 		ReadContext:   resourceMyrasecIPFilterRead,
+		UpdateContext: resourceMyrasecIPFilterUpdate,
 		DeleteContext: resourceMyrasecIPFilterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -54,7 +55,6 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"type": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
@@ -64,7 +64,6 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"value": {
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
@@ -73,21 +72,18 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"expire_date": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "Expire date schedules the deaktivation of the filter. If none is set, the filter will be active until manual deactivation.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Enable or disable a filter.",
 			},
 			"comment": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				ForceNew:    true,
 				Description: "A comment to describe this IP filter.",
 			},
 		},
@@ -110,7 +106,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error building ip filter",
+			Summary:  "Error building IP filter",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -120,7 +116,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error creating filter",
+			Summary:  "Error creating IP filter",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -143,13 +139,13 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		subDomainName = name.(string)
 		filterID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing IP filter ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -160,12 +156,14 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing IP filter ID",
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
+
+	d.SetId(strconv.Itoa(filterID))
 
 	filters, err := client.ListIPFilters(subDomainName, nil)
 	if err != nil {
@@ -188,6 +186,8 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		d.Set("value", r.Value)
 		d.Set("enabled", r.Enabled)
 		d.Set("comment", r.Comment)
+		d.Set("subdomain_name", subDomainName)
+
 		if r.ExpireDate != nil {
 			d.Set("expire_date", r.ExpireDate.Format(time.RFC3339))
 		}
@@ -195,6 +195,49 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	return diags
+}
+
+//
+// resourceMyrasecIPFilterUpdate ...
+//
+func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	filterID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing IP filter ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating IP filter: %v", filterID)
+
+	filter, err := buildIPFilter(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building IP filter",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateIPFilter(filter, d.Get("subdomain_name").(string))
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating IP filter",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	return resourceMyrasecIPFilterRead(ctx, d, meta)
 }
 
 //
@@ -209,19 +252,19 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing filter id",
+			Summary:  "Error parsing IP filter ID",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	log.Printf("[INFO] Deleting ip filter: %v", filterID)
+	log.Printf("[INFO] Deleting IP filter: %v", filterID)
 
 	filter, err := buildIPFilter(d, meta)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error building ip filter",
+			Summary:  "Error building IP filter",
 			Detail:   err.Error(),
 		})
 		return diags
@@ -231,7 +274,7 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error deleting ip filter",
+			Summary:  "Error deleting IP filter",
 			Detail:   err.Error(),
 		})
 		return diags

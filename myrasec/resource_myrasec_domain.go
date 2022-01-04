@@ -196,7 +196,7 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing domain id",
+			Summary:  "Error parsing domain ID",
 			Detail:   err.Error(),
 		})
 		return diags

@@ -22,6 +22,7 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecCacheSettingCreate,
 		ReadContext:   resourceMyrasecCacheSettingRead,
+		UpdateContext: resourceMyrasecCacheSettingUpdate,
 		DeleteContext: resourceMyrasecCacheSettingDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -54,32 +55,27 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"exact", "prefix", "suffix"}, false),
 				Description:  "Type how path should match.",
 			},
 			"path": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Path which must match to cache response.",
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Time to live.",
 			},
 			"not_found_ttl": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				ForceNew:    true,
 				Description: "How long an object will be cached. Origin responses with the HTTP codes 404 will be cached.",
 			},
 			"sort": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Default:     0,
 				Description: "The order in which the cache rules take action as long as the cache sorting is activated.",
 			},
@@ -87,14 +83,12 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-				ForceNew:    true,
 				Description: "Define wether this cache setting is enabled or not.",
 			},
 			"enforce": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				ForceNew:    true,
 				Description: "Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin.",
 			},
 		},
@@ -149,13 +143,13 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok {
+	if ok && !strings.Contains(d.Id(), ":") {
 		subDomainName = name.(string)
 		settingID, err = strconv.Atoi(d.Id())
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing cache setting ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -166,12 +160,14 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing ID",
+				Summary:  "Error parsing cache setting ID",
 				Detail:   err.Error(),
 			})
 			return diags
 		}
 	}
+
+	d.SetId(strconv.Itoa(settingID))
 
 	settings, err := client.ListCacheSettings(subDomainName, nil)
 	if err != nil {
@@ -197,10 +193,54 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		d.Set("sort", s.Sort)
 		d.Set("enabled", s.Enabled)
 		d.Set("enforce", s.Enforce)
+		d.Set("subdomain_name", subDomainName)
 		break
 	}
 
 	return diags
+}
+
+//
+// resourceMyrasecCacheSettingUpdate ...
+//
+func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	settingID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing cache setting ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating cache setting: %v", settingID)
+
+	setting, err := buildCacheSetting(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateCacheSetting(setting, d.Get("subdomain_name").(string))
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating cache setting",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	return resourceMyrasecCacheSettingRead(ctx, d, meta)
 }
 
 //
@@ -215,7 +255,7 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error parsing setting id",
+			Summary:  "Error parsing cache setting ID",
 			Detail:   err.Error(),
 		})
 		return diags

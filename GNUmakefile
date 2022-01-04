@@ -17,6 +17,9 @@ fmtcheck:
 test: vendor
 	$(GO) test -race $$($(GO) list ./...)
 
+vendor:
+	go mod vendor
+
 cleandev:
 	rm -rf terraform-provider-$(PKG_NAME)_*
 
