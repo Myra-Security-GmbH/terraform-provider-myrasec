@@ -208,7 +208,6 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 //
 func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 	var domainName string
 	var recordID int
@@ -232,7 +231,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  "Error parsing DNS record ID" + d.Id(),
+				Summary:  "Error parsing DNS record ID",
 				Detail:   err.Error(),
 			})
 			return diags
@@ -243,16 +242,24 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 
 	var records []myrasec.DNSRecord
 	output, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true", "pageSize": "1000"})
-
-	for _, o := range output.Elements {
-		records = append(records, o.(myrasec.DNSRecord))
-	}
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching DNS records",
 			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	for _, o := range output.Elements {
+		records = append(records, o.(myrasec.DNSRecord))
+	}
+
+	if len(records) <= 0 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "No record found",
+			Detail:   "No record found for the passed ID",
 		})
 		return diags
 	}

@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -480,8 +481,24 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
+	var subDomainName string
 
-	subDomainName := d.Get("subdomain_name").(string)
+	name, ok := d.GetOk("subdomain_name")
+	if ok {
+		subDomainName = name.(string)
+	} else {
+		subDomainName = d.Id()
+	}
+
+	if len(subDomainName) < 4 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing subdomain name",
+			Detail:   fmt.Errorf("[%s] is not a valid subdomain name", subDomainName).Error(),
+		})
+		return diags
+	}
+
 	settings, err := client.ListSettings(subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
