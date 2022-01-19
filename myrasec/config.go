@@ -8,9 +8,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// ProviderUserAgent ...
-const ProviderUserAgent = "terraform-provider-myrasec"
-
 //
 // Config ...
 //
