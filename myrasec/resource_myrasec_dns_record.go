@@ -240,26 +240,12 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(strconv.Itoa(recordID))
 
-	var records []myrasec.DNSRecord
-	output, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true", "pageSize": "1000"})
+	records, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true", "pageSize": "1000"})
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching DNS records",
 			Detail:   err.Error(),
-		})
-		return diags
-	}
-
-	for _, o := range output.Elements {
-		records = append(records, o.(myrasec.DNSRecord))
-	}
-
-	if len(records) <= 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "No record found",
-			Detail:   "No record found for the passed ID",
 		})
 		return diags
 	}

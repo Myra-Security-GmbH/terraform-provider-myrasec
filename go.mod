@@ -3,7 +3,7 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.13
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go v1.3.6
+	github.com/Myra-Security-GmbH/myrasec-go v1.4.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

@@ -4,9 +4,7 @@ package myrasec
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -175,7 +173,15 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 		params["search"] = f.name
 	}
 
-	records, err := getAllRecords(client, f.domainName, params)
+	records, err := client.ListDNSRecords(f.domainName, map[string]string{"loadbalancer": "true", "pageSize": "5000"})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching DNS records",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
 
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -256,33 +262,6 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
-}
-
-func getAllRecords(api *myrasec.API, domainName string, params map[string]string) ([]myrasec.DNSRecord, error) {
-
-	response, err := api.ListDNSRecords(domainName, params)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching DNS records: %s", err)
-	}
-
-	var records []myrasec.DNSRecord
-
-	amountOfPages := int(math.Ceil(float64(response.Count) / float64(response.PageSize)))
-
-	for _, o := range response.Elements {
-		records = append(records, o.(myrasec.DNSRecord))
-	}
-	var counter int = 1
-	for counter < amountOfPages {
-		counter++
-		params["pageNumber"] = fmt.Sprintf("%d", counter)
-		response, err = api.ListDNSRecords(domainName, params)
-		for _, o := range response.Elements {
-			records = append(records, o.(myrasec.DNSRecord))
-		}
-	}
-
-	return records, err
 }
 
 //
