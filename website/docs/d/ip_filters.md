@@ -5,7 +5,7 @@ Use this data source to look up IP filters.
 ## Example usage
 
 ```hcl
-# Look for a rate limit setting
+# Look for a ip filters
 data "myrasec_ip_filters" "ipfilter" {
   filter {
     subdomain_name = "www.example.com"
@@ -19,7 +19,7 @@ data "myrasec_ip_filters" "ipfilter" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the domains.
+* `filter` (Required) One or more values to filter the IP filters.
 
 ### filter
 * `subdomain_name` (Required) The subdomain name from the rate limit.
@@ -28,7 +28,7 @@ The following arguments are supported:
 
 
 ## Attributes Reference
-* `ipfilters` A list of rate limit settings.
+* `ipfilters` A list of IP filters.
 
 ### redirects
 * `id` The ID of the redirect.

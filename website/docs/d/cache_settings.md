@@ -18,7 +18,7 @@ data "myrasec_cache_settings" "cache" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the domains.
+* `filter` (Required) One or more values to filter the cache settings.
 
 ### filter
 * `subdomain_name` (Required) The subdomain name from the cache setting.

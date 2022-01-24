@@ -18,7 +18,7 @@ data "myrasec_ratelimits" "ratelimit" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the domains.
+* `filter` (Required) One or more values to filter the rate limits.
 
 ### filter
 * `subdomain_name` (Required) The subdomain name from the rate limit.

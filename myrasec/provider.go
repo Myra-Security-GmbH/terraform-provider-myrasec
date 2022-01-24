@@ -47,6 +47,7 @@ func Provider() *schema.Provider {
 			"myrasec_ratelimits":     dataSourceMyrasecRateLimits(),
 			"myrasec_waf_conditions": dataSourceMyrasecWAFConditions(),
 			"myrasec_waf_actions":    dataSourceMyrasecWAFActions(),
+			"myrasec_ip_ranges":      dataSourceMyrasecIPRanges(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":        resourceMyrasecDomain(),

@@ -5,7 +5,7 @@ Use this data source to look up redirects.
 ## Example usage
 
 ```hcl
-# Look for a cache setting
+# Look for a redirect
 data "myrasec_redirects" "redirect" {
   filter {
     subdomain_name = "www.example.com"
@@ -18,14 +18,14 @@ data "myrasec_redirects" "redirect" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the domains.
+* `filter` (Required) One or more values to filter the redirects.
 
 ### filter
 * `subdomain_name` (Required) The subdomain name from the redirects.
 * `search` (Optional) A search string to filter the redirects. Filers on the `source` and the `destination` fields.
 
 ## Attributes Reference
-* `redirects` A list of cache settings.
+* `redirects` A list of redirects.
 
 ### redirects
 * `id` The ID of the redirect.

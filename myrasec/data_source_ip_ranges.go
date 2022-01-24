@@ -12,22 +12,18 @@ import (
 )
 
 //
-// dataSourceMyrasecIPFilters ...
+// dataSourceMyrasecIPRanges ...
 //
-func dataSourceMyrasecIPFilters() *schema.Resource {
+func dataSourceMyrasecIPRanges() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMyrasecIPFiltersRead,
+		ReadContext: dataSourceMyrasecIPRangesRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
-				Required: true,
+				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"subdomain_name": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
 						"search": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -39,7 +35,7 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 					},
 				},
 			},
-			"ipfilters": {
+			"ipranges": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
@@ -56,20 +52,20 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"expire_date": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"enabled": {
 							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"valid_from": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"valid_to": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"network": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
 						"comment": {
@@ -88,16 +84,16 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 }
 
 //
-// dataSourceMyrasecIPFiltersRead ...
+// dataSourceMyrasecIPRangesRead ...
 //
-func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	f := prepareIPFilterFilter(d.Get("filter"))
+	f := prepareIPRangeFilter(d.Get("filter"))
 	if f == nil {
-		f = &ipFilterFilter{}
+		f = &ipRangeFilter{}
 	}
 
 	params := map[string]string{}
@@ -105,36 +101,39 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 		params["search"] = f.search
 	}
 
-	filters, err := client.ListIPFilters(f.subDomainName, params)
+	filters, err := client.ListIPRanges(params)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching ip filters",
+			Summary:  "Error fetching ip ranges",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	ipFilterData := make([]interface{}, 0)
+	ipRangeData := make([]interface{}, 0)
 	for _, r := range filters {
 		data := map[string]interface{}{
 			"id":       r.ID,
 			"created":  r.Created.Format(time.RFC3339),
 			"modified": r.Modified.Format(time.RFC3339),
-			"type":     r.Type,
-			"value":    r.Value,
+			"network":  r.Network,
 			"enabled":  r.Enabled,
 			"comment":  r.Comment,
 		}
 
-		if r.ExpireDate != nil {
-			data["expire_date"] = r.ExpireDate.Format(time.RFC3339)
+		if r.ValidFrom != nil {
+			data["valid_from"] = r.ValidFrom.Format(time.RFC3339)
 		}
 
-		ipFilterData = append(ipFilterData, data)
+		if r.ValidTo != nil {
+			data["valid_to"] = r.ValidTo.Format(time.RFC3339)
+		}
+
+		ipRangeData = append(ipRangeData, data)
 	}
 
-	if err := d.Set("ipfilters", ipFilterData); err != nil {
+	if err := d.Set("ipranges", ipRangeData); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -145,30 +144,30 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 }
 
 //
-// prepareIPFilterFilter fetches the panic that can happen in parseIPFilterFilter
+// prepareIPRangeFilter fetches the panic that can happen in parseIPRangeFilter
 //
-func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
+func prepareIPRangeFilter(d interface{}) *ipRangeFilter {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("[DEBUG] recovered in prepareIPFilterFilter", r)
+			log.Println("[DEBUG] recovered in prepareIPRangeFilter", r)
 		}
 	}()
 
-	return parseIPFilterFilter(d)
+	return parseIPRangeFilter(d)
 }
 
 //
 // parseRateLimitFilter converts the filter data to a rateLimitFilter struct
 //
-func parseIPFilterFilter(d interface{}) *ipFilterFilter {
+func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 	cfg := d.([]interface{})
-	f := &ipFilterFilter{}
+	f := &ipRangeFilter{}
 
 	m := cfg[0].(map[string]interface{})
 
-	subDomainName, ok := m["subdomain_name"]
+	ipVersionType, ok := m["type"]
 	if ok {
-		f.subDomainName = subDomainName.(string)
+		f.ipVersionType = ipVersionType.(string)
 	}
 
 	search, ok := m["search"]
@@ -180,9 +179,9 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 }
 
 //
-// ipFilterFilter struct ...
+// ipRangeFilter struct ...
 //
-type ipFilterFilter struct {
-	subDomainName string
+type ipRangeFilter struct {
 	search        string
+	ipVersionType string
 }

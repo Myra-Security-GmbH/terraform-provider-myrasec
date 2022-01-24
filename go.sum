@@ -37,8 +37,8 @@ github.com/Masterminds/semver v1.5.0/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF0
 github.com/Masterminds/sprig v2.22.0+incompatible/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
-github.com/Myra-Security-GmbH/myrasec-go v1.4.0 h1:KGkzxEZPkSq2N4y+tggbH7fsMIXYpS/UO2gn/5F6HQg=
-github.com/Myra-Security-GmbH/myrasec-go v1.4.0/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
+github.com/Myra-Security-GmbH/myrasec-go v1.5.0 h1:3KiHe1h2ubVsEX5BRItI6CRUdZv6IO/B4B01caCAGVI=
+github.com/Myra-Security-GmbH/myrasec-go v1.5.0/go.mod h1:Jw2kNmEsVT3keiJn0M+SaAQDGtxx7D3V0Nsb+MHfHz8=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036 h1:jHbXQ2rGSiuKhYDro1/xQnX4ajVqrxLlCBXuFyrslOY=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036/go.mod h1:2BZfINKNAlgIONp1zeT56ZAxDxjl4qOHz+JMdmYQuYE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
