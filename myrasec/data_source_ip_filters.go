@@ -69,7 +69,7 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 							Computed: true,
 						},
 						"enabled": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeBool,
 							Computed: true,
 						},
 						"comment": {
