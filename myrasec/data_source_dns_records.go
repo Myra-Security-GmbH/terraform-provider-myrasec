@@ -183,15 +183,6 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching DNS records",
-			Detail:   err.Error(),
-		})
-		return diags
-	}
-
 	recordData := make([]interface{}, 0)
 
 	for _, r := range records {
