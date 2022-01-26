@@ -3,6 +3,8 @@ package myrasec
 import (
 	"fmt"
 
+	"github.com/Myra-Security-GmbH/terraform-provider-myrasec/version"
+
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
 
 	"github.com/hashicorp/go-multierror"
@@ -52,7 +54,8 @@ func (c Config) Client() (*myrasec.API, error) {
 		return nil, err
 	}
 
-	api.SetUserAgent(ProviderUserAgent)
+	userAgent := fmt.Sprintf("terraform-provider-myrasec_%s", version.ProviderVersion)
+	api.SetUserAgent(userAgent)
 
 	api.BaseURL = c.APIBaseURL
 
