@@ -269,7 +269,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		d.Set("comment", r.Comment)
 		d.Set("domain_name", domainName)
 
-		if r.UpstreamOptions != nil {
+		if r.UpstreamOptions != nil && r.UpstreamOptions.ID > 0 {
 			d.Set("upstream_options", map[string]interface{}{
 				"upstream_id":  r.UpstreamOptions.ID,
 				"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
