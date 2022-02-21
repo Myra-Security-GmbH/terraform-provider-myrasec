@@ -85,6 +85,12 @@ func resourceMyrasecRedirect() *schema.Resource {
 				Default:     0,
 				Description: "The ascending order for the redirect rules.",
 			},
+			"expert_mode": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Disable redirect loop detection.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -289,6 +295,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 		Destination:   d.Get("destination").(string),
 		Sort:          d.Get("sort").(int),
 		Enabled:       d.Get("enabled").(bool),
+		ExpertMode:    d.Get("expert_mode").(bool),
 	}
 
 	if d.Get("redirect_id").(int) > 0 {
