@@ -31,4 +31,5 @@ The following arguments are supported:
 * `destination` (Required) Target where redirect should point to.
 * `type` (Required) Type of redirection. Valid types are: `permanent` and `redirect`.
 * `enabled` (Optional) Define wether this redirect is enabled or not. Default `true`.
+* `expert_mode` (Optional) Disable redirect loop detection. Default `false`.
 * `sort` (Optional) The ascending order for the redirect rules. Default `0`.
