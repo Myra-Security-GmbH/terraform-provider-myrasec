@@ -135,8 +135,6 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 // resourceMyrasecRedirectRead ...
 //
 func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 	var subDomainName string
 	var redirectID int
@@ -167,34 +165,26 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	d.SetId(strconv.Itoa(redirectID))
-
-	redirects, err := client.ListRedirects(subDomainName, nil)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching redirects",
-			Detail:   err.Error(),
-		})
+	redirect, diags := findRedirect(redirectID, meta, subDomainName, nil)
+	if diags.HasError() {
 		return diags
 	}
 
-	for _, r := range redirects {
-		if r.ID != redirectID {
-			continue
-		}
-		d.Set("redirect_id", r.ID)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("type", r.Type)
-		d.Set("subdomain_name", r.SubDomainName)
-		d.Set("source", r.Source)
-		d.Set("destination", r.Destination)
-		d.Set("sort", r.Sort)
-		d.Set("matching_type", r.MatchingType)
-		d.Set("enabled", r.Enabled)
-		break
+	if redirect == nil {
+		return diags
 	}
+
+	d.SetId(strconv.Itoa(redirectID))
+	d.Set("redirect_id", redirect.ID)
+	d.Set("created", redirect.Created.Format(time.RFC3339))
+	d.Set("modified", redirect.Modified.Format(time.RFC3339))
+	d.Set("type", redirect.Type)
+	d.Set("subdomain_name", redirect.SubDomainName)
+	d.Set("source", redirect.Source)
+	d.Set("destination", redirect.Destination)
+	d.Set("sort", redirect.Sort)
+	d.Set("matching_type", redirect.MatchingType)
+	d.Set("enabled", redirect.Enabled)
 
 	return diags
 }
@@ -320,4 +310,47 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 	redirect.Modified = modified
 
 	return redirect, nil
+}
+
+//
+// findRedirect ...
+//
+func findRedirect(redirectID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.Redirect, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListRedirects(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading redirects",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, r := range res {
+			if r.ID == redirectID {
+				return &r, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find redirect",
+		Detail:   fmt.Sprintf("Unable to find redirect with ID = [%d]", redirectID),
+	})
+	return nil, diags
 }

@@ -130,8 +130,6 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 // resourceMyrasecIPFilterRead ...
 //
 func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 
 	var subDomainName string
@@ -163,35 +161,27 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	d.SetId(strconv.Itoa(filterID))
-
-	filters, err := client.ListIPFilters(subDomainName, nil)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching filters",
-			Detail:   err.Error(),
-		})
+	filter, diags := findIPFilter(filterID, meta, subDomainName, nil)
+	if diags.HasError() {
 		return diags
 	}
 
-	for _, r := range filters {
-		if r.ID != filterID {
-			continue
-		}
-		d.Set("filter_id", r.ID)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("type", r.Type)
-		d.Set("value", r.Value)
-		d.Set("enabled", r.Enabled)
-		d.Set("comment", r.Comment)
-		d.Set("subdomain_name", subDomainName)
+	if filter == nil {
+		return diags
+	}
 
-		if r.ExpireDate != nil {
-			d.Set("expire_date", r.ExpireDate.Format(time.RFC3339))
-		}
-		break
+	d.SetId(strconv.Itoa(filterID))
+	d.Set("filter_id", filter.ID)
+	d.Set("created", filter.Created.Format(time.RFC3339))
+	d.Set("modified", filter.Modified.Format(time.RFC3339))
+	d.Set("type", filter.Type)
+	d.Set("value", filter.Value)
+	d.Set("enabled", filter.Enabled)
+	d.Set("comment", filter.Comment)
+	d.Set("subdomain_name", subDomainName)
+
+	if filter.ExpireDate != nil {
+		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
 	}
 
 	return diags
@@ -321,4 +311,47 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 	filter.ExpireDate = expireDate
 
 	return filter, nil
+}
+
+//
+// findIPFilter ...
+//
+func findIPFilter(filterID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.IPFilter, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListIPFilters(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading IP filters",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, f := range res {
+			if f.ID == filterID {
+				return &f, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find IP filter",
+		Detail:   fmt.Sprintf("Unable to find IP filter with ID = [%d]", filterID),
+	})
+	return nil, diags
 }

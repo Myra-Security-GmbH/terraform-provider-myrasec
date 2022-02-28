@@ -129,8 +129,6 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 // resourceMyrasecRateLimitRead ...
 //
 func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 
 	var subDomainName string
@@ -162,34 +160,26 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	d.SetId(strconv.Itoa(rateLimitID))
-
-	ratelimits, err := client.ListRateLimits("dns", map[string]string{"subDomainName": subDomainName})
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching rate limit settings",
-			Detail:   err.Error(),
-		})
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName, nil)
+	if diags.HasError() {
 		return diags
 	}
 
-	for _, r := range ratelimits {
-		if r.ID != rateLimitID {
-			continue
-		}
-		d.Set("ratelimit_id", r.ID)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("type", r.Type)
-		d.Set("network", r.Network)
-		d.Set("value", r.Value)
-		d.Set("burst", r.Burst)
-		d.Set("timeframe", r.Timeframe)
-		d.Set("subdomain_name", r.SubDomainName)
-
-		break
+	if rateLimit == nil {
+		return diags
 	}
+
+	d.SetId(strconv.Itoa(rateLimitID))
+
+	d.Set("ratelimit_id", rateLimit.ID)
+	d.Set("created", rateLimit.Created.Format(time.RFC3339))
+	d.Set("modified", rateLimit.Modified.Format(time.RFC3339))
+	d.Set("type", rateLimit.Type)
+	d.Set("network", rateLimit.Network)
+	d.Set("value", rateLimit.Value)
+	d.Set("burst", rateLimit.Burst)
+	d.Set("timeframe", rateLimit.Timeframe)
+	d.Set("subdomain_name", rateLimit.SubDomainName)
 
 	return diags
 }
@@ -313,4 +303,48 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 	ratelimit.Modified = modified
 
 	return ratelimit, nil
+}
+
+//
+// findRateLimit ...
+//
+func findRateLimit(rateLimitID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.RateLimit, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	params["subDomainName"] = subDomainName
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListRateLimits("dns", params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading rate limits",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, r := range res {
+			if r.ID == rateLimitID {
+				return &r, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find rate limit",
+		Detail:   fmt.Sprintf("Unable to find rate limit with ID = [%d]", rateLimitID),
+	})
+	return nil, diags
 }

@@ -91,10 +91,6 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 // dataSourceMyrasecIPFiltersRead ...
 //
 func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareIPFilterFilter(d.Get("filter"))
 	if f == nil {
 		f = &ipFilterFilter{}
@@ -105,13 +101,8 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 		params["search"] = f.search
 	}
 
-	filters, err := client.ListIPFilters(f.subDomainName, params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching ip filters",
-			Detail:   err.Error(),
-		})
+	filters, diags := listIPFilters(meta, f.subDomainName, params)
+	if diags.HasError() {
 		return diags
 	}
 
@@ -177,6 +168,39 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 	}
 
 	return f
+}
+
+//
+// listIPFilters ...
+//
+func listIPFilters(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var filters []myrasec.IPFilter
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListIPFilters(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching IP filters",
+				Detail:   err.Error(),
+			})
+			return filters, diags
+		}
+		filters = append(filters, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return filters, diags
 }
 
 //

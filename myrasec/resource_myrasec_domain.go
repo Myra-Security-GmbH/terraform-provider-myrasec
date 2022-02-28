@@ -111,8 +111,6 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 // resourceMyrasecDomainRead ...
 //
 func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 
 	domainID, err := strconv.Atoi(d.Id())
@@ -125,29 +123,23 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	domains, err := client.ListDomains(nil)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domains",
-			Detail:   err.Error(),
-		})
+	domain, diags := findDomain(domainID, meta, nil)
+	if diags.HasError() {
 		return diags
 	}
 
-	for _, r := range domains {
-		if r.ID != domainID {
-			continue
-		}
-		d.Set("domain_id", r.ID)
-		d.Set("name", r.Name)
-		d.Set("auto_update", r.AutoUpdate)
-		d.Set("paused", r.Paused)
-		d.Set("paused_until", r.PausedUntil)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		break
+	if domain == nil {
+		return diags
 	}
+
+	d.SetId(strconv.Itoa(domainID))
+	d.Set("domain_id", domain.ID)
+	d.Set("name", domain.Name)
+	d.Set("auto_update", domain.AutoUpdate)
+	d.Set("paused", domain.Paused)
+	d.Set("paused_until", domain.PausedUntil)
+	d.Set("created", domain.Created.Format(time.RFC3339))
+	d.Set("modified", domain.Modified.Format(time.RFC3339))
 
 	return diags
 }
@@ -265,4 +257,47 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	domain.PausedUntil = pausedUntil
 
 	return domain, nil
+}
+
+//
+// findDomain ...
+//
+func findDomain(domainID int, meta interface{}, params map[string]string) (*myrasec.Domain, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListDomains(params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading domains",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, d := range res {
+			if d.ID == domainID {
+				return &d, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find domain",
+		Detail:   fmt.Sprintf("Unable to find domain with ID = [%d]", domainID),
+	})
+	return nil, diags
 }

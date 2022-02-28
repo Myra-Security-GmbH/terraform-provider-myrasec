@@ -156,10 +156,6 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 // dataSourceMyrasecDNSRecordsRead ...
 //
 func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareDNSRecordFilter(d.Get("filter"))
 	if f == nil {
 		f = &recordFilter{}
@@ -173,13 +169,8 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 		params["search"] = f.name
 	}
 
-	records, err := client.ListDNSRecords(f.domainName, map[string]string{"loadbalancer": "true", "pageSize": "5000"})
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching DNS records",
-			Detail:   err.Error(),
-		})
+	records, diags := listDnsRecords(meta, f.domainName, params)
+	if diags.HasError() {
 		return diags
 	}
 
@@ -299,6 +290,39 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 	}
 
 	return f
+}
+
+//
+// listDnsRecords ...
+//
+func listDnsRecords(meta interface{}, domainName string, params map[string]string) ([]myrasec.DNSRecord, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var records []myrasec.DNSRecord
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListDNSRecords(domainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching DNS records",
+				Detail:   err.Error(),
+			})
+			return records, diags
+		}
+		records = append(records, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return records, diags
 }
 
 //

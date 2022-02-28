@@ -88,10 +88,6 @@ func dataSourceMyrasecDomains() *schema.Resource {
 // dataSourceMyrasecDomainsRead ...
 //
 func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareDomainFilter(d.Get("filter"))
 	if f == nil {
 		f = &domainFilter{}
@@ -103,13 +99,8 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 		params["search"] = f.name
 	}
 
-	domains, err := client.ListDomains(params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domains",
-			Detail:   err.Error(),
-		})
+	domains, diags := listDomains(meta, params)
+	if diags.HasError() {
 		return diags
 	}
 
@@ -199,6 +190,39 @@ func parseDomainFilter(d interface{}) *domainFilter {
 	}
 
 	return f
+}
+
+//
+// listDomains ...
+//
+func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var domains []myrasec.Domain
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListDomains(params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching domains",
+				Detail:   err.Error(),
+			})
+			return domains, diags
+		}
+		domains = append(domains, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return domains, diags
 }
 
 //
