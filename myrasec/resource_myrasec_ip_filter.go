@@ -25,7 +25,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 		UpdateContext: resourceMyrasecIPFilterUpdate,
 		DeleteContext: resourceMyrasecIPFilterDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecIPFilterImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -130,68 +130,46 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 // resourceMyrasecIPFilterRead ...
 //
 func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 
-	var subDomainName string
-	var filterID int
-	var err error
-
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		filterID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing IP filter ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, filterID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing IP filter ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
+		return diags
 	}
 
-	d.SetId(strconv.Itoa(filterID))
-
-	filters, err := client.ListIPFilters(subDomainName, nil)
+	subDomainName := name.(string)
+	filterID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching filters",
+			Summary:  "Error parsing IP filter ID",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	for _, r := range filters {
-		if r.ID != filterID {
-			continue
-		}
-		d.Set("filter_id", r.ID)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("type", r.Type)
-		d.Set("value", r.Value)
-		d.Set("enabled", r.Enabled)
-		d.Set("comment", r.Comment)
-		d.Set("subdomain_name", subDomainName)
+	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	if diags.HasError() || filter == nil {
+		return diags
+	}
 
-		if r.ExpireDate != nil {
-			d.Set("expire_date", r.ExpireDate.Format(time.RFC3339))
-		}
-		break
+	d.SetId(strconv.Itoa(filterID))
+	d.Set("filter_id", filter.ID)
+	d.Set("created", filter.Created.Format(time.RFC3339))
+	d.Set("modified", filter.Modified.Format(time.RFC3339))
+	d.Set("type", filter.Type)
+	d.Set("value", filter.Value)
+	d.Set("enabled", filter.Enabled)
+	d.Set("comment", filter.Comment)
+	d.Set("subdomain_name", subDomainName)
+
+	if filter.ExpireDate != nil {
+		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
 	}
 
 	return diags
@@ -283,6 +261,30 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 //
+// resourceMyrasecIPFilterImport ...
+//
+func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, filterID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing IP filter ID: [%s]", err.Error())
+	}
+
+	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	if diags.HasError() || filter == nil {
+		return nil, fmt.Errorf("Unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
+	}
+
+	d.SetId(strconv.Itoa(filterID))
+	d.Set("filter_id", filter.ID)
+	d.Set("subdomain_name", subDomainName)
+
+	resourceMyrasecIPFilterRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
+}
+
+//
 // buildIPFilter ...
 //
 func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter, error) {
@@ -321,4 +323,50 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 	filter.ExpireDate = expireDate
 
 	return filter, nil
+}
+
+//
+// findIPFilter ...
+//
+func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrasec.IPFilter, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListIPFilters(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading IP filters",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, f := range res {
+			if f.ID == filterID {
+				return &f, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find IP filter",
+		Detail:   fmt.Sprintf("Unable to find IP filter with ID = [%d]", filterID),
+	})
+	return nil, diags
 }

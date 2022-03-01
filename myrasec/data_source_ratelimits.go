@@ -91,10 +91,6 @@ func dataSourceMyrasecRateLimits() *schema.Resource {
 // dataSourceMyrasecRateLimitsRead ...
 //
 func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareRateLimitFilter(d.Get("filter"))
 	if f == nil {
 		f = &rateLimitFilter{}
@@ -106,19 +102,13 @@ func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData
 	if len(f.search) > 0 {
 		params["search"] = f.search
 	}
-
-	redirects, err := client.ListRateLimits("dns", params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching rate limits",
-			Detail:   err.Error(),
-		})
+	limits, diags := listRateLimits(meta, "dns", params)
+	if diags.HasError() {
 		return diags
 	}
 
 	rateLimitData := make([]interface{}, 0)
-	for _, r := range redirects {
+	for _, r := range limits {
 		rateLimitData = append(rateLimitData, map[string]interface{}{
 			"id":             r.ID,
 			"created":        r.Created.Format(time.RFC3339),
@@ -175,6 +165,39 @@ func parseRateLimitFilter(d interface{}) *rateLimitFilter {
 	}
 
 	return f
+}
+
+//
+// listIPFilters ...
+//
+func listRateLimits(meta interface{}, rateLimitType string, params map[string]string) ([]myrasec.RateLimit, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var limits []myrasec.RateLimit
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListRateLimits(rateLimitType, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching rate limits",
+				Detail:   err.Error(),
+			})
+			return limits, diags
+		}
+		limits = append(limits, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return limits, diags
 }
 
 //

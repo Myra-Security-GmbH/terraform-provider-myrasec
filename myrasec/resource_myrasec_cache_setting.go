@@ -25,7 +25,7 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 		UpdateContext: resourceMyrasecCacheSettingUpdate,
 		DeleteContext: resourceMyrasecCacheSettingDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecCacheSettingImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -135,67 +135,46 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 // resourceMyrasecCacheSettingRead ...
 //
 func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
-	var subDomainName string
-	var settingID int
-	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		settingID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing cache setting ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, settingID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing cache setting ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
+		return diags
 	}
 
-	d.SetId(strconv.Itoa(settingID))
-
-	settings, err := client.ListCacheSettings(subDomainName, nil)
+	subDomainName := name.(string)
+	settingID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching cache settings",
+			Summary:  "Error parsing cache setting ID",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	for _, s := range settings {
-		if s.ID != settingID {
-			continue
-		}
-		d.Set("setting_id", s.ID)
-		d.Set("created", s.Created.Format(time.RFC3339))
-		d.Set("modified", s.Modified.Format(time.RFC3339))
-		d.Set("type", s.Type)
-		d.Set("path", s.Path)
-		d.Set("ttl", s.TTL)
-		d.Set("not_found_ttl", s.NotFoundTTL)
-		d.Set("sort", s.Sort)
-		d.Set("enabled", s.Enabled)
-		d.Set("enforce", s.Enforce)
-		d.Set("subdomain_name", subDomainName)
-		break
+	setting, diags := findCacheSetting(settingID, meta, subDomainName)
+	if diags.HasError() || setting == nil {
+		return diags
 	}
+
+	d.SetId(strconv.Itoa(settingID))
+	d.Set("setting_id", setting.ID)
+	d.Set("created", setting.Created.Format(time.RFC3339))
+	d.Set("modified", setting.Modified.Format(time.RFC3339))
+	d.Set("type", setting.Type)
+	d.Set("path", setting.Path)
+	d.Set("ttl", setting.TTL)
+	d.Set("not_found_ttl", setting.NotFoundTTL)
+	d.Set("sort", setting.Sort)
+	d.Set("enabled", setting.Enabled)
+	d.Set("enforce", setting.Enforce)
+	d.Set("subdomain_name", subDomainName)
 
 	return diags
 }
@@ -286,6 +265,30 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 //
+// resourceMyrasecCacheSettingImport ...
+//
+func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, settingID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing cache setting ID: [%s]", err.Error())
+	}
+
+	setting, diags := findCacheSetting(settingID, meta, subDomainName)
+	if diags.HasError() || setting == nil {
+		return nil, fmt.Errorf("Unable to find cache setting for subdomain [%s] with ID = [%d]", subDomainName, settingID)
+	}
+
+	d.SetId(strconv.Itoa(settingID))
+	d.Set("setting_id", setting.ID)
+	d.Set("subdomain_name", subDomainName)
+
+	resourceMyrasecCacheSettingRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
+}
+
+//
 // buildCacheSetting ...
 //
 func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.CacheSetting, error) {
@@ -321,4 +324,50 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 	setting.Modified = modified
 
 	return setting, nil
+}
+
+//
+// findCacheSetting ...
+//
+func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*myrasec.CacheSetting, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListCacheSettings(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading cache settings",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, s := range res {
+			if s.ID == settingID {
+				return &s, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find cache setting",
+		Detail:   fmt.Sprintf("Unable to find cache setting with ID = [%d]", settingID),
+	})
+	return nil, diags
 }

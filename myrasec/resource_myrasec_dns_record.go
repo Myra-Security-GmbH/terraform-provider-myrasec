@@ -25,7 +25,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 		UpdateContext: resourceMyrasecDNSRecordUpdate,
 		DeleteContext: resourceMyrasecDNSRecordDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecDNSRecordImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
@@ -207,83 +207,66 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 // resourceMyrasecDNSRecordRead ...
 //
 func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
 	var diags diag.Diagnostics
-	var domainName string
-	var recordID int
-	var err error
 
 	name, ok := d.GetOk("domain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		domainName = name.(string)
-		recordID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing DNS record ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		domainName, recordID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing DNS record ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[domain_name] is not set",
+		})
+		return diags
 	}
 
-	d.SetId(strconv.Itoa(recordID))
-
-	records, err := client.ListDNSRecords(domainName, map[string]string{"loadbalancer": "true", "pageSize": "1000"})
+	domainName := name.(string)
+	recordID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching DNS records",
+			Summary:  "Error parsing DNS record ID",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	for _, r := range records {
-		if r.ID != recordID {
-			continue
-		}
-		d.Set("record_id", r.ID)
-		d.Set("name", r.Name)
-		d.Set("value", r.Value)
-		d.Set("record_type", r.RecordType)
-		d.Set("ttl", r.TTL)
-		d.Set("alternative_cname", r.AlternativeCNAME)
-		d.Set("active", r.Active)
-		d.Set("enabled", r.Enabled)
-		d.Set("priority", r.Priority)
-		d.Set("port", r.Port)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("comment", r.Comment)
-		d.Set("domain_name", domainName)
-
-		if r.UpstreamOptions != nil && r.UpstreamOptions.ID > 0 {
-			d.Set("upstream_options", map[string]interface{}{
-				"upstream_id":  r.UpstreamOptions.ID,
-				"created":      r.UpstreamOptions.Created.Format(time.RFC3339),
-				"modified":     r.UpstreamOptions.Modified.Format(time.RFC3339),
-				"backup":       r.UpstreamOptions.Backup,
-				"down":         r.UpstreamOptions.Down,
-				"fail_timeout": r.UpstreamOptions.FailTimeout,
-				"max_fails":    r.UpstreamOptions.MaxFails,
-				"weight":       r.UpstreamOptions.Weight,
-			})
-		}
-		break
+	record, diags := findDNSRecord(recordID, meta, domainName)
+	if diags.HasError() {
+		return diags
 	}
 
+	if record == nil {
+		return diags
+	}
+
+	d.SetId(strconv.Itoa(recordID))
+	d.Set("record_id", record.ID)
+	d.Set("name", record.Name)
+	d.Set("value", record.Value)
+	d.Set("record_type", record.RecordType)
+	d.Set("ttl", record.TTL)
+	d.Set("alternative_cname", record.AlternativeCNAME)
+	d.Set("active", record.Active)
+	d.Set("enabled", record.Enabled)
+	d.Set("priority", record.Priority)
+	d.Set("port", record.Port)
+	d.Set("created", record.Created.Format(time.RFC3339))
+	d.Set("modified", record.Modified.Format(time.RFC3339))
+	d.Set("comment", record.Comment)
+	d.Set("domain_name", domainName)
+
+	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
+		d.Set("upstream_options", map[string]interface{}{
+			"upstream_id":  record.UpstreamOptions.ID,
+			"created":      record.UpstreamOptions.Created.Format(time.RFC3339),
+			"modified":     record.UpstreamOptions.Modified.Format(time.RFC3339),
+			"backup":       record.UpstreamOptions.Backup,
+			"down":         record.UpstreamOptions.Down,
+			"fail_timeout": record.UpstreamOptions.FailTimeout,
+			"max_fails":    record.UpstreamOptions.MaxFails,
+			"weight":       record.UpstreamOptions.Weight,
+		})
+	}
 	return diags
 }
 
@@ -370,6 +353,30 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecDNSRecordImport ...
+//
+func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	domainName, recordID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing DNS record ID: [%s]", err.Error())
+	}
+
+	record, diags := findDNSRecord(recordID, meta, domainName)
+	if diags.HasError() || record == nil {
+		return nil, fmt.Errorf("Unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
+	}
+
+	d.SetId(strconv.Itoa(recordID))
+	d.Set("record_id", record.ID)
+	d.Set("domain_name", domainName)
+
+	resourceMyrasecDNSRecordRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //
@@ -463,4 +470,51 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 	}
 
 	return options, nil
+}
+
+//
+// findDNSRecord ...
+//
+func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.DNSRecord, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	page := 1
+	params := map[string]string{
+		"loadbalancer": "true",
+		"pageSize":     "50",
+		"page":         strconv.Itoa(page),
+	}
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListDNSRecords(domainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading DNS records",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, r := range res {
+			if r.ID == recordID {
+				return &r, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find DNS record",
+		Detail:   fmt.Sprintf("Unable to find DNS record with ID = [%d]", recordID),
+	})
+	return nil, diags
 }

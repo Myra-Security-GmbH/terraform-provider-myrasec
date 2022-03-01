@@ -87,10 +87,6 @@ func dataSourceMyrasecIPRanges() *schema.Resource {
 // dataSourceMyrasecIPRangesRead ...
 //
 func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareIPRangeFilter(d.Get("filter"))
 	if f == nil {
 		f = &ipRangeFilter{}
@@ -101,18 +97,13 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 		params["search"] = f.search
 	}
 
-	filters, err := client.ListIPRanges(params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching ip ranges",
-			Detail:   err.Error(),
-		})
+	ranges, diags := listIPRanges(meta, params)
+	if diags.HasError() {
 		return diags
 	}
 
 	ipRangeData := make([]interface{}, 0)
-	for _, r := range filters {
+	for _, r := range ranges {
 		data := map[string]interface{}{
 			"id":       r.ID,
 			"created":  r.Created.Format(time.RFC3339),
@@ -176,6 +167,39 @@ func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 	}
 
 	return f
+}
+
+//
+// listIPRanges ...
+//
+func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var ranges []myrasec.IPRange
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListIPRanges(params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching IP ranges",
+				Detail:   err.Error(),
+			})
+			return ranges, diags
+		}
+		ranges = append(ranges, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return ranges, diags
 }
 
 //

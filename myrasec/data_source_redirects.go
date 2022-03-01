@@ -95,10 +95,6 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 // dataSourceMyrasecRedirectsRead ...
 //
 func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareRedirectFilter(d.Get("filter"))
 	if f == nil {
 		f = &redirectFilter{}
@@ -109,13 +105,8 @@ func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData,
 		params["search"] = f.search
 	}
 
-	redirects, err := client.ListRedirects(f.subDomainName, params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching redirects",
-			Detail:   err.Error(),
-		})
+	redirects, diags := listRedirects(meta, f.subDomainName, params)
+	if diags.HasError() {
 		return diags
 	}
 
@@ -177,6 +168,39 @@ func parseRedirectFilter(d interface{}) *redirectFilter {
 	}
 
 	return f
+}
+
+//
+// listRedirects ...
+//
+func listRedirects(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var redirects []myrasec.Redirect
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListRedirects(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching rate limits",
+				Detail:   err.Error(),
+			})
+			return redirects, diags
+		}
+		redirects = append(redirects, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return redirects, diags
 }
 
 //

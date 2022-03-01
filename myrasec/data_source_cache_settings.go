@@ -95,10 +95,6 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 // dataSourceMyrasecCacheSettingsRead ...
 //
 func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
-	var diags diag.Diagnostics
-
 	f := prepareCacheSettingFilter(d.Get("filter"))
 	if f == nil {
 		f = &cacheSettingFilter{}
@@ -109,13 +105,8 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 		params["search"] = f.path
 	}
 
-	settings, err := client.ListCacheSettings(f.subDomainName, params)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching cache settings",
-			Detail:   err.Error(),
-		})
+	settings, diags := listCacheSettings(meta, f.subDomainName, params)
+	if diags.HasError() {
 		return diags
 	}
 
@@ -178,6 +169,39 @@ func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
 	}
 
 	return f
+}
+
+//
+// listCacheSettings ...
+//
+func listCacheSettings(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	var settings []myrasec.CacheSetting
+
+	client := meta.(*myrasec.API)
+
+	params["pageSize"] = "50"
+	page := 1
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListCacheSettings(subDomainName, params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching cache settings",
+				Detail:   err.Error(),
+			})
+			return settings, diags
+		}
+		settings = append(settings, res...)
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	return settings, diags
 }
 
 //

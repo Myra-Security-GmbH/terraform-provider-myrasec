@@ -22,7 +22,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 		UpdateContext: resourceMyrasecWAFRuleUpdate,
 		DeleteContext: resourceMyrasecWAFRuleDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecWAFRuleImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -261,119 +261,98 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 // resourceMyrasecWAFRuleRead ...
 //
 func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
-	var subDomainName string
-	var ruleID int
-	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		ruleID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing WAF rule ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, ruleID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing WAF rule ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
+		return diags
 	}
 
-	d.SetId(strconv.Itoa(ruleID))
-
-	rules, err := client.ListWAFRules("domain", map[string]string{"subDomain": subDomainName})
+	subDomainName := name.(string)
+	ruleID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching WAF rule",
+			Summary:  "Error parsing WAF rule ID",
 			Detail:   err.Error(),
 		})
 		return diags
 	}
 
-	for _, r := range rules {
-		if r.ID != ruleID {
-			continue
-		}
-		d.Set("rule_id", r.ID)
-		d.Set("created", r.Created.Format(time.RFC3339))
-		d.Set("modified", r.Modified.Format(time.RFC3339))
-		d.Set("subdomain_name", r.SubDomainName)
-		d.Set("name", r.Name)
-		d.Set("description", r.Description)
-		d.Set("log_identifier", r.LogIdentifier)
-		d.Set("direction", r.Direction)
-		d.Set("sort", r.Sort)
-		d.Set("sync", r.Sync)
-		d.Set("process_next", r.ProcessNext)
-		d.Set("enabled", r.Enabled)
-
-		conditions := []interface{}{}
-		for _, condition := range r.Conditions {
-
-			c := map[string]interface{}{
-				"condition_id":        condition.ID,
-				"force_custom_values": condition.ForceCustomValues,
-				"available_phases":    condition.AvailablePhases,
-				"alias":               condition.Alias,
-				"category":            condition.Category,
-				"matching_type":       condition.MatchingType,
-				"name":                condition.Name,
-				"key":                 condition.Key,
-				"value":               condition.Value,
-			}
-
-			if condition.Created != nil {
-				c["created"] = condition.Created.Format(time.RFC3339)
-			}
-
-			if condition.Modified != nil {
-				c["modified"] = condition.Modified.Format(time.RFC3339)
-			}
-
-			conditions = append(conditions, c)
-		}
-		d.Set("conditions", conditions)
-
-		actions := []interface{}{}
-		for _, action := range r.Actions {
-			a := map[string]interface{}{
-				"action_id":           action.ID,
-				"force_custom_values": action.ForceCustomValues,
-				"available_phases":    action.AvailablePhases,
-				"name":                action.Name,
-				"type":                action.Type,
-				"value":               action.Value,
-				"custom_key":          action.CustomKey,
-			}
-
-			if action.Created != nil {
-				a["created"] = action.Created.Format(time.RFC3339)
-			}
-
-			if action.Modified != nil {
-				a["modified"] = action.Modified.Format(time.RFC3339)
-			}
-			actions = append(actions, a)
-		}
-		d.Set("actions", actions)
-
-		break
+	rule, diags := findWAFRule(ruleID, meta, subDomainName)
+	if diags.HasError() || rule == nil {
+		return diags
 	}
+
+	d.SetId(strconv.Itoa(ruleID))
+
+	d.Set("rule_id", rule.ID)
+	d.Set("created", rule.Created.Format(time.RFC3339))
+	d.Set("modified", rule.Modified.Format(time.RFC3339))
+	d.Set("subdomain_name", rule.SubDomainName)
+	d.Set("name", rule.Name)
+	d.Set("description", rule.Description)
+	d.Set("log_identifier", rule.LogIdentifier)
+	d.Set("direction", rule.Direction)
+	d.Set("sort", rule.Sort)
+	d.Set("sync", rule.Sync)
+	d.Set("process_next", rule.ProcessNext)
+	d.Set("enabled", rule.Enabled)
+
+	conditions := []interface{}{}
+	for _, condition := range rule.Conditions {
+
+		c := map[string]interface{}{
+			"condition_id":        condition.ID,
+			"force_custom_values": condition.ForceCustomValues,
+			"available_phases":    condition.AvailablePhases,
+			"alias":               condition.Alias,
+			"category":            condition.Category,
+			"matching_type":       condition.MatchingType,
+			"name":                condition.Name,
+			"key":                 condition.Key,
+			"value":               condition.Value,
+		}
+
+		if condition.Created != nil {
+			c["created"] = condition.Created.Format(time.RFC3339)
+		}
+
+		if condition.Modified != nil {
+			c["modified"] = condition.Modified.Format(time.RFC3339)
+		}
+
+		conditions = append(conditions, c)
+	}
+	d.Set("conditions", conditions)
+
+	actions := []interface{}{}
+	for _, action := range rule.Actions {
+		a := map[string]interface{}{
+			"action_id":           action.ID,
+			"force_custom_values": action.ForceCustomValues,
+			"available_phases":    action.AvailablePhases,
+			"name":                action.Name,
+			"type":                action.Type,
+			"value":               action.Value,
+			"custom_key":          action.CustomKey,
+		}
+
+		if action.Created != nil {
+			a["created"] = action.Created.Format(time.RFC3339)
+		}
+
+		if action.Modified != nil {
+			a["modified"] = action.Modified.Format(time.RFC3339)
+		}
+		actions = append(actions, a)
+	}
+	d.Set("actions", actions)
 
 	return diags
 }
@@ -460,6 +439,30 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecWAFRuleImport ...
+//
+func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing WAF rule ID: [%s]", err.Error())
+	}
+
+	rule, diags := findWAFRule(ruleID, meta, subDomainName)
+	if diags.HasError() || rule == nil {
+		return nil, fmt.Errorf("Unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
+	}
+
+	d.SetId(strconv.Itoa(ruleID))
+	d.Set("rule_id", rule.ID)
+	d.Set("subdomain_name", rule.SubDomainName)
+
+	resourceMyrasecWAFRuleRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //
@@ -608,4 +611,51 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	}
 
 	return a, nil
+}
+
+//
+// findWAFRule ...
+//
+func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrasec.WAFRule, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	page := 1
+	params := map[string]string{
+		"subDomainName": subDomainName,
+		"pageSize":      "50",
+		"page":          strconv.Itoa(page),
+	}
+
+	for {
+		params["page"] = strconv.Itoa(page)
+		res, err := client.ListWAFRules("domain", params)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error loading WAF rules",
+				Detail:   err.Error(),
+			})
+			return nil, diags
+		}
+
+		for _, r := range res {
+			if r.ID == wafRuleID {
+				return &r, diags
+			}
+		}
+
+		if len(res) < 50 {
+			break
+		}
+		page++
+	}
+
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Warning,
+		Summary:  "Unable to find WAF rule",
+		Detail:   fmt.Sprintf("Unable to find WAF rule with ID = [%d]", wafRuleID),
+	})
+	return nil, diags
 }
