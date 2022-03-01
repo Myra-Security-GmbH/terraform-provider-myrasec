@@ -160,7 +160,7 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName, nil)
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -308,14 +308,17 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 //
 // findRateLimit ...
 //
-func findRateLimit(rateLimitID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.RateLimit, diag.Diagnostics) {
+func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["subDomainName"] = subDomainName
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"subDomainName": subDomainName,
+		"pageSize":      "50",
+		"page":          strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

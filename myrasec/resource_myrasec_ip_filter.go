@@ -161,7 +161,7 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	filter, diags := findIPFilter(filterID, meta, subDomainName, nil)
+	filter, diags := findIPFilter(filterID, meta, subDomainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -316,13 +316,16 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 //
 // findIPFilter ...
 //
-func findIPFilter(filterID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.IPFilter, diag.Diagnostics) {
+func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

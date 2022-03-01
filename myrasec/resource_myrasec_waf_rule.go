@@ -291,7 +291,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 		}
 	}
 
-	rule, diags := findWAFRule(ruleID, meta, subDomainName, nil)
+	rule, diags := findWAFRule(ruleID, meta, subDomainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -602,14 +602,17 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 //
 // findWAFRule ...
 //
-func findWAFRule(wafRuleID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.WAFRule, diag.Diagnostics) {
+func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["subDomainName"] = subDomainName
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"subDomainName": subDomainName,
+		"pageSize":      "50",
+		"page":          strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

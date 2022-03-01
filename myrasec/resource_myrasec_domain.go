@@ -123,7 +123,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	domain, diags := findDomain(domainID, meta, nil)
+	domain, diags := findDomain(domainID, meta)
 	if diags.HasError() {
 		return diags
 	}
@@ -262,13 +262,16 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 //
 // findDomain ...
 //
-func findDomain(domainID int, meta interface{}, params map[string]string) (*myrasec.Domain, diag.Diagnostics) {
+func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

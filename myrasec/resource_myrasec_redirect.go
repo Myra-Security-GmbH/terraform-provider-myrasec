@@ -165,7 +165,7 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	redirect, diags := findRedirect(redirectID, meta, subDomainName, nil)
+	redirect, diags := findRedirect(redirectID, meta, subDomainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -315,13 +315,16 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 //
 // findRedirect ...
 //
-func findRedirect(redirectID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.Redirect, diag.Diagnostics) {
+func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

@@ -165,7 +165,7 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
-	setting, diags := findCacheSetting(settingID, meta, subDomainName, nil)
+	setting, diags := findCacheSetting(settingID, meta, subDomainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -316,13 +316,16 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 //
 // findCacheSetting ...
 //
-func findCacheSetting(settingID int, meta interface{}, subDomainName string, params map[string]string) (*myrasec.CacheSetting, diag.Diagnostics) {
+func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"pageSize": "50",
+		"page":     strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)

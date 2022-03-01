@@ -237,7 +237,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	record, diags := findDNSRecord(recordID, meta, domainName, map[string]string{"loadbalancer": "true"})
+	record, diags := findDNSRecord(recordID, meta, domainName)
 	if diags.HasError() {
 		return diags
 	}
@@ -458,13 +458,17 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 //
 // findDNSRecord ...
 //
-func findDNSRecord(recordID int, meta interface{}, domainName string, params map[string]string) (*myrasec.DNSRecord, diag.Diagnostics) {
+func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
 	page := 1
+	params := map[string]string{
+		"loadbalancer": "true",
+		"pageSize":     "50",
+		"page":         strconv.Itoa(page),
+	}
 
 	for {
 		params["page"] = strconv.Itoa(page)
