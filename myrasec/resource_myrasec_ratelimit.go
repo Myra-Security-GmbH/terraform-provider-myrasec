@@ -25,7 +25,7 @@ func resourceMyrasecRateLimit() *schema.Resource {
 		UpdateContext: resourceMyrasecRateLimitUpdate,
 		DeleteContext: resourceMyrasecRateLimitDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecRateLimitImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -131,41 +131,29 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	var subDomainName string
-	var rateLimitID int
-	var err error
-
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		rateLimitID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing rate limit setting ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, rateLimitID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing rate limit setting ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-	}
-
-	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
-	if diags.HasError() {
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
 		return diags
 	}
 
-	if rateLimit == nil {
+	subDomainName := name.(string)
+	rateLimitID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing rate limit setting ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
+	if diags.HasError() || rateLimit == nil {
 		return diags
 	}
 
@@ -266,6 +254,30 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecRateLimitImport ...
+//
+func resourceMyrasecRateLimitImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, rateLimitID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing rate limit ID: [%s]", err.Error())
+	}
+
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
+	if diags.HasError() || rateLimit == nil {
+		return nil, fmt.Errorf("Unable to find rate limit for subdomain [%s] with ID = [%d]", subDomainName, rateLimitID)
+	}
+
+	d.SetId(strconv.Itoa(rateLimitID))
+	d.Set("ratelimit_id", rateLimit.ID)
+	d.Set("subdomain_name", rateLimit.SubDomainName)
+
+	resourceMyrasecRateLimitRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //

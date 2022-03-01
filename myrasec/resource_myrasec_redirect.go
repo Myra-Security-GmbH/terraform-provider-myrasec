@@ -25,7 +25,7 @@ func resourceMyrasecRedirect() *schema.Resource {
 		UpdateContext: resourceMyrasecRedirectUpdate,
 		DeleteContext: resourceMyrasecRedirectDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecRedirectImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"redirect_id": {
@@ -136,41 +136,30 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 //
 func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	var subDomainName string
-	var redirectID int
-	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		redirectID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing redirect ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, redirectID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing redirect ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-	}
-
-	redirect, diags := findRedirect(redirectID, meta, subDomainName)
-	if diags.HasError() {
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
 		return diags
 	}
 
-	if redirect == nil {
+	subDomainName := name.(string)
+	redirectID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing redirect ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	redirect, diags := findRedirect(redirectID, meta, subDomainName)
+	if diags.HasError() || redirect == nil {
 		return diags
 	}
 
@@ -271,6 +260,30 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecRedirectImport ...
+//
+func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing redirect ID: [%s]", err.Error())
+	}
+
+	redirect, diags := findRedirect(redirectID, meta, subDomainName)
+	if diags.HasError() || redirect == nil {
+		return nil, fmt.Errorf("Unable to find redirect for subdomain [%s] with ID = [%d]", subDomainName, redirectID)
+	}
+
+	d.SetId(strconv.Itoa(redirectID))
+	d.Set("redirect_id", redirect.ID)
+	d.Set("subdomain_name", redirect.SubDomainName)
+
+	resourceMyrasecRedirectRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //

@@ -25,7 +25,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 		UpdateContext: resourceMyrasecDNSRecordUpdate,
 		DeleteContext: resourceMyrasecDNSRecordDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecDNSRecordImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"domain_name": {
@@ -208,33 +208,26 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 //
 func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	var domainName string
-	var recordID int
-	var err error
 
 	name, ok := d.GetOk("domain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		domainName = name.(string)
-		recordID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing DNS record ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[domain_name] is not set",
+		})
+		return diags
+	}
 
-	} else {
-		domainName, recordID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing DNS record ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	domainName := name.(string)
+	recordID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing DNS record ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	record, diags := findDNSRecord(recordID, meta, domainName)
@@ -360,6 +353,30 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecDNSRecordImport ...
+//
+func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	domainName, recordID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing DNS record ID: [%s]", err.Error())
+	}
+
+	record, diags := findDNSRecord(recordID, meta, domainName)
+	if diags.HasError() || record == nil {
+		return nil, fmt.Errorf("Unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
+	}
+
+	d.SetId(strconv.Itoa(recordID))
+	d.Set("record_id", record.ID)
+	d.Set("domain_name", domainName)
+
+	resourceMyrasecDNSRecordRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //

@@ -22,7 +22,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 		UpdateContext: resourceMyrasecWAFRuleUpdate,
 		DeleteContext: resourceMyrasecWAFRuleDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecWAFRuleImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -262,40 +262,30 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 //
 func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	var subDomainName string
-	var ruleID int
-	var err error
 
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		ruleID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing WAF rule ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
+		return diags
+	}
 
-	} else {
-		subDomainName, ruleID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing WAF rule ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
+	subDomainName := name.(string)
+	ruleID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing WAF rule ID",
+			Detail:   err.Error(),
+		})
+		return diags
 	}
 
 	rule, diags := findWAFRule(ruleID, meta, subDomainName)
-	if diags.HasError() {
-		return diags
-	}
-	if rule == nil {
+	if diags.HasError() || rule == nil {
 		return diags
 	}
 
@@ -449,6 +439,30 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecWAFRuleImport ...
+//
+func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing WAF rule ID: [%s]", err.Error())
+	}
+
+	rule, diags := findWAFRule(ruleID, meta, subDomainName)
+	if diags.HasError() || rule == nil {
+		return nil, fmt.Errorf("Unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
+	}
+
+	d.SetId(strconv.Itoa(ruleID))
+	d.Set("rule_id", rule.ID)
+	d.Set("subdomain_name", rule.SubDomainName)
+
+	resourceMyrasecWAFRuleRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //

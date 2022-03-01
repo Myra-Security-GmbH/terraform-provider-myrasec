@@ -25,7 +25,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 		UpdateContext: resourceMyrasecIPFilterUpdate,
 		DeleteContext: resourceMyrasecIPFilterDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecIPFilterImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"subdomain_name": {
@@ -132,41 +132,29 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	var subDomainName string
-	var filterID int
-	var err error
-
 	name, ok := d.GetOk("subdomain_name")
-	if ok && !strings.Contains(d.Id(), ":") {
-		subDomainName = name.(string)
-		filterID, err = strconv.Atoi(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing IP filter ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-
-	} else {
-		subDomainName, filterID, err = parseResourceServiceID(d.Id())
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error parsing IP filter ID",
-				Detail:   err.Error(),
-			})
-			return diags
-		}
-	}
-
-	filter, diags := findIPFilter(filterID, meta, subDomainName)
-	if diags.HasError() {
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   "[subdomain_name] is not set",
+		})
 		return diags
 	}
 
-	if filter == nil {
+	subDomainName := name.(string)
+	filterID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing IP filter ID",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	if diags.HasError() || filter == nil {
 		return diags
 	}
 
@@ -270,6 +258,30 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecIPFilterImport ...
+//
+func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	subDomainName, filterID, err := parseResourceServiceID(d.Id())
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing IP filter ID: [%s]", err.Error())
+	}
+
+	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	if diags.HasError() || filter == nil {
+		return nil, fmt.Errorf("Unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
+	}
+
+	d.SetId(strconv.Itoa(filterID))
+	d.Set("filter_id", filter.ID)
+	d.Set("subdomain_name", subDomainName)
+
+	resourceMyrasecIPFilterRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //

@@ -24,7 +24,7 @@ func resourceMyrasecDomain() *schema.Resource {
 		UpdateContext: resourceMyrasecDomainUpdate,
 		DeleteContext: resourceMyrasecDomainDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceMyrasecDomainImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"domain_id": {
@@ -102,7 +102,6 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		})
 		return diags
 	}
-
 	d.SetId(fmt.Sprintf("%d", resp.ID))
 	return resourceMyrasecDomainRead(ctx, d, meta)
 }
@@ -124,11 +123,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	domain, diags := findDomain(domainID, meta)
-	if diags.HasError() {
-		return diags
-	}
-
-	if domain == nil {
+	if diags.HasError() || domain == nil {
 		return diags
 	}
 
@@ -216,6 +211,29 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 	return diags
+}
+
+//
+// resourceMyrasecDomainImport ...
+//
+func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	domainID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return nil, err
+	}
+
+	domain, diags := findDomain(domainID, meta)
+	if diags.HasError() || domain == nil {
+		return nil, fmt.Errorf("Unable to find domain with ID = [%d]", domainID)
+	}
+
+	d.SetId(strconv.Itoa(domainID))
+	d.Set("domain_id", domain.ID)
+
+	resourceMyrasecDomainRead(ctx, d, meta)
+
+	return []*schema.ResourceData{d}, nil
 }
 
 //
