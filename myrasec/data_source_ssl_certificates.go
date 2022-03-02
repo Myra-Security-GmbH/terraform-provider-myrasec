@@ -36,6 +36,10 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"domain_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"id": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -47,6 +51,88 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 						"created": {
 							Type:     schema.TypeString,
 							Computed: true,
+						},
+						"subject": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"algorithm": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"valid_from": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"valid_to": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"fingerprint": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"serial_number": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"subject_alternatives": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"wildcard": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"extended_validation": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"subdomains": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"intermediates": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"subject": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"algorithm": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"valid_from": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"valid_to": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"fingerprint": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"serial_number": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"issuer": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -76,14 +162,59 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 	}
 
 	certificateData := make([]interface{}, 0)
+
 	for _, c := range certificates {
-		certificateData = append(certificateData, map[string]interface{}{
-			"id":       c.ID,
-			"created":  c.Created.Format(time.RFC3339),
-			"modified": c.Modified.Format(time.RFC3339),
-			// @TODO - define schema
-		})
+
+		var created string
+		if c.Created != nil {
+			created = c.Certificate.Created.Format(time.RFC3339)
+		}
+
+		var modified string
+		if c.Created != nil {
+			modified = c.Certificate.Modified.Format(time.RFC3339)
+		}
+		data := map[string]interface{}{
+			"domain_name":          f.domainName,
+			"id":                   c.Certificate.ID,
+			"created":              created,
+			"modified":             modified,
+			"subject":              c.Certificate.Subject,
+			"algorithm":            c.Certificate.Algorithm,
+			"valid_from":           c.Certificate.ValidFrom.Format(time.RFC3339),
+			"valid_to":             c.Certificate.ValidTo.Format(time.RFC3339),
+			"fingerprint":          c.Certificate.Fingerprint,
+			"serial_number":        c.Certificate.SerialNumber,
+			"subject_alternatives": c.SubjectAlternatives,
+			"wildcard":             c.Wildcard,
+			"extended_validation":  c.ExtendedValidation,
+			"subdomains":           c.Subdomains,
+		}
+
+		if c.Intermediates != nil && len(c.Intermediates) > 0 {
+			intermediates := make([]map[string]interface{}, 0)
+			for _, inter := range c.Intermediates {
+				intermediates = append(intermediates, map[string]interface{}{
+					"subject":       inter.Certificate.Subject,
+					"algorithm":     inter.Certificate.Algorithm,
+					"fingerprint":   inter.Certificate.Fingerprint,
+					"serial_number": inter.Certificate.SerialNumber,
+					"valid_from":    inter.Certificate.ValidFrom.Format(time.RFC3339),
+					"valid_to":      inter.Certificate.ValidTo.Format(time.RFC3339),
+					"issuer":        inter.Issuer,
+				})
+			}
+			data["intermediates"] = intermediates
+		}
+
+		certificateData = append(certificateData, data)
 	}
+
+	if err := d.Set("certificates", certificateData); err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return diags
 }
