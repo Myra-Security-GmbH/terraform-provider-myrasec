@@ -78,9 +78,21 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Description: "The alternative CNAME that points to the record.",
 			},
 			"active": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				DiffSuppressFunc: func(k string, old string, new string, d *schema.ResourceData) bool {
+					rt, ok := d.GetOk("record_type")
+					if !ok {
+						return false
+					}
+
+					if StringInSlice(rt.(string), []string{"A", "AAAA", "CNAME"}) {
+						return false
+					}
+
+					return true
+				},
 				Description: "Define wether this subdomain should be protected by Myra or not.",
 			},
 			"enabled": {

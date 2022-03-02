@@ -22,3 +22,15 @@ func parseResourceServiceID(id string) (string, int, error) {
 
 	return parts[0], recordID, nil
 }
+
+//
+// StringInSlice checks if the haystack []string slice contains the passed needle string
+//
+func StringInSlice(needle string, haystack []string) bool {
+	for _, a := range haystack {
+		if a == needle {
+			return true
+		}
+	}
+	return false
+}

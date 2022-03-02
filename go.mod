@@ -3,7 +3,7 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.13
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go v1.6.0
+	github.com/Myra-Security-GmbH/myrasec-go v1.7.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -24,10 +24,10 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220218161850-94dd64e39d7c // indirect
+	google.golang.org/genproto v0.0.0-20220302033224-9aa15565e42a // indirect
 	google.golang.org/grpc v1.44.0 // indirect
 )
