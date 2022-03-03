@@ -44,19 +44,13 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			},
 			"certificate": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "Certificate",
-				DiffSuppressFunc: func(k string, old string, new string, d *schema.ResourceData) bool {
-					return true
-				},
 			},
 			"key": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "Unencrypted private key",
-				DiffSuppressFunc: func(k string, old string, new string, d *schema.ResourceData) bool {
-					return true
-				},
 			},
 			"subject": {
 				Type:        schema.TypeString,
@@ -114,7 +108,17 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"intermediates": {
+			"cert_refresh_forced": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+			"cert_to_refresh": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
+			"intermediate": {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Description: "An array of intermediate certificate(s)",
@@ -124,9 +128,6 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "Certificate",
-							DiffSuppressFunc: func(k string, old string, new string, d *schema.ResourceData) bool {
-								return true
-							},
 						},
 						"subject": {
 							Type:        schema.TypeString,
@@ -243,8 +244,6 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("certificate_id", cert.ID)
 	d.Set("created", cert.Created.Format(time.RFC3339))
 	d.Set("modified", cert.Modified.Format(time.RFC3339))
-	d.Set("certificate", cert.Cert)
-	d.Set("key", cert.Key)
 	d.Set("subject", cert.Subject)
 	d.Set("algorithm", cert.Algorithm)
 	d.Set("valid_from", cert.ValidFrom.Format(time.RFC3339))
@@ -256,20 +255,21 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
 
-	if cert.Intermediates != nil && len(cert.Intermediates) > 0 {
-		intermediates := []map[string]interface{}{}
-		for _, inter := range cert.Intermediates {
-			intermediates = append(intermediates, map[string]interface{}{
-				"certificate":   inter.Cert,
-				"subject":       inter.Subject,
-				"algorithm":     inter.Algorithm,
-				"fingerprint":   inter.Fingerprint,
-				"serial_number": inter.SerialNumber,
-				"issuer":        inter.Issuer,
-			})
-		}
-		d.Set("intermediates", intermediates)
+	var interData []map[string]interface{}
+	var interItem map[string]interface{}
+
+	for _, inter := range cert.Intermediates {
+		interItem = make(map[string]interface{})
+
+		interItem["subject"] = inter.Subject
+		interItem["algorithm"] = inter.Algorithm
+		interItem["fingerprint"] = inter.Fingerprint
+		interItem["serial_number"] = inter.SerialNumber
+		interItem["issuer"] = inter.Issuer
+
+		interData = append(interData, interItem)
 	}
+	d.Set("intermediate", interData)
 
 	return diags
 }
@@ -385,19 +385,36 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 // buildSSLCertificate ...
 //
 func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSLCertificate, error) {
+
 	cert := &myrasec.SSLCertificate{
-		Certificate: &myrasec.Certificate{
-			Cert: d.Get("certificate").(string),
-			//Subject:      d.Get("subject").(string),
-			//Algorithm:    d.Get("algorithm").(string),
-			//Fingerprint:  d.Get("fingerprint").(string),
-			//SerialNumber: d.Get("serial_number").(string),
-		},
-		Key: d.Get("key").(string),
-		//SubjectAlternatives: d.Get("subject_alternatives").([]string),
-		//Wildcard:           d.Get("wildcard").(bool),
-		//ExtendedValidation: d.Get("extended_validation").(bool),
-		//Subdomains:         d.Get("subdomains").([]string),
+		Certificate: &myrasec.Certificate{},
+	}
+
+	subdomains, ok := d.GetOk("subdomains")
+	if ok {
+		for _, sd := range subdomains.([]interface{}) {
+			cert.Subdomains = append(cert.Subdomains, sd.(string))
+		}
+	}
+
+	crt, ok := d.GetOk("certificate")
+	if ok {
+		cert.Certificate.Cert = crt.(string)
+	}
+
+	key, ok := d.GetOk("key")
+	if ok {
+		cert.Key = key.(string)
+	}
+
+	ctr, ok := d.GetOk("cert_to_refresh")
+	if ok {
+		cert.CertToRefresh = ctr.(int)
+	}
+
+	crf, ok := d.GetOk("cert_refresh_forced")
+	if ok {
+		cert.CertRefreshForced = crf.(bool)
 	}
 
 	if d.Get("certificate_id").(int) > 0 {
@@ -421,24 +438,12 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 	}
 	cert.Certificate.Modified = modified
 
-	validFrom, err := types.ParseDate(d.Get("valid_from").(string))
-	if err != nil {
-		return nil, err
-	}
-	cert.Certificate.ValidFrom = validFrom
-
-	validTo, err := types.ParseDate(d.Get("valid_to").(string))
-	if err != nil {
-		return nil, err
-	}
-	cert.Certificate.ValidTo = validTo
-
-	intermediates, ok := d.GetOk("intermediates")
+	intermediates, ok := d.GetOk("intermediate")
 	if !ok {
 		return cert, nil
 	}
 
-	for _, intermediate := range intermediates.([]interface{}) {
+	for _, intermediate := range intermediates.(*schema.Set).List() {
 		icert, err := buildSSLIntermediate(intermediate)
 		if err != nil {
 			return nil, err
@@ -454,49 +459,10 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 // buildSSLIntermediate ...
 //
 func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, error) {
-	cert := &myrasec.SSLIntermediate{}
-
-	for key, val := range intermediate.(map[string]interface{}) {
-		switch key {
-		//case "certificate_id":
-		//	cert.ID = val.(int)
-		//case "modified":
-		//	modified, err := types.ParseDate(val.(string))
-		//	if err != nil {
-		//			return nil, err
-		//		}
-		//		cert.Modified = modified
-		//	case "created":
-		//		created, err := types.ParseDate(val.(string))
-		//		if err != nil {
-		//			return nil, err
-		//		}
-		//		cert.Created = created
-		case "valid_from":
-			validFrom, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			cert.ValidFrom = validFrom
-		case "valid_to":
-			validTo, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			cert.ValidTo = validTo
-		case "certificate":
-			cert.Cert = val.(string)
-		case "subject":
-			cert.Subject = val.(string)
-		case "algorithm":
-			cert.Algorithm = val.(string)
-		case "fingerprint":
-			cert.Fingerprint = val.(string)
-		case "serial_number":
-			cert.SerialNumber = val.(string)
-		case "issuer":
-			cert.Issuer = val.(string)
-		}
+	cert := &myrasec.SSLIntermediate{
+		Certificate: &myrasec.Certificate{
+			Cert: intermediate.(map[string]interface{})["certificate"].(string),
+		},
 	}
 
 	return cert, nil
