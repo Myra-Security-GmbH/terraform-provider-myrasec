@@ -121,7 +121,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			"intermediate": {
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Description: "An array of intermediate certificate(s)",
+				Description: "A list of intermediate certificates",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"certificate": {
@@ -129,41 +129,43 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 							Optional:    true,
 							Description: "Certificate",
 						},
-						"subject": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Subject of the certificate",
-						},
-						"algorithm": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Signature algorithm of the certificate",
-						},
-						"valid_from": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date and time the certificate is valid from",
-						},
-						"valid_to": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date and time the certificate is valid to",
-						},
-						"fingerprint": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "RSA 256 fingerprint of the certificate",
-						},
-						"serial_number": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Serial number of the certificate",
-						},
-						"issuer": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "",
-						},
+						/*
+							"subject": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "Subject of the certificate",
+							},
+							"algorithm": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "Signature algorithm of the certificate",
+							},
+							"valid_from": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "Date and time the certificate is valid from",
+							},
+							"valid_to": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "Date and time the certificate is valid to",
+							},
+							"fingerprint": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "RSA 256 fingerprint of the certificate",
+							},
+							"serial_number": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "Serial number of the certificate",
+							},
+							"issuer": {
+								Type:        schema.TypeString,
+								Computed:    true,
+								Description: "",
+							},
+						*/
 					},
 				},
 			},
@@ -269,7 +271,8 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 
 		interData = append(interData, interItem)
 	}
-	d.Set("intermediate", interData)
+
+	//d.Set("intermediate", interData)
 
 	return diags
 }
