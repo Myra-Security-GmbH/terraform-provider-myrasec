@@ -31,7 +31,7 @@ The following arguments are supported:
 * `ipfilters` A list of IP filters.
 
 ### redirects
-* `id` The ID of the redirect.
+* `id` The ID of the IP filter.
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `type` Type of the IP filter.

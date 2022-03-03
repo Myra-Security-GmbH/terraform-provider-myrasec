@@ -24,7 +24,7 @@ The following arguments are supported:
 * `filter_id` (Computed) ID of the IP filter.
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
-* `subdomain_name` (Required) The Subdomain for the IP filter.
+* `subdomain_name` (Required) The subdomain for the IP filter.
 * `type` (Required) Type of the IP filter. Valid types are: `BLACKLIST`, `WHITELIST` and `WHITELIST_REQUEST_LIMITER`.
 * `value` (Required) The IP you want to whitelist or blacklist. By using CIDR notation on IPv4 IPs, you are able to define whole subnets.
 * `enabled` (Optional) Enable or disable a filter. Default `true`.
