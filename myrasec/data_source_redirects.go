@@ -72,6 +72,10 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"comment": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"enabled": {
 							Type:     schema.TypeBool,
 							Computed: true,
@@ -123,6 +127,7 @@ func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData,
 			"subdomain_name": r.SubDomainName,
 			"source":         r.Source,
 			"destination":    r.Destination,
+			"comment":        r.Comment,
 		})
 	}
 

@@ -67,6 +67,12 @@ func resourceMyrasecRedirect() *schema.Resource {
 				Required:    true,
 				Description: "Target where redirect should point to.",
 			},
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "A comment to describe this redirect.",
+			},
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -171,6 +177,7 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	d.Set("subdomain_name", redirect.SubDomainName)
 	d.Set("source", redirect.Source)
 	d.Set("destination", redirect.Destination)
+	d.Set("comment", redirect.Comment)
 	d.Set("sort", redirect.Sort)
 	d.Set("matching_type", redirect.MatchingType)
 	d.Set("enabled", redirect.Enabled)
@@ -296,6 +303,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 		SubDomainName: d.Get("subdomain_name").(string),
 		Source:        d.Get("source").(string),
 		Destination:   d.Get("destination").(string),
+		Comment:       d.Get("comment").(string),
 		Sort:          d.Get("sort").(int),
 		Enabled:       d.Get("enabled").(bool),
 		ExpertMode:    d.Get("expert_mode").(bool),

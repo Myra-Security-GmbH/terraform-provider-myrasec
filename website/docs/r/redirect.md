@@ -29,6 +29,7 @@ The following arguments are supported:
 * `matching_type` (Required) Type to match the redirect. Valid types are: `exact`, `prefix` and `suffix`.
 * `source` (Required) Location to match against.
 * `destination` (Required) Target where redirect should point to.
+* `comment` (Optional) A comment to describe this redirect.
 * `type` (Required) Type of redirection. Valid types are: `permanent` and `redirect`.
 * `enabled` (Optional) Define wether this redirect is enabled or not. Default `true`.
 * `expert_mode` (Optional) Disable redirect loop detection. Default `false`.

@@ -35,6 +35,7 @@ The following arguments are supported:
 * `matching_type` Type to match the redirect.
 * `source` Location to match against.
 * `destination` Target where redirect should point to.
+* `comment` Comment to describe this redirect.
 * `type` Type of redirection.
 * `enabled` Define wether this redirect is enabled or not.
 * `sort` The ascending order for the redirect rules.
