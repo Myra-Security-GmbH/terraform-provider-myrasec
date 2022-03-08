@@ -46,12 +46,12 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 		return nil, err
 	}
 
-	var domainNames map[string]bool
+	domainNames := make(map[string]bool)
 	for _, s := range subdomains {
 		domainNames[s.DomainName] = true
 	}
 
-	for dn, _ := range domainNames {
+	for dn := range domainNames {
 		domains, err := client.ListDomains(map[string]string{"search": dn})
 		if err != nil {
 			return nil, err
@@ -64,7 +64,7 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 			}
 
 			for _, vh := range vhosts {
-				if vh.Label == subdomain {
+				if ensureTrailingDot(vh.Label) == ensureTrailingDot(subdomain) {
 					return &d, nil
 				}
 			}
@@ -91,4 +91,11 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 	}
 
 	return nil, fmt.Errorf("Unable to find domain for passed domain name")
+}
+
+//
+// ensureTrailingDot ...
+//
+func ensureTrailingDot(subdomain string) string {
+	return strings.TrimRight(subdomain, ".") + "."
 }
