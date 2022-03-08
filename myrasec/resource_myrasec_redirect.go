@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -123,7 +123,18 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	resp, err := client.CreateRedirect(redirect, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -215,7 +226,18 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	_, err = client.UpdateRedirect(redirect, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -257,7 +279,18 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	_, err = client.DeleteRedirect(redirect, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.DeleteRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -341,6 +374,16 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"pageSize": "50",
@@ -349,7 +392,7 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRedirects(subDomainName, params)
+		res, err := client.ListRedirects(domain.ID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

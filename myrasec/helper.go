@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 )
 
 //
@@ -33,4 +35,67 @@ func StringInSlice(needle string, haystack []string) bool {
 		}
 	}
 	return false
+}
+
+//
+// fetchDomainForSubdomainName ...
+//
+func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrasec.Domain, error) {
+	subdomains, err := client.ListAllSubdomains(map[string]string{"search": subdomain})
+	if err != nil {
+		return nil, err
+	}
+
+	domainNames := make(map[string]bool)
+	for _, s := range subdomains {
+		domainNames[s.DomainName] = true
+	}
+
+	for dn := range domainNames {
+		domains, err := client.ListDomains(map[string]string{"search": dn})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, d := range domains {
+			vhosts, err := client.ListAllSubdomainsForDomain(d.ID, map[string]string{"search": subdomain})
+			if err != nil {
+				return nil, err
+			}
+
+			for _, vh := range vhosts {
+				if ensureTrailingDot(vh.Label) == ensureTrailingDot(subdomain) {
+					return &d, nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("Unable to find domain for passed subdomain")
+}
+
+//
+// fetchDomain ...
+//
+func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
+
+	domains, err := client.ListDomains(map[string]string{"search": domain})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range domains {
+		if d.Name == domain {
+			return &d, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Unable to find domain for passed domain name")
+}
+
+//
+// ensureTrailingDot ...
+//
+func ensureTrailingDot(subdomain string) string {
+	return strings.TrimRight(subdomain, ".") + "."
 }

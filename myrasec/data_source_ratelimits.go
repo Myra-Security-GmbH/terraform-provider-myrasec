@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -96,13 +96,11 @@ func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData
 		f = &rateLimitFilter{}
 	}
 
-	params := map[string]string{
-		"subDomainName": f.subDomainName,
-	}
+	params := map[string]string{}
 	if len(f.search) > 0 {
 		params["search"] = f.search
 	}
-	limits, diags := listRateLimits(meta, "dns", params)
+	limits, diags := listRateLimits(meta, f.subDomainName, params)
 	if diags.HasError() {
 		return diags
 	}
@@ -170,18 +168,28 @@ func parseRateLimitFilter(d interface{}) *rateLimitFilter {
 //
 // listIPFilters ...
 //
-func listRateLimits(meta interface{}, rateLimitType string, params map[string]string) ([]myrasec.RateLimit, diag.Diagnostics) {
+func listRateLimits(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var limits []myrasec.RateLimit
 
 	client := meta.(*myrasec.API)
+
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return limits, diags
+	}
 
 	params["pageSize"] = "50"
 	page := 1
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRateLimits(rateLimitType, params)
+		res, err := client.ListRateLimits(domain.ID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -111,7 +111,18 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	resp, err := client.CreateRateLimit(ratelimit)
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -202,7 +213,18 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	_, err = client.UpdateRateLimit(ratelimit)
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -244,7 +266,18 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	_, err = client.DeleteRateLimit(ratelimit)
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.DeleteRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -325,6 +358,16 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"subDomainName": subDomainName,
@@ -334,7 +377,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRateLimits("dns", params)
+		res, err := client.ListRateLimits(domain.ID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

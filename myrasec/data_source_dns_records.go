@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -301,12 +301,22 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return records, diags
+	}
+
 	params["pageSize"] = "50"
 	page := 1
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListDNSRecords(domainName, params)
+		res, err := client.ListDNSRecords(domain.ID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
