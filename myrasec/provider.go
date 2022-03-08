@@ -34,7 +34,7 @@ func Provider() *schema.Provider {
 			"api_base_url": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_BASE_URL", "https://api.myracloud.com/%s/rapi/%s"),
+				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_BASE_URL", "https://apiv2.myracloud.com/%s"),
 				Description: "API Base URL. Keep the default value. No change required.",
 			},
 		},
