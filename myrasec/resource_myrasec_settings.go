@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Myra-Security-GmbH/myrasec-go"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -459,7 +459,18 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -499,7 +510,17 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	settings, err := client.ListSettings(subDomainName, nil)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	settings, err := client.ListSettings(domain.ID, subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -581,7 +602,18 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 	log.Printf("[INFO] Updating settings")
 
-	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -626,7 +658,18 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	_, err = client.UpdateSettings(settings, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

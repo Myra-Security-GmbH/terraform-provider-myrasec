@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -201,7 +201,19 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	resp, err := client.CreateDNSRecord(record, d.Get("domain_name").(string))
+
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateDNSRecord(record, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -312,7 +324,18 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	_, err = client.UpdateDNSRecord(record, d.Get("domain_name").(string))
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateDNSRecord(record, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -355,7 +378,18 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	_, err = client.DeleteDNSRecord(record, d.Get("domain_name").(string))
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.DeleteDNSRecord(record, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -492,6 +526,16 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"loadbalancer": "true",
@@ -501,7 +545,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListDNSRecords(domainName, params)
+		res, err := client.ListDNSRecords(domain.ID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

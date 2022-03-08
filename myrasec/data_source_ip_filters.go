@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -179,12 +179,22 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return filters, diags
+	}
+
 	params["pageSize"] = "50"
 	page := 1
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListIPFilters(subDomainName, params)
+		res, err := client.ListIPFilters(domain.ID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

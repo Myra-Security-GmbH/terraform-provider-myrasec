@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

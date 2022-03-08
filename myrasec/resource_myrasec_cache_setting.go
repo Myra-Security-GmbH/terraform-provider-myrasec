@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -117,7 +117,18 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	resp, err := client.CreateCacheSetting(setting, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -209,7 +220,18 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	_, err = client.UpdateCacheSetting(setting, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -252,7 +274,18 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	_, err = client.DeleteCacheSetting(setting, d.Get("subdomain_name").(string))
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.DeleteCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -334,6 +367,16 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"pageSize": "50",
@@ -342,7 +385,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListCacheSettings(subDomainName, params)
+		res, err := client.ListCacheSettings(domain.ID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

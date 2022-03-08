@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -243,7 +243,18 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	resp, err := client.CreateWAFRule(rule)
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateWAFRule(rule, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -387,7 +398,18 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	_, err = client.UpdateWAFRule(rule)
+	subDomainName := d.Get("subdomain_name").(string)
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateWAFRule(rule, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -621,6 +643,16 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"subDomainName": subDomainName,
@@ -630,7 +662,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWAFRules("domain", params)
+		res, err := client.ListWAFRules(domain.ID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

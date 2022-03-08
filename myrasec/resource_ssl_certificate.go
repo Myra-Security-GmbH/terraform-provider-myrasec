@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Myra-Security-GmbH/myrasec-go"
-	"github.com/Myra-Security-GmbH/myrasec-go/pkg/types"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -195,7 +195,18 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	resp, err := client.CreateSSLCertificate(cert, d.Get("domain_name").(string))
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	resp, err := client.CreateSSLCertificate(cert, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -307,7 +318,18 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	_, err = client.UpdateSSLCertificate(cert, d.Get("domain_name").(string))
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.UpdateSSLCertificate(cert, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -350,7 +372,18 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	_, err = client.DeleteSSLCertificate(cert, d.Get("domain_name").(string))
+	domainName := d.Get("domain_name").(string)
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return diags
+	}
+
+	_, err = client.DeleteSSLCertificate(cert, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -479,6 +512,16 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 
 	client := meta.(*myrasec.API)
 
+	domain, err := fetchDomain(client, domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   err.Error(),
+		})
+		return nil, diags
+	}
+
 	page := 1
 	params := map[string]string{
 		"pageSize": "50",
@@ -487,7 +530,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLCertificates(domainName, params)
+		res, err := client.ListSSLCertificates(domain.ID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

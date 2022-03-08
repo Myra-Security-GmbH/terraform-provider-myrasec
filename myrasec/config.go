@@ -5,7 +5,7 @@ import (
 
 	"github.com/Myra-Security-GmbH/terraform-provider-myrasec/version"
 
-	myrasec "github.com/Myra-Security-GmbH/myrasec-go"
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 
 	"github.com/hashicorp/go-multierror"
 )
