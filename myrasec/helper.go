@@ -41,6 +41,18 @@ func StringInSlice(needle string, haystack []string) bool {
 // fetchDomainForSubdomainName ...
 //
 func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrasec.Domain, error) {
+
+	if strings.HasPrefix(subdomain, "ALL-") {
+		parts := strings.Split(removeTrailingDot(subdomain), "ALL-")
+		if len(parts) == 2 {
+			id, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return nil, err
+			}
+			return fetchDomainById(client, id)
+		}
+	}
+
 	subdomains, err := client.ListAllSubdomains(map[string]string{"search": subdomain})
 	if err != nil {
 		return nil, err
@@ -99,8 +111,33 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 }
 
 //
+// fetchDomainById ...
+//
+func fetchDomainById(client *myrasec.API, id int) (*myrasec.Domain, error) {
+	domains, err := client.ListDomains(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range domains {
+		if d.ID == id {
+			return &d, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Unable to find domain for passed domain ID [%d]", id)
+}
+
+//
 // ensureTrailingDot ...
 //
 func ensureTrailingDot(subdomain string) string {
-	return strings.TrimRight(subdomain, ".") + "."
+	return removeTrailingDot(subdomain) + "."
+}
+
+//
+// removeTrailingDot ...
+//
+func removeTrailingDot(subdomain string) string {
+	return strings.TrimRight(subdomain, ".")
 }
