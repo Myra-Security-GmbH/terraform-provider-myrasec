@@ -43,6 +43,8 @@ github.com/Myra-Security-GmbH/myrasec-go/v2 v2.5.0 h1:x8P3yZdla6diJBrpy0gKJXxjhF
 github.com/Myra-Security-GmbH/myrasec-go/v2 v2.5.0/go.mod h1:jH1ddU9a/QdfcrJ6QEEn4/K37GrZWLk5inX1Cte6Q+I=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036 h1:jHbXQ2rGSiuKhYDro1/xQnX4ajVqrxLlCBXuFyrslOY=
 github.com/Myra-Security-GmbH/signature v0.0.0-20210212094602-405a72309036/go.mod h1:2BZfINKNAlgIONp1zeT56ZAxDxjl4qOHz+JMdmYQuYE=
+github.com/Myra-Security-GmbH/signature v1.0.0 h1:u46nIxnffLLb8pCe6ic2w7OmSSEJk4warn3W4Vp2GjQ=
+github.com/Myra-Security-GmbH/signature v1.0.0/go.mod h1:zgyy5MGBCezqxVOjrG3THQJqsIfJ04LWtQv3Q4Ug2+Y=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=
@@ -177,6 +179,8 @@ github.com/hashicorp/go-hclog v0.16.1/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39
 github.com/hashicorp/go-hclog v1.0.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-hclog v1.1.0 h1:QsGcniKx5/LuX2eYoeL+Np3UKYPNaN7YKpTh29h8rbw=
 github.com/hashicorp/go-hclog v1.1.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
+github.com/hashicorp/go-hclog v1.2.0 h1:La19f8d7WIlm4ogzNHB0JGqs5AUDAZ2UfCY4sJXcJdM=
+github.com/hashicorp/go-hclog v1.2.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHhCYQXV3UM06sGGrk=
 github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+lD48awMYo=
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
@@ -579,6 +583,8 @@ google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc h1:fb/ViRpv3ln/Lvb
 google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc/go.mod h1:kGP+zUP2Ddo0ayMi4YuN7C3WZyJvGLZRh8Z5wnAqvEI=
 google.golang.org/genproto v0.0.0-20220307174427-659dce7fcb03 h1:roRqEkPqsCOa0ViO0CuSwDIVdttRbBMj8oU/2E7pI08=
 google.golang.org/genproto v0.0.0-20220307174427-659dce7fcb03/go.mod h1:kGP+zUP2Ddo0ayMi4YuN7C3WZyJvGLZRh8Z5wnAqvEI=
+google.golang.org/genproto v0.0.0-20220308174144-ae0e22291548 h1:J5ZNG1QIdstOl8aaUoFoQJfp04FKTsFV+jwkBHEchqs=
+google.golang.org/genproto v0.0.0-20220308174144-ae0e22291548/go.mod h1:kGP+zUP2Ddo0ayMi4YuN7C3WZyJvGLZRh8Z5wnAqvEI=
 google.golang.org/grpc v1.8.0/go.mod h1:yo6s7OP7yaDglbqo1J04qKzAhqBH6lvTonzMVmEdcZw=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.20.1/go.mod h1:10oTOabMzJvdu6/UiuZezV6QK5dSlG84ov/aaiqXj38=
