@@ -90,7 +90,12 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Unable to find domain for passed domain name")
+	d, err := fetchDomainForSubdomainName(client, domain)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to find domain for passed domain name [%s]", err.Error())
+	}
+
+	return d, nil
 }
 
 //
