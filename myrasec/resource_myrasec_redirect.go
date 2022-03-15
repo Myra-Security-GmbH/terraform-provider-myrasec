@@ -384,35 +384,18 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 		return nil, diags
 	}
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	r, err := client.GetRedirect(domain.ID, subDomainName, redirectID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading redirect",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRedirects(domain.ID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading redirects",
-				Detail:   err.Error(),
-			})
-			return nil, diags
-		}
-
-		for _, r := range res {
-			if r.ID == redirectID {
-				return &r, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if r != nil {
+		return r, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

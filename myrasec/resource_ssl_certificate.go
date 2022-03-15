@@ -522,35 +522,18 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 		return nil, diags
 	}
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	c, err := client.GetSSLCertificate(domain.ID, certID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading SSL certificate",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLCertificates(domain.ID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading SSL certificates",
-				Detail:   err.Error(),
-			})
-			return nil, diags
-		}
-
-		for _, c := range res {
-			if c.ID == certID {
-				return &c, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if c != nil {
+		return c, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

@@ -285,35 +285,17 @@ func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnosti
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	d, err := client.GetDomain(domainID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading domain",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListDomains(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading domains",
-				Detail:   err.Error(),
-			})
-			return nil, diags
-		}
-
-		for _, d := range res {
-			if d.ID == domainID {
-				return &d, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if d != nil {
+		return d, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

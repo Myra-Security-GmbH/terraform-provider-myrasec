@@ -376,35 +376,18 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 		return nil, diags
 	}
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	f, err := client.GetIPFilter(domain.ID, subDomainName, filterID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading IP filter",
+			Detail:   err.Error(),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListIPFilters(domain.ID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading IP filters",
-				Detail:   err.Error(),
-			})
-			return nil, diags
-		}
-
-		for _, f := range res {
-			if f.ID == filterID {
-				return &f, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if f != nil {
+		return f, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
