@@ -255,6 +255,7 @@ func parseSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 func listSSLCertificates(meta interface{}, domainName string, params map[string]string) ([]myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var certificates []myrasec.SSLCertificate
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -268,7 +269,7 @@ func listSSLCertificates(meta interface{}, domainName string, params map[string]
 		return certificates, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -283,7 +284,7 @@ func listSSLCertificates(meta interface{}, domainName string, params map[string]
 			return certificates, diags
 		}
 		certificates = append(certificates, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

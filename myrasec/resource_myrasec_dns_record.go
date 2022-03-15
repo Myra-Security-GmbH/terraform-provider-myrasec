@@ -537,9 +537,10 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
 		"loadbalancer": "true",
-		"pageSize":     "50",
+		"pageSize":     strconv.Itoa(pageSize),
 		"page":         strconv.Itoa(page),
 	}
 
@@ -561,7 +562,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

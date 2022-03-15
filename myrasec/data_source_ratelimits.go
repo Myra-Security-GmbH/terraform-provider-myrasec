@@ -171,6 +171,7 @@ func parseRateLimitFilter(d interface{}) *rateLimitFilter {
 func listRateLimits(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var limits []myrasec.RateLimit
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -184,7 +185,7 @@ func listRateLimits(meta interface{}, subDomainName string, params map[string]st
 		return limits, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -199,7 +200,7 @@ func listRateLimits(meta interface{}, subDomainName string, params map[string]st
 			return limits, diags
 		}
 		limits = append(limits, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

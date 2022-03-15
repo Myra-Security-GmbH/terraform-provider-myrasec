@@ -654,9 +654,10 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
 		"subDomain": subDomainName,
-		"pageSize":  "50",
+		"pageSize":  strconv.Itoa(pageSize),
 		"page":      strconv.Itoa(page),
 	}
 
@@ -678,7 +679,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

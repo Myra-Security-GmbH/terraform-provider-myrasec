@@ -378,8 +378,9 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
-		"pageSize": "50",
+		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
 	}
 
@@ -401,7 +402,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

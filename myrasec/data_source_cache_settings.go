@@ -177,6 +177,7 @@ func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
 func listCacheSettings(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var settings []myrasec.CacheSetting
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -190,7 +191,7 @@ func listCacheSettings(meta interface{}, subDomainName string, params map[string
 		return settings, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -205,7 +206,7 @@ func listCacheSettings(meta interface{}, subDomainName string, params map[string
 			return settings, diags
 		}
 		settings = append(settings, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

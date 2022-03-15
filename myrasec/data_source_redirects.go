@@ -181,6 +181,7 @@ func parseRedirectFilter(d interface{}) *redirectFilter {
 func listRedirects(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var redirects []myrasec.Redirect
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -194,7 +195,7 @@ func listRedirects(meta interface{}, subDomainName string, params map[string]str
 		return redirects, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -209,7 +210,7 @@ func listRedirects(meta interface{}, subDomainName string, params map[string]str
 			return redirects, diags
 		}
 		redirects = append(redirects, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

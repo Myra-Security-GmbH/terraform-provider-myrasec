@@ -286,8 +286,9 @@ func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnosti
 	client := meta.(*myrasec.API)
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
-		"pageSize": "50",
+		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
 	}
 
@@ -309,7 +310,7 @@ func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnosti
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

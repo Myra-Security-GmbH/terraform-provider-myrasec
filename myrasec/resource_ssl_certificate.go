@@ -523,8 +523,9 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
-		"pageSize": "50",
+		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
 	}
 
@@ -546,7 +547,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

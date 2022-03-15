@@ -198,10 +198,11 @@ func parseDomainFilter(d interface{}) *domainFilter {
 func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var domains []myrasec.Domain
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -216,7 +217,7 @@ func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, 
 			return domains, diags
 		}
 		domains = append(domains, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

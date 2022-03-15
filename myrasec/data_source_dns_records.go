@@ -298,6 +298,7 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 func listDnsRecords(meta interface{}, domainName string, params map[string]string) ([]myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var records []myrasec.DNSRecord
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -311,7 +312,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 		return records, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -326,7 +327,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 			return records, diags
 		}
 		records = append(records, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

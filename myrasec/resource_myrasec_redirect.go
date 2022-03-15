@@ -385,8 +385,9 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
-		"pageSize": "50",
+		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
 	}
 
@@ -408,7 +409,7 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

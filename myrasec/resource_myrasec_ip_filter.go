@@ -377,8 +377,9 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
-		"pageSize": "50",
+		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
 	}
 
@@ -400,7 +401,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

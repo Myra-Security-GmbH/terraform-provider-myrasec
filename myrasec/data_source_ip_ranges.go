@@ -175,10 +175,11 @@ func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var ranges []myrasec.IPRange
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -193,7 +194,7 @@ func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange
 			return ranges, diags
 		}
 		ranges = append(ranges, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

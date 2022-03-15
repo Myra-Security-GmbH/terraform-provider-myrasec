@@ -176,6 +176,7 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 func listIPFilters(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var filters []myrasec.IPFilter
+	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -189,7 +190,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 		return filters, diags
 	}
 
-	params["pageSize"] = "50"
+	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
@@ -204,7 +205,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 			return filters, diags
 		}
 		filters = append(filters, res...)
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++

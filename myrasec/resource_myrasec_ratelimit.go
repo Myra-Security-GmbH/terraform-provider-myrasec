@@ -369,9 +369,10 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 	}
 
 	page := 1
+	pageSize := 250
 	params := map[string]string{
 		"subDomainName": subDomainName,
-		"pageSize":      "50",
+		"pageSize":      strconv.Itoa(pageSize),
 		"page":          strconv.Itoa(page),
 	}
 
@@ -393,7 +394,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 			}
 		}
 
-		if len(res) < 50 {
+		if len(res) < pageSize {
 			break
 		}
 		page++
