@@ -93,6 +93,10 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateDomain(domain)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -156,6 +160,10 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.UpdateDomain(domain)
 	if err != nil {

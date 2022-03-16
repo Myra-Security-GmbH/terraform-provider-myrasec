@@ -122,6 +122,10 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -223,6 +227,10 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {

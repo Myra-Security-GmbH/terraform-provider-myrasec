@@ -128,6 +128,10 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -230,6 +234,10 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {

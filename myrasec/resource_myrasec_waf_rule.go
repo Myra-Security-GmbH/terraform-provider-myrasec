@@ -254,6 +254,10 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateWAFRule(rule, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -408,6 +412,10 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateWAFRule(rule, domain.ID, subDomainName)
 	if err != nil {

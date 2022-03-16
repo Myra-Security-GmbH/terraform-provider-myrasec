@@ -134,6 +134,10 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -236,6 +240,10 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {

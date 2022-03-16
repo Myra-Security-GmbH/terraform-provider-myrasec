@@ -206,6 +206,10 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateSSLCertificate(cert, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -328,6 +332,10 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateSSLCertificate(cert, domain.ID)
 	if err != nil {

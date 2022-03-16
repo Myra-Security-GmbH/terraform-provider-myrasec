@@ -123,6 +123,10 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
+
 	resp, err := client.CreateIPFilter(filter, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -226,6 +230,10 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 		})
 		return diags
 	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(200 * time.Millisecond)
 
 	_, err = client.UpdateIPFilter(filter, domain.ID, subDomainName)
 	if err != nil {
