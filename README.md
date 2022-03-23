@@ -7,8 +7,8 @@
 
 ## Documentation
 
+- [How-to guide](https://github.com/Myra-Security-GmbH/terraform-provider-documentation)
 - [Official documentation](https://registry.terraform.io/providers/Myra-Security-GmbH/myrasec/latest/docs)
-
 
 ## Requirements
 -   [Terraform](https://www.terraform.io/downloads.html)
