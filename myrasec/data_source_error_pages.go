@@ -12,9 +12,9 @@ import (
 )
 
 //
-// dataSourceMyrasecErrorPage
+// dataSourceMyrasecErrorPages
 //
-func dataSourceMyrasecErrorPage() *schema.Resource {
+func dataSourceMyrasecErrorPages() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecErrorPageRead,
 		Schema: map[string]*schema.Schema{
