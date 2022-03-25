@@ -2,10 +2,8 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 
 go 1.13
 
-replace github.com/Myra-Security-GmbH/myrasec-go/v2 => /home/tim/Projects/myra/myrasec-go
-
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.7.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.8.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -20,6 +18,6 @@ require (
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220322021311-435b647f9ef2 // indirect
+	google.golang.org/genproto v0.0.0-20220324131243-acbaeb5b85eb // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
