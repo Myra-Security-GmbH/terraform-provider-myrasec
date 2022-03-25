@@ -83,7 +83,7 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 		}
 	}
 
-	return nil, fmt.Errorf("Unable to find domain for passed subdomain")
+	return nil, fmt.Errorf("unable to find domain for passed subdomain")
 }
 
 //
@@ -104,7 +104,7 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 
 	d, err := fetchDomainForSubdomainName(client, domain)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to find domain for passed domain name [%s]", err.Error())
+		return nil, fmt.Errorf("unable to find domain for passed domain name [%s]", err.Error())
 	}
 
 	return d, nil
@@ -125,7 +125,7 @@ func fetchDomainById(client *myrasec.API, id int) (*myrasec.Domain, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Unable to find domain for passed domain ID [%d]", id)
+	return nil, fmt.Errorf("unable to find domain for passed domain ID [%d]", id)
 }
 
 //

@@ -9,7 +9,6 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 //
@@ -50,15 +49,14 @@ func dataSourceMyrasecErrorPage() *schema.Resource {
 							Computed: true,
 						},
 						"error_code": {
-							Type:         schema.TypeInt,
-							Required:     true,
-							ValidateFunc: validation.IntInSlice([]int{400, 405, 429, 500, 502, 503, 504, 9999}),
+							Type:     schema.TypeInt,
+							Computed: true,
 						},
 						"content": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"sub_domain_name": {
+						"subdomain_name": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -104,12 +102,12 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 		}
 
 		data := map[string]interface{}{
-			"id":              ep.ID,
-			"created":         created,
-			"modified":        modified,
-			"error_code":      ep.ErrorCode,
-			"content":         ep.Content,
-			"sub_domain_name": ep.SubDomainName,
+			"id":             ep.ID,
+			"created":        created,
+			"modified":       modified,
+			"error_code":     ep.ErrorCode,
+			"content":        ep.Content,
+			"subdomain_name": ep.SubDomainName,
 		}
 
 		errorPageData = append(errorPageData, data)

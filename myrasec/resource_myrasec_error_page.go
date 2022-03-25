@@ -12,6 +12,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 //
@@ -47,9 +48,10 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"error_code": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "Error code of the error page.",
+				Type:         schema.TypeInt,
+				Required:     true,
+				Description:  "Error code of the error page.",
+				ValidateFunc: validation.IntInSlice([]int{400, 405, 429, 500, 502, 503, 504, 9999}),
 			},
 			"content": {
 				Type:        schema.TypeString,
@@ -251,14 +253,14 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	subDomainName, pageId, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing error page ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing error page ID: [%s]", err.Error())
 	}
 
 	errorCode := d.Get("error_code").(int)
 	errorPage, diags := findErrorPage(subDomainName, errorCode, meta)
 
 	if diags.HasError() || errorPage == nil {
-		return nil, fmt.Errorf("Unable to find error page for subdomain [%s] with ID = [%d]", subDomainName, pageId)
+		return nil, fmt.Errorf("unable to find error page for subdomain [%s] with ID = [%d]", subDomainName, pageId)
 	}
 
 	d.SetId(strconv.Itoa(pageId))

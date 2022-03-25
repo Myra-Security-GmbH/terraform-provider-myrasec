@@ -312,12 +312,12 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 
 	subDomainName, settingID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing cache setting ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing cache setting ID: [%s]", err.Error())
 	}
 
 	setting, diags := findCacheSetting(settingID, meta, subDomainName)
 	if diags.HasError() || setting == nil {
-		return nil, fmt.Errorf("Unable to find cache setting for subdomain [%s] with ID = [%d]", subDomainName, settingID)
+		return nil, fmt.Errorf("unable to find cache setting for subdomain [%s] with ID = [%d]", subDomainName, settingID)
 	}
 
 	d.SetId(strconv.Itoa(settingID))

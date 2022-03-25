@@ -233,7 +233,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 
 	domain, diags := findDomain(domainID, meta)
 	if diags.HasError() || domain == nil {
-		return nil, fmt.Errorf("Unable to find domain with ID = [%d]", domainID)
+		return nil, fmt.Errorf("unable to find domain with ID = [%d]", domainID)
 	}
 
 	d.SetId(strconv.Itoa(domainID))
