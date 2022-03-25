@@ -109,7 +109,6 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
 	return resourceMyrasecErrorPageRead(ctx, d, meta)
 }
 
@@ -190,7 +189,6 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
 	return resourceMyrasecErrorPageRead(ctx, d, meta)
 }
 
