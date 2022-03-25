@@ -478,12 +478,12 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 
 	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing WAF rule ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing WAF rule ID: [%s]", err.Error())
 	}
 
 	rule, diags := findWAFRule(ruleID, meta, subDomainName)
 	if diags.HasError() || rule == nil {
-		return nil, fmt.Errorf("Unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
+		return nil, fmt.Errorf("unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
 	}
 
 	d.SetId(strconv.Itoa(ruleID))

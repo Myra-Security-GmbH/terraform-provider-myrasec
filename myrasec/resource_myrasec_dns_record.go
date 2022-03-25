@@ -416,12 +416,12 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 
 	domainName, recordID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing DNS record ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing DNS record ID: [%s]", err.Error())
 	}
 
 	record, diags := findDNSRecord(recordID, meta, domainName)
 	if diags.HasError() || record == nil {
-		return nil, fmt.Errorf("Unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
+		return nil, fmt.Errorf("unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
 	}
 
 	d.SetId(strconv.Itoa(recordID))

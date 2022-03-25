@@ -304,12 +304,12 @@ func resourceMyrasecRateLimitImport(ctx context.Context, d *schema.ResourceData,
 
 	subDomainName, rateLimitID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing rate limit ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing rate limit ID: [%s]", err.Error())
 	}
 
 	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
 	if diags.HasError() || rateLimit == nil {
-		return nil, fmt.Errorf("Unable to find rate limit for subdomain [%s] with ID = [%d]", subDomainName, rateLimitID)
+		return nil, fmt.Errorf("unable to find rate limit for subdomain [%s] with ID = [%d]", subDomainName, rateLimitID)
 	}
 
 	d.SetId(strconv.Itoa(rateLimitID))

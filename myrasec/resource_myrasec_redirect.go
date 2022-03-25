@@ -317,12 +317,12 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 
 	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing redirect ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing redirect ID: [%s]", err.Error())
 	}
 
 	redirect, diags := findRedirect(redirectID, meta, subDomainName)
 	if diags.HasError() || redirect == nil {
-		return nil, fmt.Errorf("Unable to find redirect for subdomain [%s] with ID = [%d]", subDomainName, redirectID)
+		return nil, fmt.Errorf("unable to find redirect for subdomain [%s] with ID = [%d]", subDomainName, redirectID)
 	}
 
 	d.SetId(strconv.Itoa(redirectID))

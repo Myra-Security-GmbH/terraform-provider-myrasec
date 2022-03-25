@@ -308,12 +308,12 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 
 	subDomainName, filterID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing IP filter ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing IP filter ID: [%s]", err.Error())
 	}
 
 	filter, diags := findIPFilter(filterID, meta, subDomainName)
 	if diags.HasError() || filter == nil {
-		return nil, fmt.Errorf("Unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
+		return nil, fmt.Errorf("unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
 	}
 
 	d.SetId(strconv.Itoa(filterID))

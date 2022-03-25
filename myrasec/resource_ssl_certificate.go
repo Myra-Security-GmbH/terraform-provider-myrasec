@@ -272,23 +272,24 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
 
-	var interData []map[string]interface{}
-	var interItem map[string]interface{}
+	/*
+		var interData []map[string]interface{}
+		var interItem map[string]interface{}
 
-	for _, inter := range cert.Intermediates {
-		interItem = make(map[string]interface{})
+		for _, inter := range cert.Intermediates {
+			interItem = make(map[string]interface{})
 
-		interItem["subject"] = inter.Subject
-		interItem["algorithm"] = inter.Algorithm
-		interItem["fingerprint"] = inter.Fingerprint
-		interItem["serial_number"] = inter.SerialNumber
-		interItem["issuer"] = inter.Issuer
+			interItem["subject"] = inter.Subject
+			interItem["algorithm"] = inter.Algorithm
+			interItem["fingerprint"] = inter.Fingerprint
+			interItem["serial_number"] = inter.SerialNumber
+			interItem["issuer"] = inter.Issuer
 
-		interData = append(interData, interItem)
-	}
+			interData = append(interData, interItem)
+		}
 
-	//d.Set("intermediate", interData)
-
+		//d.Set("intermediate", interData)
+	*/
 	return diags
 }
 
@@ -409,12 +410,12 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	domainName, certID, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing SSL certificate ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing SSL certificate ID: [%s]", err.Error())
 	}
 
 	cert, diags := findSSLCertificate(certID, meta, domainName)
 	if diags.HasError() || cert == nil {
-		return nil, fmt.Errorf("Unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
+		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
 	}
 
 	d.SetId(strconv.Itoa(certID))
