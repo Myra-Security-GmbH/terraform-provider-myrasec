@@ -24,6 +24,12 @@ resource "myrasec_dns_record" "www" {
 }
 ```
 
+## Import example
+Importing an existing DNS record requires the domain name and the ID of the DNS record you want to import.
+```hcl
+terraform import myrasec_dns_record.www example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

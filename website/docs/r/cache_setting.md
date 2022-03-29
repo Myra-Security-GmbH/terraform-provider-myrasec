@@ -18,6 +18,12 @@ resource "myrasec_cache_setting" "index" {
 }
 ```
 
+## Import example
+Importing an existing cache setting requires the subdomain and the ID of the cache setting you want to import.
+```hcl
+terraform import myrasec_cache_setting.index www.example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

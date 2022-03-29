@@ -12,6 +12,12 @@ resource "myrasec_domain" "example" {
 }
 ```
 
+## Import example
+Importing an existing domain requires the domain name of the domain you want to import.
+```hcl
+terraform import myrasec_domain.example example.com
+```
+
 ## Argument Reference
 
 The following arguments are supported:

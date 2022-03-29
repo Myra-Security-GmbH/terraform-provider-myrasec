@@ -17,6 +17,12 @@ resource "myrasec_ip_filter" "filter" {
 }
 ```
 
+## Import example
+Importing an existing IP filter requires the subdomain and the ID of the IP filter you want to import.
+```hcl
+terraform import myrasec_ip_filter.filter www.example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

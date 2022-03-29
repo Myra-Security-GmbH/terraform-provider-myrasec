@@ -18,6 +18,12 @@ resource "myrasec_ratelimit" "ratelimit" {
 }
 ```
 
+## Import example
+Importing an existing rate limit requires the subdomain and the ID of the rate limit setting you want to import.
+```hcl
+terraform import myrasec_ratelimit.ratelimit www.example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

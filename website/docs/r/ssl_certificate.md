@@ -60,6 +60,12 @@ EOF
 }
 ```
 
+## Import example
+Importing an existing SSL certificate requires the domain name and the ID of the certificate you want to import.
+```hcl
+terraform import myrasec_ssl_certificate.cert example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

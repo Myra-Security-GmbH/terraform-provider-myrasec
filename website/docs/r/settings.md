@@ -21,6 +21,12 @@ resource "myrasec_settings" "settings" {
 }
 ```
 
+## Import example
+Importing existing settings requires the subdomain for the settings you want to import.
+```hcl
+terraform import myrasec_settings.settings www.example.com
+```
+
 ## Argument Reference
 
 The following arguments are supported:

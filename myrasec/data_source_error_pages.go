@@ -12,7 +12,7 @@ import (
 )
 
 //
-// dataSourceMyrasecErrorPages
+// dataSourceMyrasecErrorPages ...
 //
 func dataSourceMyrasecErrorPages() *schema.Resource {
 	return &schema.Resource{
@@ -72,7 +72,7 @@ func dataSourceMyrasecErrorPages() *schema.Resource {
 }
 
 //
-// dataSourceMyrasecErrorPageRead
+// dataSourceMyrasecErrorPageRead ...
 //
 func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareErrorPageFilter(d.Get("filter"))
@@ -152,7 +152,7 @@ func parseErrorPageFilter(d interface{}) *errorPageFilter {
 }
 
 //
-// listErrorPages
+// listErrorPages ...
 //
 func listErrorPages(meta interface{}, domainName string, params map[string]string) ([]myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
@@ -195,7 +195,7 @@ func listErrorPages(meta interface{}, domainName string, params map[string]strin
 }
 
 //
-// errorPageFilter
+// errorPageFilter ...
 //
 type errorPageFilter struct {
 	domainName string

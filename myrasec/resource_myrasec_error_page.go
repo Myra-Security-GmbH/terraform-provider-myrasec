@@ -16,7 +16,7 @@ import (
 )
 
 //
-// resourceMyrasecErrorPage
+// resourceMyrasecErrorPage ...
 //
 func resourceMyrasecErrorPage() *schema.Resource {
 	return &schema.Resource{
@@ -67,7 +67,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 }
 
 //
-// resourceMyrasecErrorPageCreate
+// resourceMyrasecErrorPageCreate ...
 //
 func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
@@ -113,7 +113,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 }
 
 //
-// resourceMyrasecErrorPageRead
+// resourceMyrasecErrorPageRead ...
 //
 func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
@@ -147,7 +147,7 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 //
-// resourceMyrasecErrorPageUpdate
+// resourceMyrasecErrorPageUpdate ...
 //
 func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
@@ -193,7 +193,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 }
 
 //
-// resourceMyrasecErrorPageDelete
+// resourceMyrasecErrorPageDelete ...
 //
 func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
@@ -246,22 +246,25 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 //
-// resourceMyrasecErrorPageImport
+// resourceMyrasecErrorPageImport ...
 //
 func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	subDomainName, pageId, err := parseResourceServiceID(d.Id())
+	subDomainName, errorCode, err := parseResourceServiceID(d.Id())
 	if err != nil {
-		return nil, fmt.Errorf("error parsing error page ID: [%s]", err.Error())
+		return nil, fmt.Errorf("error parsing error code: [%s]", err.Error())
 	}
 
-	errorCode := d.Get("error_code").(int)
+	if !IntInSlice(errorCode, []int{400, 405, 429, 500, 502, 503, 504, 9999}) {
+		return nil, fmt.Errorf("passed error code [%d] not supported for import", errorCode)
+	}
+
 	errorPage, diags := findErrorPage(subDomainName, errorCode, meta)
 
 	if diags.HasError() || errorPage == nil {
-		return nil, fmt.Errorf("unable to find error page for subdomain [%s] with ID = [%d]", subDomainName, pageId)
+		return nil, fmt.Errorf("unable to find error page [%d] for subdomain [%s]", errorCode, subDomainName)
 	}
 
-	d.SetId(strconv.Itoa(pageId))
+	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
 	d.Set("content", errorPage.Content)
 	d.Set("subdomain_name", errorPage.SubDomainName)
@@ -274,7 +277,7 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 }
 
 //
-// buildErrorPage
+// buildErrorPage ...
 //
 func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPage, error) {
 
@@ -300,7 +303,7 @@ func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPag
 }
 
 //
-// findErrorPage
+// findErrorPage ...
 //
 func findErrorPage(subDomainName string, errorCode int, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
@@ -322,10 +325,11 @@ func findErrorPage(subDomainName string, errorCode int, meta interface{}) (*myra
 	params := map[string]string{
 		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
+		"search":   removeTrailingDot(subDomainName),
 	}
 	for {
 		params["page"] = strconv.Itoa(page)
-		domains, err := client.ListErrorPages(domain.ID, params)
+		pages, err := client.ListErrorPages(domain.ID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -335,12 +339,12 @@ func findErrorPage(subDomainName string, errorCode int, meta interface{}) (*myra
 			return nil, diags
 		}
 
-		for _, ep := range domains {
-			if ep.ErrorCode == errorCode && ep.SubDomainName == subDomainName {
+		for _, ep := range pages {
+			if ep.ErrorCode == errorCode && ensureTrailingDot(ep.SubDomainName) == ensureTrailingDot(subDomainName) {
 				return &ep, diags
 			}
 		}
-		if len(domains) < pageSize {
+		if len(pages) < pageSize {
 			break
 		}
 		page++

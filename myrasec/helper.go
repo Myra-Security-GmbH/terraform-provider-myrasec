@@ -38,6 +38,18 @@ func StringInSlice(needle string, haystack []string) bool {
 }
 
 //
+// IntInSlice checks if the haystack []int slice contains the passed needle int
+//
+func IntInSlice(needle int, haystack []int) bool {
+	for _, a := range haystack {
+		if a == needle {
+			return true
+		}
+	}
+	return false
+}
+
+//
 // fetchDomainForSubdomainName ...
 //
 func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrasec.Domain, error) {

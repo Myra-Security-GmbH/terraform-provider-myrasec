@@ -18,6 +18,12 @@ resource "myrasec_redirect" "redirect" {
 }
 ```
 
+## Import example
+Importing an existing redirect requires the subdomain and the ID of the redirect you want to import.
+```hcl
+terraform import myrasec_redirect.redirect www.example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:

@@ -30,6 +30,12 @@ resource "myrasec_waf_rule" "waf" {
 }
 ```
 
+## Import example
+Importing an existing WAF rule requires the subdomain and the ID of the WAF rule you want to import.
+```hcl
+terraform import myrasec_waf_rule.waf www.example.com:0000000
+```
+
 ## Argument Reference
 
 The following arguments are supported:
