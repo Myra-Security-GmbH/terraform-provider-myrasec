@@ -286,7 +286,10 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 
 			return f
 		}
-		f.regex = regex
+
+		if len(regex.String()) > 0 {
+			f.regex = regex
+		}
 	}
 
 	return f

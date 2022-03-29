@@ -175,7 +175,7 @@ func parseDomainFilter(d interface{}) *domainFilter {
 
 	name, ok := m["name"]
 	if ok {
-		f.name = name.(string)
+		f.name = removeTrailingDot(name.(string))
 	}
 
 	match, ok := m["match"]
@@ -186,7 +186,10 @@ func parseDomainFilter(d interface{}) *domainFilter {
 
 			return f
 		}
-		f.regex = regex
+
+		if len(regex.String()) > 0 {
+			f.regex = regex
+		}
 	}
 
 	return f
