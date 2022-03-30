@@ -125,7 +125,6 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"upstream_options": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"upstream_id": {
@@ -156,9 +155,9 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 							Description: "Marks the server as unavailable.",
 						},
 						"fail_timeout": {
-							Type:        schema.TypeInt,
+							Type:        schema.TypeString,
 							Optional:    true,
-							Default:     1,
+							Default:     "1",
 							Description: "Double usage: 1. Time period in which the max_fails must occur until the upstream is deactivated. 2. Time period the upstream is deactivated until it is reactivated. The time during which the specified number of unsuccessful attempts \"Max fails\" to communicate with the server should happen to consider the server unavailable. Also the period of time the server will be considered unavailable. Default is 10 seconds.",
 						},
 						"max_fails": {
@@ -284,15 +283,17 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	d.Set("domain_name", domainName)
 
 	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
-		d.Set("upstream_options", map[string]interface{}{
-			"upstream_id":  record.UpstreamOptions.ID,
-			"created":      record.UpstreamOptions.Created.Format(time.RFC3339),
-			"modified":     record.UpstreamOptions.Modified.Format(time.RFC3339),
-			"backup":       record.UpstreamOptions.Backup,
-			"down":         record.UpstreamOptions.Down,
-			"fail_timeout": record.UpstreamOptions.FailTimeout,
-			"max_fails":    record.UpstreamOptions.MaxFails,
-			"weight":       record.UpstreamOptions.Weight,
+		d.Set("upstream_options", []map[string]interface{}{
+			{
+				"upstream_id":  record.UpstreamOptions.ID,
+				"created":      record.UpstreamOptions.Created.Format(time.RFC3339),
+				"modified":     record.UpstreamOptions.Modified.Format(time.RFC3339),
+				"backup":       record.UpstreamOptions.Backup,
+				"down":         record.UpstreamOptions.Down,
+				"fail_timeout": record.UpstreamOptions.FailTimeout,
+				"max_fails":    record.UpstreamOptions.MaxFails,
+				"weight":       record.UpstreamOptions.Weight,
+			},
 		})
 	}
 	return diags
@@ -515,7 +516,7 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 		case "down":
 			options.Down = val.(bool)
 		case "fail_timeout":
-			options.FailTimeout = val.(int)
+			options.FailTimeout = val.(string)
 		case "max_fails":
 			options.MaxFails = val.(int)
 		case "weight":

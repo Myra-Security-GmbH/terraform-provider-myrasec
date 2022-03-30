@@ -127,7 +127,7 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 										Computed: true,
 									},
 									"fail_timeout": {
-										Type:     schema.TypeInt,
+										Type:     schema.TypeString,
 										Computed: true,
 									},
 									"max_fails": {
