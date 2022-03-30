@@ -17,11 +17,14 @@ resource "myrasec_error_page" "500" {
 ```
 
 ## Import example
-Importing an existing error page requires the subdomain and the error code you want to import.
+Importing an existing error page requires the subdomain and the error code or the ID of the error page you want to import.
 ```hcl
 terraform import myrasec_error_page.500 www.example.com:500
 ```
-
+or using the ID of the existing error page (0000000)
+```hcl
+terraform import myrasec_error_page.500 www.example.com:0000000
+```
 ## Argument Reference
 
 The following arguments are supported:
