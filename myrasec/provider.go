@@ -45,6 +45,7 @@ func Provider() *schema.Provider {
 			"myrasec_redirects":        dataSourceMyrasecRedirects(),
 			"myrasec_ip_filters":       dataSourceMyrasecIPFilters(),
 			"myrasec_ratelimits":       dataSourceMyrasecRateLimits(),
+			"myrasec_waf_rules":        dataSourceMyrasecWAFRules(),
 			"myrasec_waf_conditions":   dataSourceMyrasecWAFConditions(),
 			"myrasec_waf_actions":      dataSourceMyrasecWAFActions(),
 			"myrasec_ip_ranges":        dataSourceMyrasecIPRanges(),
