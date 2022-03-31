@@ -42,8 +42,8 @@ The following arguments are supported:
 * `rule_id` (Computed) ID of the rule.
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
-* `rule_type` (Computed) The type of the rule
-* `subdomain_name` (Required) The Subdomain for the rule.
+* `rule_type` (Computed) The type of the rule.
+* `subdomain_name` (Required) The subdomain for the rule.
 * `name` (Required) The rule name identifies each rule.
 * `direction` (Required) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` (Optional) Your notes on this rule. Default `""`.

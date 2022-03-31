@@ -33,7 +33,11 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 				StateFunc: func(i interface{}) string {
-					return strings.ToLower(i.(string))
+					name := i.(string)
+					if isGeneralDomainName(name) {
+						return name
+					}
+					return strings.ToLower(name)
 				},
 				Description: "The Subdomain for the cache setting.",
 			},

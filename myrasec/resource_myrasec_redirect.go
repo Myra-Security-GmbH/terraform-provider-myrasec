@@ -53,7 +53,11 @@ func resourceMyrasecRedirect() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				StateFunc: func(i interface{}) string {
-					return strings.ToLower(i.(string))
+					name := i.(string)
+					if isGeneralDomainName(name) {
+						return name
+					}
+					return strings.ToLower(name)
 				},
 				Description: "The Subdomain for the redirect.",
 			},

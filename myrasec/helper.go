@@ -50,19 +50,39 @@ func IntInSlice(needle int, haystack []int) bool {
 }
 
 //
+// isGeneralDomainName checks if the passed name starts with ALL- or ALL:
+//
+func isGeneralDomainName(name string) bool {
+	name = strings.ToUpper(name)
+	return strings.HasPrefix(name, "ALL-") || strings.HasPrefix(name, "ALL:")
+}
+
+//
 // fetchDomainForSubdomainName ...
 //
 func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrasec.Domain, error) {
 
-	if strings.HasPrefix(subdomain, "ALL-") {
-		parts := strings.Split(removeTrailingDot(subdomain), "ALL-")
-		if len(parts) == 2 {
+	if isGeneralDomainName(subdomain) {
+		var parts []string
+		name := removeTrailingDot(subdomain)
+		if strings.HasPrefix(name, "ALL-") {
+			parts = strings.Split(name, "ALL-")
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("wrong format for ALL-<DOMAIN_ID> annotation")
+			}
 			id, err := strconv.Atoi(parts[1])
 			if err != nil {
 				return nil, err
 			}
 			return fetchDomainById(client, id)
 		}
+
+		parts = strings.Split(name, "ALL:")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("wrong format for ALL:<DOMAIN_NAME> annotation")
+		}
+
+		return fetchDomain(client, parts[1])
 	}
 
 	subdomains, err := client.ListAllSubdomains(map[string]string{"search": subdomain})
