@@ -668,7 +668,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 	page := 1
 	pageSize := 250
 	params := map[string]string{
-		"subDomain": subDomainName,
+		"subDomain": ensureTrailingDot(subDomainName),
 		"pageSize":  strconv.Itoa(pageSize),
 		"page":      strconv.Itoa(page),
 	}

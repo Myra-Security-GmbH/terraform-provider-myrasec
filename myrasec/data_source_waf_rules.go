@@ -195,7 +195,7 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if len(f.subDomainName) > 0 {
-		params["subDomain"] = f.subDomainName
+		params["subDomain"] = ensureTrailingDot(f.subDomainName)
 	}
 
 	rules, diags := listWAFRules(meta, f.subDomainName, params)
