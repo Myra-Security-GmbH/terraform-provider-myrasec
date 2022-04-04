@@ -226,17 +226,25 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 //
 func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
+	var domain *myrasec.Domain
+	var diags diag.Diagnostics
+	var err error
+
 	domainID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return nil, err
+	if err == nil {
+		domain, diags = findDomain(domainID, meta)
+		if diags.HasError() || domain == nil {
+			return nil, fmt.Errorf("unable to find domain with ID = [%d]", domainID)
+		}
+	} else {
+		client := meta.(*myrasec.API)
+		domain, err = fetchDomain(client, d.Id())
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	domain, diags := findDomain(domainID, meta)
-	if diags.HasError() || domain == nil {
-		return nil, fmt.Errorf("unable to find domain with ID = [%d]", domainID)
-	}
-
-	d.SetId(strconv.Itoa(domainID))
+	d.SetId(strconv.Itoa(domain.ID))
 	d.Set("domain_id", domain.ID)
 
 	resourceMyrasecDomainRead(ctx, d, meta)
