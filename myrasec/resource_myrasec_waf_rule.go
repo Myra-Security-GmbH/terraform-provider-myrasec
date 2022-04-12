@@ -242,7 +242,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -253,7 +253,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -267,7 +267,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -287,7 +287,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing resource information",
-			Detail:   "[subdomain_name] is not set",
+			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
 		})
 		return diags
 	}
@@ -298,7 +298,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing WAF rule ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -389,7 +389,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing WAF rule ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -401,7 +401,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -412,7 +412,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -426,7 +426,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -446,7 +446,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing WAF rule ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -458,7 +458,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -468,7 +468,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting WAF rule",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -660,7 +660,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
@@ -680,7 +680,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error loading WAF rules",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return nil, diags
 		}

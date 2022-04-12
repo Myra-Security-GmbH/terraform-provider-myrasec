@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 )
@@ -172,4 +173,11 @@ func ensureTrailingDot(subdomain string) string {
 //
 func removeTrailingDot(subdomain string) string {
 	return strings.TrimRight(subdomain, ".")
+}
+
+//
+// formatError returns the error message with a timestamp appended to it
+//
+func formatError(err error) string {
+	return fmt.Sprintf("%s: %s", time.Now().Format(time.RFC3339Nano), err.Error())
 }

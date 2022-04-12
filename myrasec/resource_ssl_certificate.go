@@ -190,7 +190,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -201,7 +201,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -215,7 +215,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -235,7 +235,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing resource information",
-			Detail:   "[domain_name] is not set",
+			Detail:   formatError(fmt.Errorf("[domain_name] is not set")),
 		})
 		return diags
 	}
@@ -246,7 +246,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing SSL certificate ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -306,7 +306,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing SSL certificate ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -318,7 +318,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -329,7 +329,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -343,7 +343,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -364,7 +364,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing SSL certificate ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -376,7 +376,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -387,7 +387,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -397,7 +397,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -526,7 +526,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
@@ -536,7 +536,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error loading SSL certificate",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}

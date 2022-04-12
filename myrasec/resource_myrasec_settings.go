@@ -458,7 +458,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -469,7 +469,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -479,7 +479,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -509,7 +509,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing subdomain name",
-			Detail:   fmt.Errorf("[%s] is not a valid subdomain name", subDomainName).Error(),
+			Detail:   formatError(fmt.Errorf("[%s] is not a valid subdomain name", subDomainName)),
 		})
 		return diags
 	}
@@ -519,7 +519,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -529,7 +529,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -600,7 +600,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -612,7 +612,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -622,7 +622,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -645,7 +645,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing setting ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -657,7 +657,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -668,7 +668,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -678,7 +678,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting settings",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}

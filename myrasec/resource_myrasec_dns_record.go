@@ -196,7 +196,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -207,7 +207,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -221,7 +221,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -241,7 +241,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing resource information",
-			Detail:   "[domain_name] is not set",
+			Detail:   formatError(fmt.Errorf("[domain_name] is not set")),
 		})
 		return diags
 	}
@@ -252,7 +252,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing DNS record ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -312,7 +312,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing record id",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -324,7 +324,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -335,7 +335,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -349,7 +349,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -370,7 +370,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing record id",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -382,7 +382,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -393,7 +393,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -403,7 +403,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -540,7 +540,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
@@ -550,7 +550,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error loading DNS record",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}

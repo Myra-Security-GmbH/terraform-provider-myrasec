@@ -310,7 +310,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return records, diags
 	}
@@ -325,7 +325,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching DNS records",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return records, diags
 		}

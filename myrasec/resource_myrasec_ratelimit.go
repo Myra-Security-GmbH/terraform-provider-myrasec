@@ -110,7 +110,7 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -121,7 +121,7 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -135,7 +135,7 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -155,7 +155,7 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing resource information",
-			Detail:   "[subdomain_name] is not set",
+			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
 		})
 		return diags
 	}
@@ -166,7 +166,7 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing rate limit setting ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -204,7 +204,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing rate limit ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -216,7 +216,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -227,7 +227,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -241,7 +241,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -261,7 +261,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing rate limit ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -273,7 +273,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -284,7 +284,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -294,7 +294,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting rate limit setting",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -375,7 +375,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
@@ -395,7 +395,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error loading rate limits",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return nil, diags
 		}

@@ -185,7 +185,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return filters, diags
 	}
@@ -200,7 +200,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching IP filters",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return filters, diags
 		}

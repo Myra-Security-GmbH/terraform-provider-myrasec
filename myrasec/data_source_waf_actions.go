@@ -98,7 +98,7 @@ func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching WAF actions",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}

@@ -186,7 +186,7 @@ func listCacheSettings(meta interface{}, subDomainName string, params map[string
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return settings, diags
 	}
@@ -201,7 +201,7 @@ func listCacheSettings(meta interface{}, subDomainName string, params map[string
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching cache settings",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return settings, diags
 		}

@@ -285,7 +285,7 @@ func listWAFRules(meta interface{}, subDomainName string, params map[string]stri
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return rules, diags
 	}
@@ -301,7 +301,7 @@ func listWAFRules(meta interface{}, subDomainName string, params map[string]stri
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching WAF rules",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return rules, diags
 		}

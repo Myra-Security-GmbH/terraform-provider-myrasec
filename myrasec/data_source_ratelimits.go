@@ -180,7 +180,7 @@ func listRateLimits(meta interface{}, subDomainName string, params map[string]st
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return limits, diags
 	}
@@ -195,7 +195,7 @@ func listRateLimits(meta interface{}, subDomainName string, params map[string]st
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching rate limits",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return limits, diags
 		}

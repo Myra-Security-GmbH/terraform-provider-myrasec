@@ -165,7 +165,7 @@ func listErrorPages(meta interface{}, domainName string, params map[string]strin
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return errorPages, diags
 	}
@@ -180,7 +180,7 @@ func listErrorPages(meta interface{}, domainName string, params map[string]strin
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching error pages",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return errorPages, diags
 		}

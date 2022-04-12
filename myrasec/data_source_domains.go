@@ -215,7 +215,7 @@ func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, 
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching domains",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return domains, diags
 		}

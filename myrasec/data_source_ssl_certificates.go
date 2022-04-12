@@ -264,7 +264,7 @@ func listSSLCertificates(meta interface{}, domainName string, params map[string]
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given domain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return certificates, diags
 	}
@@ -279,7 +279,7 @@ func listSSLCertificates(meta interface{}, domainName string, params map[string]
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching SSL certificates",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return certificates, diags
 		}

@@ -189,7 +189,7 @@ func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error fetching IP ranges",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return ranges, diags
 		}

@@ -83,7 +83,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -94,7 +94,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -108,7 +108,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -127,7 +127,7 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing resource information",
-			Detail:   "[subdomain_name] is not set",
+			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
 		})
 		return diags
 	}
@@ -163,7 +163,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -174,7 +174,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -188,7 +188,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -209,7 +209,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error parsing error page ID",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -221,7 +221,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error building error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -232,7 +232,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -242,7 +242,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error deleting error page",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -336,7 +336,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   err.Error(),
+			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
@@ -355,7 +355,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error loading error pages",
-				Detail:   err.Error(),
+				Detail:   formatError(err),
 			})
 			return nil, diags
 		}
