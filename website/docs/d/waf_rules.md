@@ -19,7 +19,7 @@ The following arguments are supported:
 * `filter` (Required) Filter the WAF actions.
 
 ### filter
-* `subdomain_name` (Required) The action type to filter for.
+* `subdomain_name` (Required) The action type to filter for. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `search` (Optional) A search string to filter the WAF rules.
 
 ## Attributes Reference

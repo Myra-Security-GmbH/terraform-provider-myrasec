@@ -31,7 +31,7 @@ terraform import myrasec_settings.settings www.example.com
 
 The following arguments are supported:
 
-* `subdomain_name` (Required) The Subdomain for the Setting.
+* `subdomain_name` (Required) The Subdomain for the setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `access_log` (Optional) Activate separated access log. Default `false`.
 * `antibot_post_flood` (Optional) Detection of POST floods by using a JavaScript based puzzle.. Default `false`.
 * `antibot_post_flood_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `540`.

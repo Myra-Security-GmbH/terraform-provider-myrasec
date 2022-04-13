@@ -31,7 +31,7 @@ The following arguments are supported:
 * `setting_id` (computed) ID of the cache setting.
 * `created` (computed) Date of creation.
 * `modified` (computed) Date of last modification.
-* `subdomain_name` (Required) The Subdomain for the cache setting.
+* `subdomain_name` (Required) The Subdomain for the cache setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `type` (Required) Type how path should match. Valid types are: `exact`, `prefix` and `suffix`.
 * `path` (Required) Path which must match to cache response.
 * `ttl` (Required) Time to live.

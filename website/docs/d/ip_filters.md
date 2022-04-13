@@ -22,7 +22,7 @@ The following arguments are supported:
 * `filter` (Required) One or more values to filter the IP filters.
 
 ### filter
-* `subdomain_name` (Required) The subdomain name from the rate limit.
+* `subdomain_name` (Required) The subdomain name from the rate limit. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `search` (Optional) A search string to filter the IP filters. Filers on the `value` field.
 * `type` (Optional) Specify the filter type.
 
@@ -30,7 +30,7 @@ The following arguments are supported:
 ## Attributes Reference
 * `ipfilters` A list of IP filters.
 
-### redirects
+### ipfilters
 * `id` The ID of the IP filter.
 * `created` Date of creation.
 * `modified` Date of last modification.

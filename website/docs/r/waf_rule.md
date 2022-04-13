@@ -43,7 +43,7 @@ The following arguments are supported:
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
 * `rule_type` (Computed) The type of the rule.
-* `subdomain_name` (Required) The subdomain for the rule.
+* `subdomain_name` (Required) The subdomain for the rule. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `name` (Required) The rule name identifies each rule.
 * `direction` (Required) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` (Optional) Your notes on this rule. Default `""`.

@@ -31,7 +31,7 @@ The following arguments are supported:
 * `redirect_id` (Computed) ID of the redirect.
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
-* `subdomain_name` (Required) The Subdomain for the redirect.
+* `subdomain_name` (Required) The Subdomain for the redirect. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `matching_type` (Required) Type to match the redirect. Valid types are: `exact`, `prefix` and `suffix`.
 * `source` (Required) Location to match against.
 * `destination` (Required) Target where redirect should point to.

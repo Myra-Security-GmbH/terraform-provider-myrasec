@@ -25,7 +25,7 @@ The following arguments are supported:
 ## Attributes Reference
 * `error_pages` A list of error pages.
 
-### redirects
+### error_pages
 * `id` The ID of the error page.
 * `created` Date of creation.
 * `modified` Date of last modification.

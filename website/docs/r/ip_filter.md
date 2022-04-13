@@ -30,7 +30,7 @@ The following arguments are supported:
 * `filter_id` (Computed) ID of the IP filter.
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
-* `subdomain_name` (Required) The subdomain for the IP filter.
+* `subdomain_name` (Required) The subdomain for the IP filter. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `type` (Required) Type of the IP filter. Valid types are: `BLACKLIST`, `WHITELIST` and `WHITELIST_REQUEST_LIMITER`.
 * `value` (Required) The value of an IP filter rule can contain a single IP address or a CIDR notation. IPv4 and IPv6 are both supported. An IP filter for IPv6 can only contain a /128 subnet. An IPv4 IP filter for the `Whitelist Request Limiter` can only contain a /32 subnet.
 * `enabled` (Optional) Enable or disable a filter. Default `true`.

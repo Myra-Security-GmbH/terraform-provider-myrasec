@@ -21,14 +21,14 @@ The following arguments are supported:
 * `filter` (Required) One or more values to filter the rate limits.
 
 ### filter
-* `subdomain_name` (Required) The subdomain name from the rate limit.
+* `subdomain_name` (Required) The subdomain name from the rate limit. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `search` (Optional) A search string to filter the rate limits. Filers on the `network` field.
 
 
 ## Attributes Reference
 * `ratelimits` A list of rate limit settings.
 
-### redirects
+### ratelimits
 * `id` The ID of the redirect.
 * `created` Date of creation.
 * `modified` Date of last modification.

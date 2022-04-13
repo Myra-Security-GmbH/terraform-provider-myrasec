@@ -32,7 +32,7 @@ The following arguments are supported:
 * `created` (Computed) Date of creation.
 * `modified` (Computed) Date of last modification.
 * `type` (Computed) Type of the rate limit setting.
-* `subdomain_name` (Required) The Subdomain for the rate limit setting.
+* `subdomain_name` (Required) The Subdomain for the rate limit setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
 * `network` (Required) Network in CIDR notation affected by the rate limiter.
 * `value` (Optional) Maximum amount of requests for the given network. Valid values are `4000`, `2000`, `1000`, `500`, `100`, `60` or `0`. Default `1000`
 * `burst` (Optional) Burst defines how many requests a client can make in excess of the specified rate. Default `50`

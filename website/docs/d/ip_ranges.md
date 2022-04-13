@@ -22,7 +22,7 @@ The following arguments are supported:
 ## Attributes Reference
 * `ipranges` A list of IP ranges.
 
-### redirects
+### ipranges
 * `id` The ID of the redirect.
 * `created` Date of creation.
 * `modified` Date of last modification.
