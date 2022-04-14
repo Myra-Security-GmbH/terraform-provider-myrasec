@@ -3,12 +3,12 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.13
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.10.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.11.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-uuid v1.0.3 // indirect
+	github.com/hashicorp/terraform-plugin-go v0.9.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.13.0
 	github.com/hashicorp/terraform-registry-address v0.0.0-20220131103327-5c1c5e123275 // indirect
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
@@ -17,7 +17,7 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
-	golang.org/x/sys v0.0.0-20220412071739-889880a91fd5 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
+	google.golang.org/genproto v0.0.0-20220413183235-5e96e2839df9 // indirect
 )
