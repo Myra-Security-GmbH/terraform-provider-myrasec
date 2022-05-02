@@ -101,6 +101,10 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 		params["search"] = f.search
 	}
 
+	if len(f.filterType) > 0 {
+		params["type"] = f.filterType
+	}
+
 	filters, diags := listIPFilters(meta, f.subDomainName, params)
 	if diags.HasError() {
 		return diags
@@ -167,6 +171,11 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 		f.search = search.(string)
 	}
 
+	filterType, ok := m["type"]
+	if ok {
+		f.filterType = filterType.(string)
+	}
+
 	return f
 }
 
@@ -220,4 +229,5 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 type ipFilterFilter struct {
 	subDomainName string
 	search        string
+	filterType    string
 }
