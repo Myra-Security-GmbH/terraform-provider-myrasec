@@ -87,7 +87,6 @@ func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceDat
 	var diags diag.Diagnostics
 
 	maintenance, err := buildMaintenance(d, meta)
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -370,7 +369,7 @@ func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) 
 	}
 
 	page := 1
-	pageSize := 250
+	pageSize := 100
 	params := map[string]string{
 		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),

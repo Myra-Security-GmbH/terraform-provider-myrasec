@@ -120,6 +120,7 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 		}
 		maintenanceData = append(maintenanceData, data)
 	}
+
 	if err := d.Set("maintenances", maintenanceData); err != nil {
 		return diag.FromErr(err)
 	}
@@ -165,7 +166,7 @@ func parseMaintenanceFilter(d interface{}) *maintenanceFilter {
 func listMaintenances(meta interface{}, subdomainName string, params map[string]string) ([]myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var maintenances []myrasec.Maintenance
-	pageSize := 250
+	pageSize := 100
 
 	client := meta.(*myrasec.API)
 	domain, err := fetchDomain(client, subdomainName)
