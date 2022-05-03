@@ -51,6 +51,7 @@ func Provider() *schema.Provider {
 			"myrasec_ip_ranges":        dataSourceMyrasecIPRanges(),
 			"myrasec_ssl_certificates": dataSourceMyrasecSSLCertificates(),
 			"myrasec_error_pages":      dataSourceMyrasecErrorPages(),
+			"myrasec_maintenances":     dataSourceMyrasecMaintenances(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":          resourceMyrasecDomain(),
@@ -63,6 +64,7 @@ func Provider() *schema.Provider {
 			"myrasec_waf_rule":        resourceMyrasecWAFRule(),
 			"myrasec_ssl_certificate": resourceMyrasecSSLCertificate(),
 			"myrasec_error_page":      resourceMyrasecErrorPage(),
+			"myrasec_maintenance":     resourceMyrasecMaintenance(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
