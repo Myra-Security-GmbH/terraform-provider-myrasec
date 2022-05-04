@@ -5,7 +5,7 @@ Use this data source to look up error pages.
 ## Example usage
 
 ```hcl
-# Look for a ip filters
+# Look for a error pages
 data "myrasec_error_pages" "example_com" {
   filter {
     domain_name = "example.com"
