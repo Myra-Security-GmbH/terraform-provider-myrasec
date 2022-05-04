@@ -6,7 +6,7 @@ Provides a Myra Security maintenance resource.
 
 ```hcl
 # Create a new maintenance
-resouce "myrasec_maintenance" "maintenance" {
+resource "myrasec_maintenance" "maintenance" {
     content = "<html><body>Page</body></html>"
     subdomain_name = "www.example.com"
     start = "2022-07-01T00:00:00Z"
