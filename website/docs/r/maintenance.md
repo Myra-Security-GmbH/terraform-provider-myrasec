@@ -9,8 +9,8 @@ Provides a Myra Security maintenance resource.
 resource "myrasec_maintenance" "maintenance" {
     content = "<html><body>Page</body></html>"
     subdomain_name = "www.example.com"
-    start = "2022-07-01T00:00:00Z"
-    end = "2022-07-31T23:59:59Z"
+    start = "2022-07-01T00:00:00+02:00"
+    end = "2022-07-31T23:59:59+02:00"
 }
 ```
 
