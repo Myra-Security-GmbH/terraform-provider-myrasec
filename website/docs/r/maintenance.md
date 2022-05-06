@@ -31,3 +31,4 @@ The following arguments are supporeted:
 * `start` (Required) The scheduled start date for the maintenance.
 * `end` (Required) The planed end date for the maintenance.
 * `content` (Required)) The HTML content of the maintenance.
+* `active` (Computed) Status if the maintenance page is active or not.
