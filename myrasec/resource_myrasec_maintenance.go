@@ -70,6 +70,11 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Optional:    true,
 				Description: "HTML content of the maintenance.",
 			},
+			"active": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Status if the maintenance page is active or not.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -164,6 +169,7 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("end", maintenance.End.Format(time.RFC3339))
 	d.Set("content", maintenance.Content)
 	d.Set("subdomain_name", maintenance.FQDN)
+	d.Set("active", maintenance.Active)
 
 	return diags
 }
