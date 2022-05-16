@@ -59,5 +59,6 @@ func (c Config) Client() (*myrasec.API, error) {
 
 	api.BaseURL = c.APIBaseURL
 
+	api.EnableCaching()
 	return api, nil
 }
