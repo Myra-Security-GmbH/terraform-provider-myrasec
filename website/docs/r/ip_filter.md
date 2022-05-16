@@ -9,7 +9,7 @@ Provides a Myra Security IP filter resource.
 resource "myrasec_ip_filter" "filter" {
   subdomain_name = "www.example.com"
   type = "BLACKLIST"
-  value = "192.168.0.1"
+  value = "192.168.0.1/32"
   enabled = true
   depends_on = [
     myrasec_dns_record.www
