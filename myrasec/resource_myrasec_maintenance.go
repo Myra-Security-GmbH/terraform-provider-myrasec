@@ -161,15 +161,7 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(maintenanceID))
-	d.Set("maintenance_id", maintenance.ID)
-	d.Set("created", maintenance.Created.Format(time.RFC3339))
-	d.Set("modified", maintenance.Modified.Format(time.RFC3339))
-	d.Set("start", maintenance.Start.Format(time.RFC3339))
-	d.Set("end", maintenance.End.Format(time.RFC3339))
-	d.Set("content", maintenance.Content)
-	d.Set("subdomain_name", maintenance.FQDN)
-	d.Set("active", maintenance.Active)
+	setMaintenanceData(d, maintenance)
 
 	return diags
 }
@@ -219,7 +211,7 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateMaintenance(maintenance, domain.ID, subDomainName)
+	maintenance, err = client.UpdateMaintenance(maintenance, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -229,7 +221,9 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	return resourceMyrasecMaintenanceRead(ctx, d, meta)
+	setMaintenanceData(d, maintenance)
+
+	return diags
 }
 
 //
@@ -411,4 +405,19 @@ func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) 
 		Detail:   fmt.Sprintf("Unable to find maintenance with ID = [%d]", maintenanceID),
 	})
 	return nil, diags
+}
+
+//
+// setMaintenanceData ...
+//
+func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance) {
+	d.SetId(strconv.Itoa(maintenance.ID))
+	d.Set("maintenance_id", maintenance.ID)
+	d.Set("created", maintenance.Created.Format(time.RFC3339))
+	d.Set("modified", maintenance.Modified.Format(time.RFC3339))
+	d.Set("start", maintenance.Start.Format(time.RFC3339))
+	d.Set("end", maintenance.End.Format(time.RFC3339))
+	d.Set("content", maintenance.Content)
+	d.Set("subdomain_name", maintenance.FQDN)
+	d.Set("active", maintenance.Active)
 }

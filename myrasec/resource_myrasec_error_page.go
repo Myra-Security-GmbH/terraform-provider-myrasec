@@ -140,12 +140,7 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(errorPage.ID))
-	d.Set("error_code", errorPage.ErrorCode)
-	d.Set("content", errorPage.Content)
-	d.Set("subdomain_name", errorPage.SubDomainName)
-	d.Set("created", errorPage.Created.Format(time.RFC3339))
-	d.Set("modified", errorPage.Modified.Format(time.RFC3339))
+	setErrorPageData(d, errorPage)
 
 	return diags
 }
@@ -183,7 +178,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateErrorPage(errorPage, domain.ID)
+	errorPage, err = client.UpdateErrorPage(errorPage, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -193,7 +188,9 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	return resourceMyrasecErrorPageRead(ctx, d, meta)
+	setErrorPageData(d, errorPage)
+
+	return diags
 }
 
 //
@@ -374,4 +371,17 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 
 	}
 	return nil, diags
+}
+
+//
+// setErrorPageData ...
+//
+func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage) {
+	d.SetId(strconv.Itoa(errorPage.ID))
+	d.Set("error_code", errorPage.ErrorCode)
+	d.Set("content", errorPage.Content)
+	d.Set("subdomain_name", errorPage.SubDomainName)
+	d.Set("created", errorPage.Created.Format(time.RFC3339))
+	d.Set("modified", errorPage.Modified.Format(time.RFC3339))
+
 }

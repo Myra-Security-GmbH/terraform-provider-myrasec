@@ -256,40 +256,8 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(certID))
-	d.Set("domain_name", domainName)
-	d.Set("certificate_id", cert.ID)
-	d.Set("created", cert.Created.Format(time.RFC3339))
-	d.Set("modified", cert.Modified.Format(time.RFC3339))
-	d.Set("subject", cert.Subject)
-	d.Set("algorithm", cert.Algorithm)
-	d.Set("valid_from", cert.ValidFrom.Format(time.RFC3339))
-	d.Set("valid_to", cert.ValidTo.Format(time.RFC3339))
-	d.Set("fingerprint", cert.Fingerprint)
-	d.Set("serial_number", cert.SerialNumber)
-	d.Set("subject_alternatives", cert.SubjectAlternatives)
-	d.Set("wildcard", cert.Wildcard)
-	d.Set("extended_validation", cert.ExtendedValidation)
-	d.Set("subdomains", cert.Subdomains)
+	setSSLCertificateData(d, cert, domainName)
 
-	/*
-		var interData []map[string]interface{}
-		var interItem map[string]interface{}
-
-		for _, inter := range cert.Intermediates {
-			interItem = make(map[string]interface{})
-
-			interItem["subject"] = inter.Subject
-			interItem["algorithm"] = inter.Algorithm
-			interItem["fingerprint"] = inter.Fingerprint
-			interItem["serial_number"] = inter.SerialNumber
-			interItem["issuer"] = inter.Issuer
-
-			interData = append(interData, interItem)
-		}
-
-		//d.Set("intermediate", interData)
-	*/
 	return diags
 }
 
@@ -338,7 +306,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateSSLCertificate(cert, domain.ID)
+	cert, err = client.UpdateSSLCertificate(cert, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -348,7 +316,9 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	return resourceMyrasecIPFilterRead(ctx, d, meta)
+	setSSLCertificateData(d, cert, domainName)
+
+	return diags
 }
 
 //
@@ -551,5 +521,44 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 		Detail:   fmt.Sprintf("Unable to find SSL certificate with ID = [%d]", certID),
 	})
 	return nil, diags
+}
 
+//
+// setSSLCertificateData ...
+//
+func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate, domainName string) {
+	d.SetId(strconv.Itoa(cert.ID))
+	d.Set("certificate_id", cert.ID)
+	d.Set("domain_name", domainName)
+	d.Set("created", cert.Created.Format(time.RFC3339))
+	d.Set("modified", cert.Modified.Format(time.RFC3339))
+	d.Set("subject", cert.Subject)
+	d.Set("algorithm", cert.Algorithm)
+	d.Set("valid_from", cert.ValidFrom.Format(time.RFC3339))
+	d.Set("valid_to", cert.ValidTo.Format(time.RFC3339))
+	d.Set("fingerprint", cert.Fingerprint)
+	d.Set("serial_number", cert.SerialNumber)
+	d.Set("subject_alternatives", cert.SubjectAlternatives)
+	d.Set("wildcard", cert.Wildcard)
+	d.Set("extended_validation", cert.ExtendedValidation)
+	d.Set("subdomains", cert.Subdomains)
+
+	/*
+		var interData []map[string]interface{}
+		var interItem map[string]interface{}
+
+		for _, inter := range cert.Intermediates {
+			interItem = make(map[string]interface{})
+
+			interItem["subject"] = inter.Subject
+			interItem["algorithm"] = inter.Algorithm
+			interItem["fingerprint"] = inter.Fingerprint
+			interItem["serial_number"] = inter.SerialNumber
+			interItem["issuer"] = inter.Issuer
+
+			interData = append(interData, interItem)
+		}
+
+		//d.Set("intermediate", interData)
+	*/
 }

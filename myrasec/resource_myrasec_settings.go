@@ -534,55 +534,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	d.Set("subdomain_name", subDomainName)
-	d.Set("access_log", settings.AccessLog)
-	d.Set("antibot_post_flood", settings.AntibotPostFlood)
-	d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
-	d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
-	d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
-	d.Set("balancing_method", settings.BalancingMethod)
-	d.Set("block_not_whitelisted", settings.BlockNotWhitelisted)
-	d.Set("block_tor_network", settings.BlockTorNetwork)
-	d.Set("cache_enabled", settings.CacheEnabled)
-	d.Set("cache_revalidate", settings.CacheRevalidate)
-	d.Set("cdn", settings.CDN)
-	d.Set("client_max_body_size", settings.ClientMaxBodySize)
-	d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
-	d.Set("enable_origin_sni", settings.EnableOriginSNI)
-	d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
-	d.Set("hsts", settings.HSTS)
-	d.Set("hsts_include_subdomains", settings.HSTSIncludeSubdomains)
-	d.Set("hsts_max_age", settings.HSTSMaxAge)
-	d.Set("hsts_preload", settings.HSTSPreload)
-	d.Set("http_origin_port", settings.HTTPOriginPort)
-	d.Set("ignore_nocache", settings.IgnoreNoCache)
-	d.Set("image_optimization", settings.ImageOptimization)
-	d.Set("ipv6_active", settings.IPv6Active)
-	d.Set("limit_allowed_http_method", settings.LimitAllowedHTTPMethod)
-	d.Set("limit_tls_version", settings.LimitTLSVersion)
-	d.Set("log_format", settings.LogFormat)
-	d.Set("monitoring_alert_threshold", settings.MonitoringAlertThreshold)
-	d.Set("monitoring_contact_email", settings.MonitoringContactEMail)
-	d.Set("monitoring_send_alert", settings.MonitoringSendAlert)
-	d.Set("myra_ssl_header", settings.MyraSSLHeader)
-	d.Set("next_upstream", settings.NextUpstream)
-	d.Set("only_https", settings.OnlyHTTPS)
-	d.Set("origin_connection_header", settings.OriginConnectionHeader)
-	d.Set("proxy_cache_bypass", settings.ProxyCacheBypass)
-	d.Set("proxy_cache_stale", settings.ProxyCacheStale)
-	d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
-	d.Set("proxy_read_timeout", settings.ProxyReadTimeout)
-	d.Set("request_limit_block", settings.RequestLimitBlock)
-	d.Set("request_limit_level", settings.RequestLimitLevel)
-	d.Set("request_limit_report", settings.RequestLimitReport)
-	d.Set("request_limit_report_email", settings.RequestLimitReportEMail)
-	d.Set("rewrite", settings.Rewrite)
-	d.Set("source_protocol", settings.SourceProtocol)
-	d.Set("spdy", settings.Spdy)
-	d.Set("ssl_origin_port", settings.SSLOriginPort)
-	d.Set("waf_enable", settings.WAFEnable)
-	d.Set("waf_levels_enable", settings.WAFLevelsEnable)
-	d.Set("waf_policy", settings.WAFPolicy)
+	setSettingsData(d, settings, subDomainName)
 
 	return diags
 }
@@ -629,7 +581,9 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	return resourceMyrasecSettingsRead(ctx, d, meta)
+	setSettingsData(d, settings, subDomainName)
+
+	return diags
 }
 
 //
@@ -814,4 +768,59 @@ func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Se
 	}
 
 	return settings, nil
+}
+
+//
+// setSettingsData ...
+//
+func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDomainName string) {
+	d.Set("subdomain_name", subDomainName)
+	d.Set("access_log", settings.AccessLog)
+	d.Set("antibot_post_flood", settings.AntibotPostFlood)
+	d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
+	d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
+	d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
+	d.Set("balancing_method", settings.BalancingMethod)
+	d.Set("block_not_whitelisted", settings.BlockNotWhitelisted)
+	d.Set("block_tor_network", settings.BlockTorNetwork)
+	d.Set("cache_enabled", settings.CacheEnabled)
+	d.Set("cache_revalidate", settings.CacheRevalidate)
+	d.Set("cdn", settings.CDN)
+	d.Set("client_max_body_size", settings.ClientMaxBodySize)
+	d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
+	d.Set("enable_origin_sni", settings.EnableOriginSNI)
+	d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
+	d.Set("hsts", settings.HSTS)
+	d.Set("hsts_include_subdomains", settings.HSTSIncludeSubdomains)
+	d.Set("hsts_max_age", settings.HSTSMaxAge)
+	d.Set("hsts_preload", settings.HSTSPreload)
+	d.Set("http_origin_port", settings.HTTPOriginPort)
+	d.Set("ignore_nocache", settings.IgnoreNoCache)
+	d.Set("image_optimization", settings.ImageOptimization)
+	d.Set("ipv6_active", settings.IPv6Active)
+	d.Set("limit_allowed_http_method", settings.LimitAllowedHTTPMethod)
+	d.Set("limit_tls_version", settings.LimitTLSVersion)
+	d.Set("log_format", settings.LogFormat)
+	d.Set("monitoring_alert_threshold", settings.MonitoringAlertThreshold)
+	d.Set("monitoring_contact_email", settings.MonitoringContactEMail)
+	d.Set("monitoring_send_alert", settings.MonitoringSendAlert)
+	d.Set("myra_ssl_header", settings.MyraSSLHeader)
+	d.Set("next_upstream", settings.NextUpstream)
+	d.Set("only_https", settings.OnlyHTTPS)
+	d.Set("origin_connection_header", settings.OriginConnectionHeader)
+	d.Set("proxy_cache_bypass", settings.ProxyCacheBypass)
+	d.Set("proxy_cache_stale", settings.ProxyCacheStale)
+	d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
+	d.Set("proxy_read_timeout", settings.ProxyReadTimeout)
+	d.Set("request_limit_block", settings.RequestLimitBlock)
+	d.Set("request_limit_level", settings.RequestLimitLevel)
+	d.Set("request_limit_report", settings.RequestLimitReport)
+	d.Set("request_limit_report_email", settings.RequestLimitReportEMail)
+	d.Set("rewrite", settings.Rewrite)
+	d.Set("source_protocol", settings.SourceProtocol)
+	d.Set("spdy", settings.Spdy)
+	d.Set("ssl_origin_port", settings.SSLOriginPort)
+	d.Set("waf_enable", settings.WAFEnable)
+	d.Set("waf_levels_enable", settings.WAFLevelsEnable)
+	d.Set("waf_policy", settings.WAFPolicy)
 }

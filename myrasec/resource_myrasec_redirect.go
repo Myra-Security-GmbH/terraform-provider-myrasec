@@ -188,18 +188,7 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(redirectID))
-	d.Set("redirect_id", redirect.ID)
-	d.Set("created", redirect.Created.Format(time.RFC3339))
-	d.Set("modified", redirect.Modified.Format(time.RFC3339))
-	d.Set("type", redirect.Type)
-	d.Set("subdomain_name", redirect.SubDomainName)
-	d.Set("source", redirect.Source)
-	d.Set("destination", redirect.Destination)
-	d.Set("comment", redirect.Comment)
-	d.Set("sort", redirect.Sort)
-	d.Set("matching_type", redirect.MatchingType)
-	d.Set("enabled", redirect.Enabled)
+	setRedirectData(d, redirect)
 
 	return diags
 }
@@ -249,7 +238,7 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateRedirect(redirect, domain.ID, subDomainName)
+	redirect, err = client.UpdateRedirect(redirect, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -258,7 +247,10 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 		})
 		return diags
 	}
-	return resourceMyrasecRedirectRead(ctx, d, meta)
+
+	setRedirectData(d, redirect)
+
+	return diags
 }
 
 //
@@ -416,4 +408,22 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 		Detail:   fmt.Sprintf("Unable to find redirect with ID = [%d]", redirectID),
 	})
 	return nil, diags
+}
+
+//
+// setRedirectData ...
+//
+func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
+	d.SetId(strconv.Itoa(redirect.ID))
+	d.Set("redirect_id", redirect.ID)
+	d.Set("created", redirect.Created.Format(time.RFC3339))
+	d.Set("modified", redirect.Modified.Format(time.RFC3339))
+	d.Set("type", redirect.Type)
+	d.Set("subdomain_name", redirect.SubDomainName)
+	d.Set("source", redirect.Source)
+	d.Set("destination", redirect.Destination)
+	d.Set("comment", redirect.Comment)
+	d.Set("sort", redirect.Sort)
+	d.Set("matching_type", redirect.MatchingType)
+	d.Set("enabled", redirect.Enabled)
 }
