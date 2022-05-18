@@ -129,43 +129,6 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 							Optional:    true,
 							Description: "Certificate",
 						},
-						/*
-							"subject": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "Subject of the certificate",
-							},
-							"algorithm": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "Signature algorithm of the certificate",
-							},
-							"valid_from": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "Date and time the certificate is valid from",
-							},
-							"valid_to": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "Date and time the certificate is valid to",
-							},
-							"fingerprint": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "RSA 256 fingerprint of the certificate",
-							},
-							"serial_number": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "Serial number of the certificate",
-							},
-							"issuer": {
-								Type:        schema.TypeString,
-								Computed:    true,
-								Description: "",
-							},
-						*/
 					},
 				},
 			},
@@ -542,23 +505,4 @@ func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate,
 	d.Set("wildcard", cert.Wildcard)
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
-
-	/*
-		var interData []map[string]interface{}
-		var interItem map[string]interface{}
-
-		for _, inter := range cert.Intermediates {
-			interItem = make(map[string]interface{})
-
-			interItem["subject"] = inter.Subject
-			interItem["algorithm"] = inter.Algorithm
-			interItem["fingerprint"] = inter.Fingerprint
-			interItem["serial_number"] = inter.SerialNumber
-			interItem["issuer"] = inter.Issuer
-
-			interData = append(interData, interItem)
-		}
-
-		//d.Set("intermediate", interData)
-	*/
 }
