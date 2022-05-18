@@ -37,6 +37,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_BASE_URL", "https://apiv2.myracloud.com/%s"),
 				Description: "API Base URL. Keep the default value. No change required.",
 			},
+			"api_cache_ttl": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_CACHE_TTL", 30),
+				Description: "API Cache TTL. Keep the default value. No change required.",
+			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"myrasec_domains":          dataSourceMyrasecDomains(),
@@ -75,10 +81,11 @@ func Provider() *schema.Provider {
 //
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := Config{
-		APIKey:     d.Get("api_key").(string),
-		Secret:     d.Get("secret").(string),
-		Language:   d.Get("language").(string),
-		APIBaseURL: d.Get("api_base_url").(string),
+		APIKey:      d.Get("api_key").(string),
+		Secret:      d.Get("secret").(string),
+		Language:    d.Get("language").(string),
+		APIBaseURL:  d.Get("api_base_url").(string),
+		APICacheTTL: d.Get("api_cache_ttl").(int),
 	}
 
 	var diags diag.Diagnostics

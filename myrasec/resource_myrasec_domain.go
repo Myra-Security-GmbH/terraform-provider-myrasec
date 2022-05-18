@@ -131,14 +131,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(domainID))
-	d.Set("domain_id", domain.ID)
-	d.Set("name", domain.Name)
-	d.Set("auto_update", domain.AutoUpdate)
-	d.Set("paused", domain.Paused)
-	d.Set("paused_until", domain.PausedUntil)
-	d.Set("created", domain.Created.Format(time.RFC3339))
-	d.Set("modified", domain.Modified.Format(time.RFC3339))
+	setDomainData(d, domain)
 
 	return diags
 }
@@ -175,8 +168,9 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecDomainRead(ctx, d, meta)
+	setDomainData(d, resp)
+
+	return diags
 }
 
 //
@@ -320,4 +314,18 @@ func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnosti
 		Detail:   fmt.Sprintf("Unable to find domain with ID = [%d]", domainID),
 	})
 	return nil, diags
+}
+
+//
+// setDomainData ...
+//
+func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
+	d.SetId(fmt.Sprintf("%d", domain.ID))
+	d.Set("domain_id", domain.ID)
+	d.Set("name", domain.Name)
+	d.Set("auto_update", domain.AutoUpdate)
+	d.Set("paused", domain.Paused)
+	d.Set("paused_until", domain.PausedUntil)
+	d.Set("created", domain.Created.Format(time.RFC3339))
+	d.Set("modified", domain.Modified.Format(time.RFC3339))
 }

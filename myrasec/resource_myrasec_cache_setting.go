@@ -182,18 +182,7 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(settingID))
-	d.Set("setting_id", setting.ID)
-	d.Set("created", setting.Created.Format(time.RFC3339))
-	d.Set("modified", setting.Modified.Format(time.RFC3339))
-	d.Set("type", setting.Type)
-	d.Set("path", setting.Path)
-	d.Set("ttl", setting.TTL)
-	d.Set("not_found_ttl", setting.NotFoundTTL)
-	d.Set("sort", setting.Sort)
-	d.Set("enabled", setting.Enabled)
-	d.Set("enforce", setting.Enforce)
-	d.Set("subdomain_name", subDomainName)
+	setCacheSettingData(d, setting, subDomainName)
 
 	return diags
 }
@@ -243,7 +232,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateCacheSetting(setting, domain.ID, subDomainName)
+	setting, err = client.UpdateCacheSetting(setting, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -253,7 +242,9 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	return resourceMyrasecCacheSettingRead(ctx, d, meta)
+	setCacheSettingData(d, setting, subDomainName)
+
+	return diags
 }
 
 //
@@ -426,4 +417,22 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 		Detail:   fmt.Sprintf("Unable to find cache setting with ID = [%d]", settingID),
 	})
 	return nil, diags
+}
+
+//
+// setCacheSettingData ...
+//
+func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, subDomainName string) {
+	d.SetId(strconv.Itoa(setting.ID))
+	d.Set("setting_id", setting.ID)
+	d.Set("created", setting.Created.Format(time.RFC3339))
+	d.Set("modified", setting.Modified.Format(time.RFC3339))
+	d.Set("type", setting.Type)
+	d.Set("path", setting.Path)
+	d.Set("ttl", setting.TTL)
+	d.Set("not_found_ttl", setting.NotFoundTTL)
+	d.Set("sort", setting.Sort)
+	d.Set("enabled", setting.Enabled)
+	d.Set("enforce", setting.Enforce)
+	d.Set("subdomain_name", subDomainName)
 }

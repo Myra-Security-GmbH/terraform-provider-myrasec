@@ -266,36 +266,8 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(recordID))
-	d.Set("record_id", record.ID)
-	d.Set("name", record.Name)
-	d.Set("value", record.Value)
-	d.Set("record_type", record.RecordType)
-	d.Set("ttl", record.TTL)
-	d.Set("alternative_cname", record.AlternativeCNAME)
-	d.Set("active", record.Active)
-	d.Set("enabled", record.Enabled)
-	d.Set("priority", record.Priority)
-	d.Set("port", record.Port)
-	d.Set("created", record.Created.Format(time.RFC3339))
-	d.Set("modified", record.Modified.Format(time.RFC3339))
-	d.Set("comment", record.Comment)
-	d.Set("domain_name", domainName)
+	setDNSRecordData(d, record, domainName)
 
-	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
-		d.Set("upstream_options", []map[string]interface{}{
-			{
-				"upstream_id":  record.UpstreamOptions.ID,
-				"created":      record.UpstreamOptions.Created.Format(time.RFC3339),
-				"modified":     record.UpstreamOptions.Modified.Format(time.RFC3339),
-				"backup":       record.UpstreamOptions.Backup,
-				"down":         record.UpstreamOptions.Down,
-				"fail_timeout": record.UpstreamOptions.FailTimeout,
-				"max_fails":    record.UpstreamOptions.MaxFails,
-				"weight":       record.UpstreamOptions.Weight,
-			},
-		})
-	}
 	return diags
 }
 
@@ -344,7 +316,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateDNSRecord(record, domain.ID)
+	record, err = client.UpdateDNSRecord(record, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -354,7 +326,9 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	return resourceMyrasecDNSRecordRead(ctx, d, meta)
+	setDNSRecordData(d, record, domainName)
+
+	return diags
 }
 
 //
@@ -564,4 +538,40 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 		Detail:   fmt.Sprintf("Unable to find DNS record with ID = [%d]", recordID),
 	})
 	return nil, diags
+}
+
+//
+// setDNSRecordData ...
+//
+func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainName string) {
+	d.SetId(strconv.Itoa(record.ID))
+	d.Set("record_id", record.ID)
+	d.Set("name", record.Name)
+	d.Set("value", record.Value)
+	d.Set("record_type", record.RecordType)
+	d.Set("ttl", record.TTL)
+	d.Set("alternative_cname", record.AlternativeCNAME)
+	d.Set("active", record.Active)
+	d.Set("enabled", record.Enabled)
+	d.Set("priority", record.Priority)
+	d.Set("port", record.Port)
+	d.Set("created", record.Created.Format(time.RFC3339))
+	d.Set("modified", record.Modified.Format(time.RFC3339))
+	d.Set("comment", record.Comment)
+	d.Set("domain_name", domainName)
+
+	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
+		d.Set("upstream_options", []map[string]interface{}{
+			{
+				"upstream_id":  record.UpstreamOptions.ID,
+				"created":      record.UpstreamOptions.Created.Format(time.RFC3339),
+				"modified":     record.UpstreamOptions.Modified.Format(time.RFC3339),
+				"backup":       record.UpstreamOptions.Backup,
+				"down":         record.UpstreamOptions.Down,
+				"fail_timeout": record.UpstreamOptions.FailTimeout,
+				"max_fails":    record.UpstreamOptions.MaxFails,
+				"weight":       record.UpstreamOptions.Weight,
+			},
+		})
+	}
 }

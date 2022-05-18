@@ -177,19 +177,7 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(filterID))
-	d.Set("filter_id", filter.ID)
-	d.Set("created", filter.Created.Format(time.RFC3339))
-	d.Set("modified", filter.Modified.Format(time.RFC3339))
-	d.Set("type", filter.Type)
-	d.Set("value", filter.Value)
-	d.Set("enabled", filter.Enabled)
-	d.Set("comment", filter.Comment)
-	d.Set("subdomain_name", subDomainName)
-
-	if filter.ExpireDate != nil {
-		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
-	}
+	setIPFilterData(d, filter, subDomainName)
 
 	return diags
 }
@@ -239,7 +227,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateIPFilter(filter, domain.ID, subDomainName)
+	filter, err = client.UpdateIPFilter(filter, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -249,7 +237,9 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	return resourceMyrasecIPFilterRead(ctx, d, meta)
+	setIPFilterData(d, filter, subDomainName)
+
+	return diags
 }
 
 //
@@ -408,4 +398,23 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 		Detail:   fmt.Sprintf("Unable to find IP filter with ID = [%d]", filterID),
 	})
 	return nil, diags
+}
+
+//
+// setIPFilterData ...
+//
+func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomainName string) {
+	d.SetId(strconv.Itoa(filter.ID))
+	d.Set("filter_id", filter.ID)
+	d.Set("created", filter.Created.Format(time.RFC3339))
+	d.Set("modified", filter.Modified.Format(time.RFC3339))
+	d.Set("type", filter.Type)
+	d.Set("value", filter.Value)
+	d.Set("enabled", filter.Enabled)
+	d.Set("comment", filter.Comment)
+	d.Set("subdomain_name", subDomainName)
+
+	if filter.ExpireDate != nil {
+		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
+	}
 }

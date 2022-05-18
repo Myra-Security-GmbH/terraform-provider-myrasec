@@ -176,17 +176,7 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(rateLimitID))
-
-	d.Set("ratelimit_id", rateLimit.ID)
-	d.Set("created", rateLimit.Created.Format(time.RFC3339))
-	d.Set("modified", rateLimit.Modified.Format(time.RFC3339))
-	d.Set("type", rateLimit.Type)
-	d.Set("network", rateLimit.Network)
-	d.Set("value", rateLimit.Value)
-	d.Set("burst", rateLimit.Burst)
-	d.Set("timeframe", rateLimit.Timeframe)
-	d.Set("subdomain_name", rateLimit.SubDomainName)
+	setRateLimitData(d, rateLimit)
 
 	return diags
 }
@@ -236,7 +226,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	_, err = client.UpdateRateLimit(ratelimit, domain.ID, subDomainName)
+	ratelimit, err = client.UpdateRateLimit(ratelimit, domain.ID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -245,7 +235,10 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
-	return resourceMyrasecRateLimitRead(ctx, d, meta)
+
+	setRateLimitData(d, ratelimit)
+
+	return diags
 }
 
 //
@@ -418,4 +411,20 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 		Detail:   fmt.Sprintf("Unable to find rate limit with ID = [%d]", rateLimitID),
 	})
 	return nil, diags
+}
+
+//
+// setRateLimitData ...
+//
+func setRateLimitData(d *schema.ResourceData, rateLimit *myrasec.RateLimit) {
+	d.SetId(strconv.Itoa(rateLimit.ID))
+	d.Set("ratelimit_id", rateLimit.ID)
+	d.Set("created", rateLimit.Created.Format(time.RFC3339))
+	d.Set("modified", rateLimit.Modified.Format(time.RFC3339))
+	d.Set("type", rateLimit.Type)
+	d.Set("network", rateLimit.Network)
+	d.Set("value", rateLimit.Value)
+	d.Set("burst", rateLimit.Burst)
+	d.Set("timeframe", rateLimit.Timeframe)
+	d.Set("subdomain_name", rateLimit.SubDomainName)
 }
