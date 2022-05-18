@@ -14,10 +14,11 @@ import (
 // Config ...
 //
 type Config struct {
-	APIKey     string
-	Secret     string
-	Language   string
-	APIBaseURL string
+	APIKey      string
+	Secret      string
+	Language    string
+	APIBaseURL  string
+	APICacheTTL int
 }
 
 //
@@ -59,6 +60,10 @@ func (c Config) Client() (*myrasec.API, error) {
 
 	api.BaseURL = c.APIBaseURL
 
-	api.EnableCaching()
+	if c.APICacheTTL > 0 {
+		api.EnableCaching()
+		api.SetCachingTTL(c.APICacheTTL)
+	}
+
 	return api, nil
 }
