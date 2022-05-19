@@ -1,4 +1,4 @@
-# myrasec_cache_setting
+# myrasec_redirect
 
 Provides a Myra Security redirect resource.
 
