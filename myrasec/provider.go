@@ -81,11 +81,13 @@ func Provider() *schema.Provider {
 //
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := Config{
-		APIKey:      d.Get("api_key").(string),
-		Secret:      d.Get("secret").(string),
-		Language:    d.Get("language").(string),
-		APIBaseURL:  d.Get("api_base_url").(string),
-		APICacheTTL: d.Get("api_cache_ttl").(int),
+		APIKey:        d.Get("api_key").(string),
+		Secret:        d.Get("secret").(string),
+		Language:      d.Get("language").(string),
+		APIBaseURL:    d.Get("api_base_url").(string),
+		APICacheTTL:   d.Get("api_cache_ttl").(int),
+		APIRetryCount: 3,
+		APIRetrySleep: 1,
 	}
 
 	var diags diag.Diagnostics
