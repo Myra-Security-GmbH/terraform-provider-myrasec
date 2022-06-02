@@ -14,11 +14,13 @@ import (
 // Config ...
 //
 type Config struct {
-	APIKey      string
-	Secret      string
-	Language    string
-	APIBaseURL  string
-	APICacheTTL int
+	APIKey        string
+	Secret        string
+	Language      string
+	APIBaseURL    string
+	APICacheTTL   int
+	APIRetryCount int
+	APIRetrySleep int
 }
 
 //
@@ -63,6 +65,13 @@ func (c Config) Client() (*myrasec.API, error) {
 	if c.APICacheTTL > 0 {
 		api.EnableCaching()
 		api.SetCachingTTL(c.APICacheTTL)
+	}
+
+	if c.APIRetryCount > myrasec.DefaultRetryCount {
+		api.SetMaxRetries(c.APIRetryCount)
+	}
+	if c.APIRetrySleep > myrasec.DefaultRetrySleep {
+		api.SetRetrySleep(c.APIRetrySleep)
 	}
 
 	return api, nil
