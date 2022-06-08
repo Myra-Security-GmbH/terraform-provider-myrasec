@@ -121,11 +121,12 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 
 		retries++
 		if retries >= maxRetries {
-			return nil, fmt.Errorf("unable to find domain for passed subdomain")
+			break
 		}
 
 		client.PruneCache()
 	}
+	return nil, fmt.Errorf("unable to find domain for passed subdomain")
 }
 
 //
@@ -157,11 +158,12 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 
 		retries++
 		if retries >= maxRetries {
-			return nil, nil
+			break
 		}
 
 		client.PruneCache()
 	}
+	return nil, nil
 }
 
 //
