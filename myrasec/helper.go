@@ -86,37 +86,46 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 		return fetchDomain(client, parts[1])
 	}
 
-	subdomains, err := client.ListAllSubdomains(map[string]string{"search": subdomain})
-	if err != nil {
-		return nil, err
-	}
-
-	domainNames := make(map[string]bool)
-	for _, s := range subdomains {
-		domainNames[s.DomainName] = true
-	}
-
-	for dn := range domainNames {
-		domains, err := client.ListDomains(map[string]string{"search": dn})
+	maxRetries := 2
+	retries := 0
+	for {
+		subdomains, err := client.ListAllSubdomains(map[string]string{"search": subdomain})
 		if err != nil {
 			return nil, err
 		}
 
-		for _, d := range domains {
-			vhosts, err := client.ListAllSubdomainsForDomain(d.ID, map[string]string{"search": subdomain})
+		domainNames := make(map[string]bool)
+		for _, s := range subdomains {
+			domainNames[s.DomainName] = true
+		}
+
+		for dn := range domainNames {
+			domains, err := client.ListDomains(map[string]string{"search": dn})
 			if err != nil {
 				return nil, err
 			}
 
-			for _, vh := range vhosts {
-				if ensureTrailingDot(vh.Label) == ensureTrailingDot(subdomain) {
-					return &d, nil
+			for _, d := range domains {
+				vhosts, err := client.ListAllSubdomainsForDomain(d.ID, map[string]string{"search": subdomain})
+				if err != nil {
+					return nil, err
+				}
+
+				for _, vh := range vhosts {
+					if ensureTrailingDot(vh.Label) == ensureTrailingDot(subdomain) {
+						return &d, nil
+					}
 				}
 			}
 		}
-	}
 
-	return nil, fmt.Errorf("unable to find domain for passed subdomain")
+		retries++
+		if retries >= maxRetries {
+			return nil, fmt.Errorf("unable to find domain for passed subdomain")
+		}
+
+		client.PruneCache()
+	}
 }
 
 //
@@ -124,41 +133,46 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 //
 func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 
-	domains, err := client.ListDomains(map[string]string{"search": domain})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, d := range domains {
-		if d.Name == domain {
-			return &d, nil
+	maxRetries := 2
+	retries := 0
+	for {
+		domains, err := client.ListDomains(map[string]string{"search": domain})
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	d, err := fetchDomainForSubdomainName(client, domain)
-	if err != nil {
-		return nil, fmt.Errorf("unable to find domain for passed domain name [%s]", domain)
-	}
+		for _, d := range domains {
+			if d.Name == domain {
+				return &d, nil
+			}
+		}
 
-	return d, nil
+		d, err := fetchDomainForSubdomainName(client, domain)
+		if err != nil {
+			return nil, fmt.Errorf("unable to find domain for passed domain name [%s]", domain)
+		}
+		if d != nil {
+			return d, nil
+		}
+
+		retries++
+		if retries >= maxRetries {
+			return nil, nil
+		}
+
+		client.PruneCache()
+	}
 }
 
 //
 // fetchDomainById ...
 //
 func fetchDomainById(client *myrasec.API, id int) (*myrasec.Domain, error) {
-	domains, err := client.ListDomains(nil)
+	domain, err := client.GetDomain(id)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, d := range domains {
-		if d.ID == id {
-			return &d, nil
-		}
-	}
-
-	return nil, fmt.Errorf("unable to find domain for passed domain ID [%d]", id)
+	return domain, err
 }
 
 //
