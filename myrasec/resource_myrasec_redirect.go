@@ -391,7 +391,7 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 	r, err := client.GetRedirect(domain.ID, subDomainName, redirectID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error loading redirect",
 			Detail:   formatError(err),
 		})
