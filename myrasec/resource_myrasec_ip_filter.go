@@ -381,7 +381,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 	f, err := client.GetIPFilter(domain.ID, subDomainName, filterID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error loading IP filter",
 			Detail:   formatError(err),
 		})

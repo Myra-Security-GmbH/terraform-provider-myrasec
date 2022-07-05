@@ -522,7 +522,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 	r, err := client.GetDNSRecord(domain.ID, recordID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error loading DNS record",
 			Detail:   formatError(err),
 		})
