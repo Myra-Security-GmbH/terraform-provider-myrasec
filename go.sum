@@ -3,6 +3,8 @@ cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/Microsoft/go-winio v0.4.16/go.mod h1:XB6nPKklQyQ7GC9LdcBEcBl8PF76WugXOPRXwdLnMv0=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.18.0 h1:uk/73IoOh9ejPwI0QkoMIXP8tkIOFSkoNUaDgpuKeDs=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.18.0/go.mod h1:xclgEp2eEWeNxM3M3qde7noCqabK0hkMuLBLZ+TX6ig=
 github.com/Myra-Security-GmbH/signature v1.0.0 h1:u46nIxnffLLb8pCe6ic2w7OmSSEJk4warn3W4Vp2GjQ=
 github.com/Myra-Security-GmbH/signature v1.0.0/go.mod h1:zgyy5MGBCezqxVOjrG3THQJqsIfJ04LWtQv3Q4Ug2+Y=
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
