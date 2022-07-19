@@ -3,7 +3,7 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.13
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.18.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.19.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
