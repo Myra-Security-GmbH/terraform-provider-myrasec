@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -307,6 +308,18 @@ func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrase
 		}
 	}
 
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
+	}
+	template.Created = created
+
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
+	}
+	template.Modified = modified
+
 	return template, nil
 }
 
@@ -347,9 +360,9 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domain
 			return nil, diags
 		}
 
-		for _, m := range res {
-			if m.ID == maintenanceTemplateID {
-				return &m, diags
+		for _, mt := range res {
+			if mt.ID == maintenanceTemplateID {
+				return &mt, diags
 			}
 		}
 
