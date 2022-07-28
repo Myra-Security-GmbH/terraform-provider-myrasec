@@ -146,12 +146,13 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating cache setting",
 			Detail:   formatError(err),
 		})
 		return diags
 	}
+
 	d.SetId(fmt.Sprintf("%d", setting.ID))
 	return resourceMyrasecCacheSettingRead(ctx, d, meta)
 }

@@ -98,7 +98,6 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateDomain(domain)
-
 	if err == nil {
 		d.SetId(fmt.Sprintf("%d", resp.ID))
 		return resourceMyrasecDomainRead(ctx, d, meta)
@@ -107,9 +106,8 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	domain, errImport := importExistingDomain(domain, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
-
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating domain",
 			Detail:   formatError(err),
 		})

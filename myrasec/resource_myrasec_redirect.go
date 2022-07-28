@@ -152,7 +152,7 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating redirect",
 			Detail:   formatError(err),
 		})
