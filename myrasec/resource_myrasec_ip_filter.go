@@ -139,6 +139,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 
 	filter, errImport := importExistingIPFilter(filter, domain.ID, subDomainName, meta)
 	if errImport != nil {
+		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating IP filter",
@@ -437,9 +438,8 @@ func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainNam
 	}
 
 	params := map[string]string{
-		"type":    filter.Type,
-		"search":  s[0],
-		"enabled": strconv.FormatBool(filter.Enabled),
+		"type":   filter.Type,
+		"search": s[0],
 	}
 
 	filters, err := client.ListIPFilters(domainId, subDomainName, params)

@@ -137,7 +137,14 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateCacheSetting(setting, domain.ID, subDomainName)
-	if err != nil {
+	if err == nil {
+		d.SetId(fmt.Sprintf("%d", resp.ID))
+		return resourceMyrasecCacheSettingRead(ctx, d, meta)
+	}
+
+	setting, errImport := importExistingCacheSetting(setting, domain.ID, subDomainName, meta)
+	if errImport != nil {
+		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error creating cache setting",
@@ -145,8 +152,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 		})
 		return diags
 	}
-
-	d.SetId(fmt.Sprintf("%d", resp.ID))
+	d.SetId(fmt.Sprintf("%d", setting.ID))
 	return resourceMyrasecCacheSettingRead(ctx, d, meta)
 }
 
@@ -435,4 +441,34 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 	d.Set("enabled", setting.Enabled)
 	d.Set("enforce", setting.Enforce)
 	d.Set("subdomain_name", subDomainName)
+}
+
+//
+// importExistingCacheSetting ...
+//
+func importExistingCacheSetting(setting *myrasec.CacheSetting, domainId int, subDomainName string, meta interface{}) (*myrasec.CacheSetting, error) {
+	client := meta.(*myrasec.API)
+
+	params := map[string]string{
+		"search": setting.Path,
+	}
+
+	settings, err := client.ListCacheSettings(domainId, subDomainName, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(settings) <= 0 {
+		return nil, fmt.Errorf("unable to find existing cache setting for automatic import")
+	}
+
+	for _, s := range settings {
+		if s.Path != setting.Path ||
+			s.Type != setting.Type {
+			continue
+		}
+
+		return &s, nil
+	}
+	return nil, fmt.Errorf("unable to find existing cache setting for automatic import")
 }
