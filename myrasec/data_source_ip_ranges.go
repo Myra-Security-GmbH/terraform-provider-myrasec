@@ -92,7 +92,9 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 		f = &ipRangeFilter{}
 	}
 
-	params := map[string]string{}
+	params := map[string]string{
+		"enabled": "true",
+	}
 	if len(f.search) > 0 {
 		params["search"] = f.search
 	}
