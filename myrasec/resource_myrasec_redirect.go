@@ -143,16 +143,23 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateRedirect(redirect, domain.ID, subDomainName)
-	if err != nil {
+	if err == nil {
+		d.SetId(fmt.Sprintf("%d", resp.ID))
+		return resourceMyrasecRedirectRead(ctx, d, meta)
+	}
+
+	redirect, errImport := importExistingRedirect(redirect, domain.ID, subDomainName, meta)
+	if errImport != nil {
+		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating redirect",
 			Detail:   formatError(err),
 		})
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
+	d.SetId(fmt.Sprintf("%d", redirect.ID))
 	return resourceMyrasecRedirectRead(ctx, d, meta)
 }
 
@@ -426,4 +433,34 @@ func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
 	d.Set("sort", redirect.Sort)
 	d.Set("matching_type", redirect.MatchingType)
 	d.Set("enabled", redirect.Enabled)
+}
+
+//
+// importExistingRedirect ...
+//
+func importExistingRedirect(redirect *myrasec.Redirect, domainId int, subDomainName string, meta interface{}) (*myrasec.Redirect, error) {
+	client := meta.(*myrasec.API)
+
+	params := map[string]string{
+		"search": redirect.Source,
+	}
+
+	redirects, err := client.ListRedirects(domainId, subDomainName, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(redirects) <= 0 {
+		return nil, fmt.Errorf("unable to find existing redirect for automatic import")
+	}
+
+	for _, r := range redirects {
+		if r.Source != redirect.Source ||
+			r.Destination != redirect.Destination {
+			continue
+		}
+
+		return &r, nil
+	}
+	return nil, fmt.Errorf("unable to find existing redirect for automatic import")
 }

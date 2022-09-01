@@ -132,16 +132,23 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateIPFilter(filter, domain.ID, subDomainName)
-	if err != nil {
+	if err == nil {
+		d.SetId(fmt.Sprintf("%d", resp.ID))
+		return resourceMyrasecIPFilterRead(ctx, d, meta)
+	}
+
+	filter, errImport := importExistingIPFilter(filter, domain.ID, subDomainName, meta)
+	if errImport != nil {
+		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating IP filter",
 			Detail:   formatError(err),
 		})
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
+	d.SetId(fmt.Sprintf("%d", filter.ID))
 	return resourceMyrasecIPFilterRead(ctx, d, meta)
 }
 
@@ -417,4 +424,42 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 	if filter.ExpireDate != nil {
 		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
 	}
+}
+
+//
+// importExistingIPFilter ...
+//
+func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainName string, meta interface{}) (*myrasec.IPFilter, error) {
+	client := meta.(*myrasec.API)
+
+	s := strings.Split(filter.Value, "/")
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid IP Filter value [%s] passed for automatic import", filter.Value)
+	}
+
+	params := map[string]string{
+		"type":   filter.Type,
+		"search": s[0],
+	}
+
+	filters, err := client.ListIPFilters(domainId, subDomainName, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filters) <= 0 {
+		return nil, fmt.Errorf("unable to find existing IP filter for automatic import")
+	}
+
+	for _, f := range filters {
+		if f.Value != filter.Value ||
+			f.Type != filter.Type ||
+			f.Enabled != filter.Enabled {
+			continue
+		}
+
+		return &f, nil
+	}
+
+	return nil, fmt.Errorf("unable to find existing IP filter for automatic import")
 }

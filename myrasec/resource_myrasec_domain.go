@@ -98,16 +98,26 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateDomain(domain)
-	if err != nil {
+	if err == nil {
+		d.SetId(fmt.Sprintf("%d", resp.ID))
+		return resourceMyrasecDomainRead(ctx, d, meta)
+	}
+
+	domain, errImport := importExistingDomain(domain, meta)
+	if errImport != nil {
+		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error creating domain",
 			Detail:   formatError(err),
 		})
+
 		return diags
 	}
-	d.SetId(fmt.Sprintf("%d", resp.ID))
+
+	d.SetId(fmt.Sprintf("%d", domain.ID))
 	return resourceMyrasecDomainRead(ctx, d, meta)
+
 }
 
 //
@@ -328,4 +338,34 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.Set("paused_until", domain.PausedUntil)
 	d.Set("created", domain.Created.Format(time.RFC3339))
 	d.Set("modified", domain.Modified.Format(time.RFC3339))
+}
+
+//
+// importExistingDomain ...
+//
+func importExistingDomain(domain *myrasec.Domain, meta interface{}) (*myrasec.Domain, error) {
+	client := meta.(*myrasec.API)
+
+	params := map[string]string{
+		"search": domain.Name,
+	}
+
+	domains, err := client.ListDomains(params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(domains) <= 0 {
+		return nil, fmt.Errorf("unable to find existing domain for automatic import")
+	}
+
+	for _, d := range domains {
+		if d.Name != domain.Name {
+			continue
+		}
+
+		return &d, nil
+	}
+
+	return nil, fmt.Errorf("unable to find existing domain for automatic import")
 }
