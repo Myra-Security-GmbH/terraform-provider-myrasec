@@ -38,6 +38,9 @@ func resourceMyrasecMaintenance() *schema.Resource {
 					}
 					return strings.ToLower(name)
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return removeTrailingDot(old) == removeTrailingDot(new)
+				},
 				Description: "The subdomain name for this maintenance.",
 			},
 			"maintenance_id": {

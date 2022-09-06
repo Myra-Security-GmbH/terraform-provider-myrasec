@@ -39,6 +39,9 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 					}
 					return strings.ToLower(name)
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return removeTrailingDot(old) == removeTrailingDot(new)
+				},
 				Description: "The Subdomain for the cache setting.",
 			},
 			"setting_id": {

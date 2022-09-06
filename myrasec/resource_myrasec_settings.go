@@ -83,6 +83,9 @@ func resourceMyrasecSettings() *schema.Resource {
 					}
 					return strings.ToLower(name)
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return removeTrailingDot(old) == removeTrailingDot(new)
+				},
 				Description: "The Subdomain for the Settings.",
 			},
 			"access_log": {
