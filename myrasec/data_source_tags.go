@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// dataSourceMyrasecTags ...
 func dataSourceMyrasecTags() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecTagsRead,
@@ -51,10 +52,6 @@ func dataSourceMyrasecTags() *schema.Resource {
 						},
 						"type": {
 							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"organization": {
-							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"assignments": {
@@ -100,6 +97,7 @@ func dataSourceMyrasecTags() *schema.Resource {
 	}
 }
 
+// dataSourceMyrasecTagsRead
 func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareTagFilter(d.Get("filter"))
 	if f == nil {
@@ -118,29 +116,33 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 
 	tagData := make([]interface{}, 0)
 	for _, t := range tags {
+		res, err := getTag(t.ID, meta)
+		if err != nil {
+			return diags
+		}
+
 		tag := map[string]interface{}{
-			"id":           t.ID,
-			"created":      t.Created.Format(time.RFC3339),
-			"modified":     t.Modified.Format(time.RFC3339),
-			"type":         t.Type,
-			"organization": t.Organization,
+			"id":       res.ID,
+			"created":  res.Created.Format(time.RFC3339),
+			"modified": res.Modified.Format(time.RFC3339),
+			"name":     res.Name,
+			"type":     res.Type,
 		}
 
 		assignments := make([]interface{}, 0)
-		if t.Assignments != nil && len(t.Assignments) > 0 {
-			for _, a := range t.Assignments {
-				assignment := map[string]interface{}{
-					"id":             a.ID,
-					"created":        a.Created.Format(time.RFC3339),
-					"modified":       a.Modified.Format(time.RFC3339),
-					"type":           a.Type,
-					"title":          a.Title,
-					"subdomain_name": a.SubDomainName,
-				}
-				assignments = append(assignments, assignment)
+		for _, a := range res.Assignments {
+			assignment := map[string]interface{}{
+				"id":             a.ID,
+				"created":        a.Created.Format(time.RFC3339),
+				"modified":       a.Modified.Format(time.RFC3339),
+				"type":           a.Type,
+				"title":          a.Title,
+				"subdomain_name": a.SubDomainName,
 			}
-			tag["assignments"] = assignments
+			assignments = append(assignments, assignment)
 		}
+		tag["assignments"] = assignments
+
 		tagData = append(tagData, tag)
 	}
 
@@ -153,9 +155,7 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-//
 // prepareTagFilter fetches the panic that can happen in parseTagFilter
-//
 func prepareTagFilter(d interface{}) *tagFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -166,9 +166,7 @@ func prepareTagFilter(d interface{}) *tagFilter {
 	return parseTagFilter(d)
 }
 
-//
 // parseTagFilter converts the filter data to a tagFilter struct
-//
 func parseTagFilter(d interface{}) *tagFilter {
 	cfg := d.([]interface{})
 	f := &tagFilter{}
@@ -183,9 +181,7 @@ func parseTagFilter(d interface{}) *tagFilter {
 	return f
 }
 
-//
 // listTags
-//
 func listTags(meta interface{}, params map[string]string) ([]myrasec.Tag, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var tags []myrasec.Tag
@@ -216,9 +212,24 @@ func listTags(meta interface{}, params map[string]string) ([]myrasec.Tag, diag.D
 	return tags, diags
 }
 
-//
+// getTag
+func getTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+	tag, err := client.GetTag(tagId)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error to get tag",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
+	return tag, nil
+}
+
 // tagFilter struct ...
-//
 type tagFilter struct {
 	path string
 }
