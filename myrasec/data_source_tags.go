@@ -2,7 +2,6 @@ package myrasec
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"time"
 
@@ -16,19 +15,6 @@ func dataSourceMyrasecTags() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecTagsRead,
 		Schema: map[string]*schema.Schema{
-			"filter": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"match": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
-					},
-				},
-			},
 			"tags": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -99,15 +85,7 @@ func dataSourceMyrasecTags() *schema.Resource {
 
 // dataSourceMyrasecTagsRead
 func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	f := prepareTagFilter(d.Get("filter"))
-	if f == nil {
-		f = &tagFilter{}
-	}
-
 	params := map[string]string{}
-	if len(f.path) > 0 {
-		params["search"] = f.path
-	}
 
 	tags, diags := listTags(meta, params)
 	if diags.HasError() {
@@ -153,32 +131,6 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
 	return nil
-}
-
-// prepareTagFilter fetches the panic that can happen in parseTagFilter
-func prepareTagFilter(d interface{}) *tagFilter {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("[DEBUG] recovered in prepareTagFilter", r)
-		}
-	}()
-
-	return parseTagFilter(d)
-}
-
-// parseTagFilter converts the filter data to a tagFilter struct
-func parseTagFilter(d interface{}) *tagFilter {
-	cfg := d.([]interface{})
-	f := &tagFilter{}
-
-	m := cfg[0].(map[string]interface{})
-
-	path, ok := m["path"]
-	if ok {
-		f.path = path.(string)
-	}
-
-	return f
 }
 
 // listTags
@@ -227,9 +179,4 @@ func getTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
 		return nil, diags
 	}
 	return tag, nil
-}
-
-// tagFilter struct ...
-type tagFilter struct {
-	path string
 }
