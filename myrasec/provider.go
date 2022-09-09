@@ -74,6 +74,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance":          resourceMyrasecMaintenance(),
 			"myrasec_maintenance_template": resourceMyrasecMaintenanceTemplate(),
 			"myrasec_tag":                  resourceMyrasecTag(),
+			"myrasec_tag_cache_setting":    resourceMyrasecTagCacheSetting(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
