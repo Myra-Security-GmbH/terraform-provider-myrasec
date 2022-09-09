@@ -7,9 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // Provider retruns a terraform.ResourceProvider.
-//
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -60,6 +58,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenances":          dataSourceMyrasecMaintenances(),
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
 			"myrasec_tags":                  dataSourceMyrasecTags(),
+			"myrasec_tag_cache_settings":    dataSourceMyrasecTagCacheSettings(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":               resourceMyrasecDomain(),
@@ -80,9 +79,7 @@ func Provider() *schema.Provider {
 	}
 }
 
-//
 // providerConfigure ...
-//
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	config := Config{
 		APIKey:        d.Get("api_key").(string),
