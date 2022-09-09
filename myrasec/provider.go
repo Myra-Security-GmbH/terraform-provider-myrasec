@@ -59,6 +59,7 @@ func Provider() *schema.Provider {
 			"myrasec_error_pages":           dataSourceMyrasecErrorPages(),
 			"myrasec_maintenances":          dataSourceMyrasecMaintenances(),
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
+			"myrasec_tags":                  dataSourceMyrasecTags(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":               resourceMyrasecDomain(),
@@ -73,6 +74,7 @@ func Provider() *schema.Provider {
 			"myrasec_error_page":           resourceMyrasecErrorPage(),
 			"myrasec_maintenance":          resourceMyrasecMaintenance(),
 			"myrasec_maintenance_template": resourceMyrasecMaintenanceTemplate(),
+			"myrasec_tag":                  resourceMyrasecTag(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
