@@ -33,6 +33,6 @@ The following arguments are supported:
 * `path` (Required) Path which must match to cache response.
 * `ttl` (Required) Time to live.
 * `not_found_ttl` (Required) How long an object will be cached. Origin responses with the HTTP codes 404 will be cached.
-* `sort` (Optional) The order in which the cache rules take action as long as the cache sorting is activated. Default `0`.
+* `sort` (Required) The order in which the cache rules take action as long as the cache sorting is activated.
 * `enabled` (Optional) Define wether this cache setting is enabled or not. Default `true`.
 * `enforce` (Optional) Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin. Default `false`.

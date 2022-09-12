@@ -68,8 +68,7 @@ func resourceMyrasecTagCacheSetting() *schema.Resource {
 			},
 			"sort": {
 				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     0,
+				Required:    true,
 				Description: "The order in which the cache rules take action as long as the cache sorting is activated.",
 			},
 			"enabled": {
