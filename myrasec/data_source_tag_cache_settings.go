@@ -12,9 +12,9 @@ import (
 )
 
 // dataSourceMyrasecCacheSettings ...
-func dataSourceMyrasecCacheSettings() *schema.Resource {
+func dataSourceMyrasecTagCacheSettings() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceMyrasecCacheSettingsRead,
+		ReadContext: dataSourceMyrasecTagCacheSettingsRead,
 		Schema: map[string]*schema.Schema{
 			"filter": {
 				Type:     schema.TypeList,
@@ -22,9 +22,9 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"subdomain_name": {
-							Type:     schema.TypeString,
-							Required: true,
+						"tag_id": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
 						"path": {
 							Type:     schema.TypeString,
@@ -48,6 +48,10 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 						},
 						"created": {
 							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"tag_id": {
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"type": {
@@ -89,11 +93,11 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 	}
 }
 
-// dataSourceMyrasecCacheSettingsRead ...
-func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	f := prepareCacheSettingFilter(d.Get("filter"))
+// dataSourceMyrasecTagCacheSettingsRead ...
+func dataSourceMyrasecTagCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	f := prepareTagCacheSettingFilter(d.Get("filter"))
 	if f == nil {
-		f = &cacheSettingFilter{}
+		f = &tagCacheSettingFilter{}
 	}
 
 	params := map[string]string{}
@@ -101,17 +105,51 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 		params["search"] = f.path
 	}
 
-	settings, diags := listCacheSettings(meta, f.subDomainName, params)
-	if diags.HasError() {
-		return diags
+	tags, err := listTags(meta, params)
+	if err != nil {
+		return err
 	}
 
 	settingData := make([]interface{}, 0)
+	if f.tagId > 0 {
+		settings, diags := createSettingsData(f.tagId, meta, params)
+		if diags.HasError() {
+			return diags
+		}
+		settingData = append(settingData, settings...)
+	} else {
+		for _, tag := range tags {
+			settings, diags := createSettingsData(tag.ID, meta, params)
+			if diags.HasError() {
+				return diags
+			}
+			settingData = append(settingData, settings...)
+		}
+	}
+
+	if err := d.Set("settings", settingData); err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
+
+	return nil
+}
+
+// createSettingsData
+func createSettingsData(tagId int, meta interface{}, params map[string]string) ([]interface{}, diag.Diagnostics) {
+	settings, diags := listTagCacheSettings(tagId, meta, params)
+	settingData := make([]interface{}, 0)
+	if diags.HasError() {
+		return settingData, diags
+	}
+
 	for _, r := range settings {
 		settingData = append(settingData, map[string]interface{}{
 			"id":            r.ID,
 			"created":       r.Created.Format(time.RFC3339),
 			"modified":      r.Modified.Format(time.RFC3339),
+			"tag_id":        tagId,
 			"type":          r.Type,
 			"path":          r.Path,
 			"ttl":           r.TTL,
@@ -122,37 +160,30 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 		})
 	}
 
-	if err := d.Set("settings", settingData); err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
-
-	return nil
-
+	return settingData, nil
 }
 
-// prepareCacheSettingFilter fetches the panic that can happen in parseCacheSettingFilter
-func prepareCacheSettingFilter(d interface{}) *cacheSettingFilter {
+// prepareTagCacheSettingFilter fetches the panic that can happen in parseTagCacheSettingFilter
+func prepareTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("[DEBUG] recovered in prepareCacheSettingFilter", r)
+			log.Println("[DEBUG] recovered in prepareTagCacheSettingFilter", r)
 		}
 	}()
 
-	return parseCacheSettingFilter(d)
+	return parseTagCacheSettingFilter(d)
 }
 
-// parseCacheSettingFilter converts the filter data to a cacheSettingFilter struct
-func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
+// parseTagCacheSettingFilter converts the filter data to a tagCacheSettingFilter struct
+func parseTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
 	cfg := d.([]interface{})
-	f := &cacheSettingFilter{}
+	f := &tagCacheSettingFilter{}
 
 	m := cfg[0].(map[string]interface{})
 
-	subDomainName, ok := m["subdomain_name"]
+	tagId, ok := m["tag_id"]
 	if ok {
-		f.subDomainName = subDomainName.(string)
+		f.tagId = tagId.(int)
 	}
 
 	path, ok := m["path"]
@@ -163,30 +194,20 @@ func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
 	return f
 }
 
-// listCacheSettings ...
-func listCacheSettings(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
+// listTagCacheSettings ...
+func listTagCacheSettings(tagId int, meta interface{}, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var settings []myrasec.CacheSetting
 	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return settings, diags
-	}
-
 	params["pageSize"] = strconv.Itoa(pageSize)
 	page := 1
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListCacheSettings(domain.ID, subDomainName, params)
+		res, err := client.ListTagCacheSettings(tagId, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -205,8 +226,8 @@ func listCacheSettings(meta interface{}, subDomainName string, params map[string
 	return settings, diags
 }
 
-// cacheSettingFilter struct ...
-type cacheSettingFilter struct {
-	subDomainName string
-	path          string
+// tagCacheSettingFilter struct ...
+type tagCacheSettingFilter struct {
+	tagId int
+	path  string
 }
