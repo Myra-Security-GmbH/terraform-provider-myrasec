@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecIPRanges ...
-//
 func dataSourceMyrasecIPRanges() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecIPRangesRead,
@@ -83,9 +81,7 @@ func dataSourceMyrasecIPRanges() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecIPRangesRead ...
-//
 func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareIPRangeFilter(d.Get("filter"))
 	if f == nil {
@@ -97,6 +93,10 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 	}
 	if len(f.search) > 0 {
 		params["search"] = f.search
+	}
+
+	if len(f.ipVersionType) > 0 {
+		params["ipVersion"] = f.ipVersionType
 	}
 
 	ranges, diags := listIPRanges(meta, params)
@@ -136,9 +136,7 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 
 }
 
-//
 // prepareIPRangeFilter fetches the panic that can happen in parseIPRangeFilter
-//
 func prepareIPRangeFilter(d interface{}) *ipRangeFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -149,9 +147,7 @@ func prepareIPRangeFilter(d interface{}) *ipRangeFilter {
 	return parseIPRangeFilter(d)
 }
 
-//
 // parseRateLimitFilter converts the filter data to a rateLimitFilter struct
-//
 func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 	cfg := d.([]interface{})
 	f := &ipRangeFilter{}
@@ -171,9 +167,7 @@ func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 	return f
 }
 
-//
 // listIPRanges ...
-//
 func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var ranges []myrasec.IPRange
@@ -205,9 +199,7 @@ func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange
 	return ranges, diags
 }
 
-//
 // ipRangeFilter struct ...
-//
 type ipRangeFilter struct {
 	search        string
 	ipVersionType string

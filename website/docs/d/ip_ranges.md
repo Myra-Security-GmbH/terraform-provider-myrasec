@@ -18,6 +18,7 @@ The following arguments are supported:
 
 ### filter
 * `search` (Optional) A search string to filter the IP ranges.
+* `type` (Optional) Filter for IP ranges of the given IP version. Possible values are `ipv4` or `ipv6`.
 
 ## Attributes Reference
 * `ipranges` A list of IP ranges.
