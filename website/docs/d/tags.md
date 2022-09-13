@@ -6,8 +6,20 @@ Use this data source to look up tags.
 
 ```hcl
 data "myrasec_tags" "www" {
+    filter {
+        name = "example"
+    }
 }
 ```
+
+## Argument Reference
+
+The following argument is supported
+
+* `filter` (Required) One or more values to filter the tags.
+
+### filter
+* `name` (Optional) The tag name to filter for.
 
 ## Attributes Reference
 * `tags` A list of tags.

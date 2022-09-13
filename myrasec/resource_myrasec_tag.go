@@ -3,6 +3,7 @@ package myrasec
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Myra-Security-GmbH/myrasec-go/v2"
@@ -44,8 +45,11 @@ func resourceMyrasecTag() *schema.Resource {
 				Description: "The Name of the tag",
 			},
 			"type": {
-				Type:        schema.TypeString,
-				Required:    true,
+				Type:     schema.TypeString,
+				Required: true,
+				StateFunc: func(i interface{}) string {
+					return strings.ToUpper(i.(string))
+				},
 				Description: "The Type of the tag",
 			},
 			"assignments": {
@@ -69,8 +73,11 @@ func resourceMyrasecTag() *schema.Resource {
 							Description: "Date of creation.",
 						},
 						"type": {
-							Type:        schema.TypeString,
-							Required:    true,
+							Type:     schema.TypeString,
+							Required: true,
+							StateFunc: func(i interface{}) string {
+								return strings.ToUpper(i.(string))
+							},
 							Description: "The Type of the tag assignment",
 						},
 						"title": {
@@ -79,8 +86,11 @@ func resourceMyrasecTag() *schema.Resource {
 							Description: "The Title of the tag assignment",
 						},
 						"subdomain_name": {
-							Type:        schema.TypeString,
-							Required:    true,
+							Type:     schema.TypeString,
+							Required: true,
+							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+								return removeTrailingDot(old) == removeTrailingDot(new)
+							},
 							Description: "The subdomain of the tag assignment",
 						},
 					},
