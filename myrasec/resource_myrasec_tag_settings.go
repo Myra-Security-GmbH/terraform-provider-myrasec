@@ -339,7 +339,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	tagID := d.Get("tag_id").(int)
-	_, err = client.GetTag(tagID)
+	tag, err := client.GetTag(tagID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -349,7 +349,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	_, err = client.UpdateTagSettings(settings, tagID)
+	_, err = client.UpdateTagSettings(settings, tag.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -402,7 +402,7 @@ func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	tagID := d.Get("tag_id").(int)
-	_, err = client.GetTag(tagID)
+	tag, err := client.GetTag(tagID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -412,7 +412,7 @@ func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	_, err = client.UpdateTagSettings(settings, tagID)
+	_, err = client.UpdateTagSettings(settings, tag.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -454,7 +454,7 @@ func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceDat
 	}
 
 	tagID := d.Get("tag_id").(int)
-	_, err = client.GetTag(tagID)
+	tag, err := client.GetTag(tagID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -464,7 +464,7 @@ func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	_, err = client.UpdateTagSettings(settings, tagID)
+	_, err = client.UpdateTagSettings(settings, tag.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
