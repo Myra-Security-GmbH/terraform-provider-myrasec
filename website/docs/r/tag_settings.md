@@ -6,8 +6,8 @@ Provides a Myra Security tag settings resource.
 
 ```hcl
 # Configure settings for a tag
-resource "myrasec_tag_settings" "tag_settings" {
-  tag_id = myrasec_tag.tag_cache.id
+resource "myrasec_tag_settings" "example_tag_settings" {
+  tag_id = myrasec_tag.example_tag.id
   only_https = true
   cache_enabled = true
 }
@@ -17,7 +17,7 @@ resource "myrasec_tag_settings" "tag_settings" {
 
 The following arguments are supported:
 
-* `tag_id` (Required) The tag ID for the setting. You can use the ID of the tag `0000` or the reference to the tag, if it is also managed by terraform `myrasec_tag.tag_setting.id`
+* `tag_id` (Required) The tag ID for the setting. You can use the ID of the tag `0000` or the reference to the tag, if it is also managed by terraform `myrasec_tag.example_tag.id`
 * `access_log` (Optional) Activate separated access log. Default `false`.
 * `antibot_post_flood` (Optional) Detection of POST floods by using a JavaScript based puzzle.. Default `false`.
 * `antibot_post_flood_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `540`.
