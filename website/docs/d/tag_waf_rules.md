@@ -19,18 +19,16 @@ The following arguments are supported:
 * `filter` (Required) Filter the WAF rules.
 
 ### filter
-* `tag_id` (Required) The action type to filter for.
+* `tag_id` (Required) The tag to filter for.
 * `search` (Optional) A search string to filter the WAF rules.
 
 ## Attributes Reference
 * `waf_rules` A list of WAF rules.
 
 ### rules
-* `id` The ID of the WAF action.
+* `id` The ID of the WAF rule.
 * `created` Date of creation.
 * `modified` Date of last modification.
-
-
 * `rule_type` The type of the rule.
 * `tag_id` The ID of the tag.
 * `name` The rule name identifies each rule.

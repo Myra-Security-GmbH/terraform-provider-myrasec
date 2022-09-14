@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+// resourceMyrasecTagWAFRule ...
 func resourceMyrasecTagWAFRule() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecTagWAFRuleCreate,
@@ -331,17 +332,6 @@ func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	//tagID := d.Get("tag_id").(int)
-	//tag, err := client.GetTag(tagID)
-	//if err != nil {
-	//	diags = append(diags, diag.Diagnostic{
-	//		Severity: diag.Error,
-	//		Summary:  "Error fetching tag for given ID",
-	//		Detail:   formatError(err),
-	//	})
-	//	return diags
-	//}
-
 	// REMOVEME
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
@@ -419,31 +409,6 @@ func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData
 	resourceMyrasecTagWAFRuleRead(ctx, d, meta)
 
 	return []*schema.ResourceData{d}, nil
-
-	//tagID, err := strconv.Atoi(tag)
-	//log.Println("#########################################33")
-	//log.Println(d.Id())
-	//log.Println(tag)
-	//log.Printf("%d", tagID)
-	//if err != nil {
-	//	return nil, fmt.Errorf("error converting id to int")
-	//}
-	//rule, diags := findTagWAFRule(ruleID, tagID, meta)
-	//if diags.HasError() || rule == nil {
-	//	return nil, fmt.Errorf("unable to find tag WAF rule for tag waf rule with ID = [%d]", ruleID)
-	//}
-	//log.Println(rule)
-
-	//d.SetId(strconv.Itoa(ruleID))
-	//d.Set("rule_id", rule.ID)
-	//d.Set("tag_id", tagID)
-	//log.Println(d.Get("tag_id"))
-
-	//resourceMyrasecTagWAFRuleRead(ctx, d, meta)
-
-	//log.Println(d.Get("tag_id"))
-	//log.Println("#########################################33")
-	//return []*schema.ResourceData{d}, nil
 }
 
 // buildTagWAFRule ...

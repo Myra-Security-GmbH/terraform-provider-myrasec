@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// dataSourceMyrasecTagWAFRules ...
 func dataSourceMyrasecTagWAFRules() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecTagWAFRulesRead,
