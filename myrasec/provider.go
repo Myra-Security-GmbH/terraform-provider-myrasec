@@ -59,6 +59,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
 			"myrasec_tags":                  dataSourceMyrasecTags(),
 			"myrasec_tag_cache_settings":    dataSourceMyrasecTagCacheSettings(),
+			"myrasec_tag_waf_rules":         dataSourceMyrasecTagWAFRules(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":               resourceMyrasecDomain(),
@@ -75,6 +76,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_template": resourceMyrasecMaintenanceTemplate(),
 			"myrasec_tag":                  resourceMyrasecTag(),
 			"myrasec_tag_cache_setting":    resourceMyrasecTagCacheSetting(),
+			"myrasec_tag_waf_rule":         resourceMyrasecTagWAFRule(),
 			"myrasec_tag_settings":         resourceMyrasecTagSettings(),
 		},
 		ConfigureContextFunc: providerConfigure,
