@@ -21,4 +21,4 @@ jobs:
         run: go test -v ./...
       - 
         name: Build (test)
-        run: ./bin/testbuild.sh
+        run: ./scripts/testbuild.sh
