@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecRateLimit ...
-//
 func resourceMyrasecRateLimit() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecRateLimitCreate,
@@ -100,9 +98,7 @@ func resourceMyrasecRateLimit() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecRateLimitCreate ...
-//
 func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -147,9 +143,7 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceMyrasecRateLimitRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecRateLimitRead ...
-//
 func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -184,9 +178,7 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-//
 // resourceMyrasecRateLimitUpdate ...
-//
 func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -244,9 +236,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecRateLimitDelete ...
-//
 func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -297,9 +287,7 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecRateLimitImport ...
-//
 func resourceMyrasecRateLimitImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	subDomainName, rateLimitID, err := parseResourceServiceID(d.Id())
@@ -321,9 +309,7 @@ func resourceMyrasecRateLimitImport(ctx context.Context, d *schema.ResourceData,
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildRateLimit ...
-//
 func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimit, error) {
 	ratelimit := &myrasec.RateLimit{
 		Type:          d.Get("type").(string),
@@ -358,9 +344,7 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 	return ratelimit, nil
 }
 
-//
 // findRateLimit ...
-//
 func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -416,9 +400,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 	return nil, diags
 }
 
-//
 // setRateLimitData ...
-//
 func setRateLimitData(d *schema.ResourceData, rateLimit *myrasec.RateLimit) {
 	d.SetId(strconv.Itoa(rateLimit.ID))
 	d.Set("ratelimit_id", rateLimit.ID)

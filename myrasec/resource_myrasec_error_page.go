@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecErrorPage ...
-//
 func resourceMyrasecErrorPage() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecErrorPageCreate,
@@ -73,9 +71,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecErrorPageCreate ...
-//
 func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -119,9 +115,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceMyrasecErrorPageRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecErrorPageRead ...
-//
 func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -148,9 +142,7 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-//
 // resourceMyrasecErrorPageUpdate ...
-//
 func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -196,9 +188,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecErrorPageDelete ...
-//
 func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -249,9 +239,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecErrorPageImport ...
-//
 func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	subDomainName, id, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -283,9 +271,7 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildErrorPage ...
-//
 func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPage, error) {
 
 	errorPage := &myrasec.ErrorPage{
@@ -309,23 +295,17 @@ func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPag
 	return errorPage, nil
 }
 
-//
 // findErrorPageByErrorCode ...
-//
 func findErrorPageByErrorCode(subDomainName string, code int, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
 	return findErrorPage(subDomainName, code, true, meta)
 }
 
-//
 // findErrorPageByID ...
-//
 func findErrorPageByID(subDomainName string, id int, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
 	return findErrorPage(subDomainName, id, false, meta)
 }
 
-//
 // findErrorPage ...
-//
 func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -376,9 +356,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 	return nil, diags
 }
 
-//
 // setErrorPageData ...
-//
 func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage) {
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)

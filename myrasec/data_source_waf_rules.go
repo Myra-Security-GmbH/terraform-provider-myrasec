@@ -180,9 +180,7 @@ func dataSourceMyrasecWAFRules() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecWAFRulesRead ...
-//
 func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareWAFRuleFilter(d.Get("filter"))
 	if f == nil {
@@ -270,9 +268,7 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // listWAFRules ..
-//
 func listWAFRules(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var rules []myrasec.WAFRule
@@ -316,9 +312,7 @@ func listWAFRules(meta interface{}, subDomainName string, params map[string]stri
 
 }
 
-//
 // prepareWAFRuleFilter ...
-//
 func prepareWAFRuleFilter(d interface{}) *wafRuleFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -329,9 +323,7 @@ func prepareWAFRuleFilter(d interface{}) *wafRuleFilter {
 	return parseWAFRuleFilter(d)
 }
 
-//
 // parseWAFRuleFilter ...
-//
 func parseWAFRuleFilter(d interface{}) *wafRuleFilter {
 	cfg := d.([]interface{})
 	f := &wafRuleFilter{}
@@ -351,9 +343,7 @@ func parseWAFRuleFilter(d interface{}) *wafRuleFilter {
 	return f
 }
 
-//
 // wafRuleFilter ...
-//
 type wafRuleFilter struct {
 	subDomainName string
 	search        string

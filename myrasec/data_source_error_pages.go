@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecErrorPages ...
-//
 func dataSourceMyrasecErrorPages() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecErrorPageRead,
@@ -71,9 +69,7 @@ func dataSourceMyrasecErrorPages() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecErrorPageRead ...
-//
 func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareErrorPageFilter(d.Get("filter"))
 	if f == nil {
@@ -121,9 +117,7 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 	return nil
 }
 
-//
 // prepareErrorPageFilter fetches the panic that can happen in parseErrorPageFilter
-//
 func prepareErrorPageFilter(d interface{}) *errorPageFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -134,9 +128,7 @@ func prepareErrorPageFilter(d interface{}) *errorPageFilter {
 	return parseErrorPageFilter(d)
 }
 
-//
 // parseErrorPageFilter converts the filter data to a errorPageFilter struct
-//
 func parseErrorPageFilter(d interface{}) *errorPageFilter {
 	cfg := d.([]interface{})
 	f := &errorPageFilter{}
@@ -151,9 +143,7 @@ func parseErrorPageFilter(d interface{}) *errorPageFilter {
 	return f
 }
 
-//
 // listErrorPages ...
-//
 func listErrorPages(meta interface{}, domainName string, params map[string]string) ([]myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var errorPages []myrasec.ErrorPage
@@ -194,9 +184,7 @@ func listErrorPages(meta interface{}, domainName string, params map[string]strin
 	return errorPages, diags
 }
 
-//
 // errorPageFilter ...
-//
 type errorPageFilter struct {
 	domainName string
 }

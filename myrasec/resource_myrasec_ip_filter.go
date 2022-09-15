@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecIPFilter ...
-//
 func resourceMyrasecIPFilter() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecIPFilterCreate,
@@ -101,9 +99,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecIPFilterCreate ...
-//
 func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -155,9 +151,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	return resourceMyrasecIPFilterRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecIPFilterRead ...
-//
 func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -192,9 +186,7 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-//
 // resourceMyrasecIPFilterUpdate ...
-//
 func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -252,9 +244,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // resourceMyrasecIPFilterDelete ...
-//
 func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -305,9 +295,7 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // resourceMyrasecIPFilterImport ...
-//
 func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	subDomainName, filterID, err := parseResourceServiceID(d.Id())
@@ -329,9 +317,7 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildIPFilter ...
-//
 func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter, error) {
 	filter := &myrasec.IPFilter{
 		Type:    d.Get("type").(string),
@@ -370,9 +356,7 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 	return filter, nil
 }
 
-//
 // findIPFilter ...
-//
 func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -410,9 +394,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 	return nil, diags
 }
 
-//
 // setIPFilterData ...
-//
 func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomainName string) {
 	d.SetId(strconv.Itoa(filter.ID))
 	d.Set("filter_id", filter.ID)
@@ -429,9 +411,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 	}
 }
 
-//
 // importExistingIPFilter ...
-//
 func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainName string, meta interface{}) (*myrasec.IPFilter, error) {
 	client := meta.(*myrasec.API)
 

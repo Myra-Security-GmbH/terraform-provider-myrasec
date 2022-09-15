@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecWAFActions ...
-//
 func dataSourceMyrasecWAFActions() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecWAFActionsRead,
@@ -83,9 +81,7 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecWAFActionsRead ...
-//
 func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -131,9 +127,7 @@ func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
-//
 // prepareWAFActionFilter fetches the panic that can happen in parseWAFActionFilter
-//
 func prepareWAFActionFilter(d interface{}) *wafActionFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -144,9 +138,7 @@ func prepareWAFActionFilter(d interface{}) *wafActionFilter {
 	return parseWAFActionFilter(d)
 }
 
-//
 // parseWAFActionFilter ...
-//
 func parseWAFActionFilter(d interface{}) *wafActionFilter {
 	cfg := d.([]interface{})
 	f := &wafActionFilter{}
@@ -161,9 +153,7 @@ func parseWAFActionFilter(d interface{}) *wafActionFilter {
 	return f
 }
 
-//
 // wafActionFilter struct ...
-//
 type wafActionFilter struct {
 	actionType string
 }

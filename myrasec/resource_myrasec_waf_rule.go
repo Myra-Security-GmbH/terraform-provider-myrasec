@@ -232,9 +232,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecWAFRuleCreate ...
-//
 func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -279,9 +277,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 	return resourceMyrasecWAFRuleRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecWAFRuleRead ...
-//
 func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -316,9 +312,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 	return diags
 }
 
-//
 // resourceMyrasecWAFRuleUpdate ...
-//
 func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -376,9 +370,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-//
 // resourceMyrasecWAFRuleDelete ...
-//
 func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -418,9 +410,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-//
 // resourceMyrasecWAFRuleImport ...
-//
 func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
@@ -442,9 +432,7 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildWAFRule ...
-//
 func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, error) {
 	rule := &myrasec.WAFRule{
 		SubDomainName: d.Get("subdomain_name").(string),
@@ -510,9 +498,7 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 	return rule, nil
 }
 
-//
 // buildWAFCondition ...
-//
 func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 	c := &myrasec.WAFCondition{}
 	for key, val := range condition.(map[string]interface{}) {
@@ -553,9 +539,7 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 	return c, nil
 }
 
-//
 // buildWAFAction ...
-//
 func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	a := &myrasec.WAFAction{}
 	for key, val := range action.(map[string]interface{}) {
@@ -590,9 +574,7 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	return a, nil
 }
 
-//
 // findWAFRule ...
-//
 func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -648,9 +630,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 	return nil, diags
 }
 
-//
 // setWAFRuleData ...
-//
 func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule) {
 	d.SetId(strconv.Itoa(rule.ID))
 	d.Set("rule_id", rule.ID)

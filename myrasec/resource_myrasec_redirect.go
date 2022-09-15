@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecRedirect ...
-//
 func resourceMyrasecRedirect() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecRedirectCreate,
@@ -112,9 +110,7 @@ func resourceMyrasecRedirect() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecRedirectCreate ...
-//
 func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -166,9 +162,7 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 	return resourceMyrasecRedirectRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecRedirectRead ...
-//
 func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -203,9 +197,7 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-//
 // resourceMyrasecRedirectUpdate ...
-//
 func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -263,9 +255,7 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // resourceMyrasecRedirectDelete ...
-//
 func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -316,9 +306,7 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // resourceMyrasecRedirectImport ...
-//
 func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
@@ -340,9 +328,7 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildRedirect ...
-//
 func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect, error) {
 	redirect := &myrasec.Redirect{
 		Type:          d.Get("type").(string),
@@ -380,9 +366,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 	return redirect, nil
 }
 
-//
 // findRedirect ...
-//
 func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -420,9 +404,7 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 	return nil, diags
 }
 
-//
 // setRedirectData ...
-//
 func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
 	d.SetId(strconv.Itoa(redirect.ID))
 	d.Set("redirect_id", redirect.ID)
@@ -438,9 +420,7 @@ func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
 	d.Set("enabled", redirect.Enabled)
 }
 
-//
 // importExistingRedirect ...
-//
 func importExistingRedirect(redirect *myrasec.Redirect, domainId int, subDomainName string, meta interface{}) (*myrasec.Redirect, error) {
 	client := meta.(*myrasec.API)
 

@@ -9,9 +9,7 @@ import (
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 )
 
-//
 // parseResourceServiceID splits the passed id (format like string:integer) to separate values
-//
 func parseResourceServiceID(id string) (string, int, error) {
 	parts := strings.SplitN(id, ":", 2)
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
@@ -26,9 +24,7 @@ func parseResourceServiceID(id string) (string, int, error) {
 	return parts[0], recordID, nil
 }
 
-//
 // StringInSlice checks if the haystack []string slice contains the passed needle string
-//
 func StringInSlice(needle string, haystack []string) bool {
 	for _, a := range haystack {
 		if a == needle {
@@ -38,9 +34,7 @@ func StringInSlice(needle string, haystack []string) bool {
 	return false
 }
 
-//
 // IntInSlice checks if the haystack []int slice contains the passed needle int
-//
 func IntInSlice(needle int, haystack []int) bool {
 	for _, a := range haystack {
 		if a == needle {
@@ -50,17 +44,13 @@ func IntInSlice(needle int, haystack []int) bool {
 	return false
 }
 
-//
 // isGeneralDomainName checks if the passed name starts with ALL- or ALL:
-//
 func isGeneralDomainName(name string) bool {
 	name = strings.ToUpper(name)
 	return strings.HasPrefix(name, "ALL-") || strings.HasPrefix(name, "ALL:")
 }
 
-//
 // fetchDomainForSubdomainName ...
-//
 func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrasec.Domain, error) {
 
 	if isGeneralDomainName(subdomain) {
@@ -129,9 +119,7 @@ func fetchDomainForSubdomainName(client *myrasec.API, subdomain string) (*myrase
 	return nil, fmt.Errorf("unable to find domain for passed subdomain")
 }
 
-//
 // fetchDomain ...
-//
 func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 
 	maxRetries := 2
@@ -166,9 +154,7 @@ func fetchDomain(client *myrasec.API, domain string) (*myrasec.Domain, error) {
 	return nil, nil
 }
 
-//
 // fetchDomainById ...
-//
 func fetchDomainById(client *myrasec.API, id int) (*myrasec.Domain, error) {
 	domain, err := client.GetDomain(id)
 	if err != nil {
@@ -177,23 +163,17 @@ func fetchDomainById(client *myrasec.API, id int) (*myrasec.Domain, error) {
 	return domain, err
 }
 
-//
 // ensureTrailingDot ...
-//
 func ensureTrailingDot(subdomain string) string {
 	return removeTrailingDot(subdomain) + "."
 }
 
-//
 // removeTrailingDot ...
-//
 func removeTrailingDot(subdomain string) string {
 	return strings.TrimRight(subdomain, ".")
 }
 
-//
 // formatError returns the error message with a timestamp appended to it
-//
 func formatError(err error) string {
 	return fmt.Sprintf("%s: %s", time.Now().Format(time.RFC3339Nano), err.Error())
 }

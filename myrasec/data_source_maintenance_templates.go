@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecMaintenanceTemplates ...
-//
 func dataSourceMyrasecMaintenanceTemplates() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecMaintenanceTemplatesRead,
@@ -67,9 +65,7 @@ func dataSourceMyrasecMaintenanceTemplates() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecMaintenanceTemplatesRead ...
-//
 func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareMaintenanceTemplateFilter(d.Get("filter"))
 
@@ -115,9 +111,7 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 	return nil
 }
 
-//
 // listMaintenanceTemplates ...
-//
 func listMaintenanceTemplates(meta interface{}, domainName string, params map[string]string) ([]myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var templates []myrasec.MaintenanceTemplate
@@ -158,9 +152,7 @@ func listMaintenanceTemplates(meta interface{}, domainName string, params map[st
 	return templates, diags
 }
 
-//
 // prepareMaintenanceTemplateFilter ...
-//
 func prepareMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -171,9 +163,7 @@ func prepareMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter 
 	return parseMaintenanceTemplateFilter(d)
 }
 
-//
 // parseMaintenanceTemplateFilter ...
-//
 func parseMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter {
 	cfg := d.([]interface{})
 	f := &maintenanceTemplateFilter{}
@@ -188,9 +178,7 @@ func parseMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter {
 	return f
 }
 
-//
 // maintenanceTemplateFilter ...
-//
 type maintenanceTemplateFilter struct {
 	domainName string
 }

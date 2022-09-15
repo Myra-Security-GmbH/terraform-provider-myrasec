@@ -12,9 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecDomains ...
-//
 func dataSourceMyrasecDomains() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecDomainsRead,
@@ -84,9 +82,7 @@ func dataSourceMyrasecDomains() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecDomainsRead ...
-//
 func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareDomainFilter(d.Get("filter"))
 	if f == nil {
@@ -145,9 +141,7 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-//
 // prepareDomainFilter fetches the panic that can happen in parseDomainFilter
-//
 func prepareDomainFilter(d interface{}) *domainFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -158,9 +152,7 @@ func prepareDomainFilter(d interface{}) *domainFilter {
 	return parseDomainFilter(d)
 }
 
-//
 // parseDomainFilter converts the filter data to a domainFilter struct
-//
 func parseDomainFilter(d interface{}) *domainFilter {
 
 	cfg := d.([]interface{})
@@ -195,9 +187,7 @@ func parseDomainFilter(d interface{}) *domainFilter {
 	return f
 }
 
-//
 // listDomains ...
-//
 func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var domains []myrasec.Domain
@@ -229,9 +219,7 @@ func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, 
 	return domains, diags
 }
 
-//
 // domainFilter struct ...
-//
 type domainFilter struct {
 	id    int
 	name  string

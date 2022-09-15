@@ -14,9 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // resourceMyrasecDomain ...
-//
 func resourceMyrasecDomain() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecDomainCreate,
@@ -75,9 +73,7 @@ func resourceMyrasecDomain() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecDomainCreate ...
-//
 func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -120,9 +116,7 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 }
 
-//
 // resourceMyrasecDomainRead ...
-//
 func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -146,9 +140,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	return diags
 }
 
-//
 // resourceMyrasecDomainUpdate ...
-//
 func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -183,9 +175,7 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-//
 // resourceMyrasecDomainDelete ...
-//
 func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -225,9 +215,7 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-//
 // resourceMyrasecDomainImport ...
-//
 func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	var domain *myrasec.Domain
@@ -256,9 +244,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildDomain ...
-//
 func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, error) {
 	domain := &myrasec.Domain{
 		Name:       d.Get("name").(string),
@@ -297,9 +283,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 	return domain, nil
 }
 
-//
 // findDomain ...
-//
 func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -326,9 +310,7 @@ func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnosti
 	return nil, diags
 }
 
-//
 // setDomainData ...
-//
 func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.SetId(fmt.Sprintf("%d", domain.ID))
 	d.Set("domain_id", domain.ID)
@@ -340,9 +322,7 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.Set("modified", domain.Modified.Format(time.RFC3339))
 }
 
-//
 // importExistingDomain ...
-//
 func importExistingDomain(domain *myrasec.Domain, meta interface{}) (*myrasec.Domain, error) {
 	client := meta.(*myrasec.API)
 

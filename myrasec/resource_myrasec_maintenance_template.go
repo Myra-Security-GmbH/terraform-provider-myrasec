@@ -14,9 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // resourceMyrasecMaintenanceTemplate ...
-//
 func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecMaintenanceTemplateCreate,
@@ -69,9 +67,7 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecMaintenanceTemplateCreate ...
-//
 func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -116,9 +112,7 @@ func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.Res
 	return resourceMyrasecMaintenanceTemplateRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecMaintenanceTemplateRead ...
-//
 func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -152,9 +146,7 @@ func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.Resou
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceTemplateUpdate ...
-//
 func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -212,9 +204,7 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceTemplateDelete ...
-//
 func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -265,9 +255,7 @@ func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.Res
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceTemplateImport ...
-//
 func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	domainName, maintenanceTemplateID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -290,9 +278,7 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildMaintenanceTemplate ...
-//
 func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrasec.MaintenanceTemplate, error) {
 	template := &myrasec.MaintenanceTemplate{
 		Content: d.Get("content").(string),
@@ -323,9 +309,7 @@ func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrase
 	return template, nil
 }
 
-//
 // findMaintenanceTemplate ...
-//
 func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domainName string) (*myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -380,9 +364,7 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domain
 	return nil, diags
 }
 
-//
 // setMaintenanceTemplateData ...
-//
 func setMaintenanceTemplateData(d *schema.ResourceData, template *myrasec.MaintenanceTemplate) {
 	d.SetId(strconv.Itoa(template.ID))
 	d.Set("maintenance_template_id", template.ID)

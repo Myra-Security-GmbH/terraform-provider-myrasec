@@ -14,9 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // resourceMyrasecMaintenance ...
-//
 func resourceMyrasecMaintenance() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecMaintenanceCreate,
@@ -86,9 +84,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecMaintenanceCreate
-//
 func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -133,9 +129,7 @@ func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceDat
 	return resourceMyrasecMaintenanceRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecMaintenanceRead
-//
 func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -169,9 +163,7 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceUpdate ...
-//
 func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -229,9 +221,7 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceDelete
-//
 func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -282,9 +272,7 @@ func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-//
 // resourceMyrasecMaintenanceImport
-//
 func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	subDomainName, maintenanceID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -308,9 +296,7 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildMaintenance
-//
 func buildMaintenance(d *schema.ResourceData, meta interface{}) (*myrasec.Maintenance, error) {
 	maintenance := &myrasec.Maintenance{
 		Content: d.Get("content").(string),
@@ -353,9 +339,7 @@ func buildMaintenance(d *schema.ResourceData, meta interface{}) (*myrasec.Mainte
 	return maintenance, nil
 }
 
-//
 // findMaintenance
-//
 func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) (*myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -410,9 +394,7 @@ func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) 
 	return nil, diags
 }
 
-//
 // setMaintenanceData ...
-//
 func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance) {
 	d.SetId(strconv.Itoa(maintenance.ID))
 	d.Set("maintenance_id", maintenance.ID)

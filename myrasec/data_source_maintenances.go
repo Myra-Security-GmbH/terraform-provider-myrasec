@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecMaintenances ...
-//
 func dataSourceMyrasecMaintenances() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecMaintenancesRead,
@@ -79,9 +77,7 @@ func dataSourceMyrasecMaintenances() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecMaintenancesRead
-//
 func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareMaintenanceFilter(d.Get("filter"))
 
@@ -130,9 +126,7 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-//
 // prepareMaintenanceFilter
-//
 func prepareMaintenanceFilter(d interface{}) *maintenanceFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -143,9 +137,7 @@ func prepareMaintenanceFilter(d interface{}) *maintenanceFilter {
 	return parseMaintenanceFilter(d)
 }
 
-//
 // parseMaintenanceFilter
-//
 func parseMaintenanceFilter(d interface{}) *maintenanceFilter {
 	cfg := d.([]interface{})
 	f := &maintenanceFilter{}
@@ -160,9 +152,7 @@ func parseMaintenanceFilter(d interface{}) *maintenanceFilter {
 	return f
 }
 
-//
 // listMaintenances ...
-//
 func listMaintenances(meta interface{}, subdomainName string, params map[string]string) ([]myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var maintenances []myrasec.Maintenance
@@ -203,9 +193,7 @@ func listMaintenances(meta interface{}, subdomainName string, params map[string]
 	return maintenances, diags
 }
 
-//
 // maintenanceFilter
-//
 type maintenanceFilter struct {
 	subDomainName string
 }

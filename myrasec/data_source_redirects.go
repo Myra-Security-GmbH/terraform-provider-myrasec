@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecRedirects ...
-//
 func dataSourceMyrasecRedirects() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecRedirectsRead,
@@ -95,9 +93,7 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecRedirectsRead ...
-//
 func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareRedirectFilter(d.Get("filter"))
 	if f == nil {
@@ -140,9 +136,7 @@ func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // prepareRedirectFilter fetches the panic that can happen in parseRedirectFilter
-//
 func prepareRedirectFilter(d interface{}) *redirectFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -153,9 +147,7 @@ func prepareRedirectFilter(d interface{}) *redirectFilter {
 	return parseRedirectFilter(d)
 }
 
-//
 // parseRedirectFilter converts the filter data to a redirectFilter struct
-//
 func parseRedirectFilter(d interface{}) *redirectFilter {
 	cfg := d.([]interface{})
 	f := &redirectFilter{}
@@ -175,9 +167,7 @@ func parseRedirectFilter(d interface{}) *redirectFilter {
 	return f
 }
 
-//
 // listRedirects ...
-//
 func listRedirects(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var redirects []myrasec.Redirect
@@ -219,9 +209,7 @@ func listRedirects(meta interface{}, subDomainName string, params map[string]str
 	return redirects, diags
 }
 
-//
 // redirectFilter struct ...
-//
 type redirectFilter struct {
 	subDomainName string
 	search        string

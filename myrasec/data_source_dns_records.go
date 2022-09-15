@@ -14,9 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecDNSRecords ...
-//
 func dataSourceMyrasecDNSRecords() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecDNSRecordsRead,
@@ -152,9 +150,7 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecDNSRecordsRead ...
-//
 func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareDNSRecordFilter(d.Get("filter"))
 	if f == nil {
@@ -246,9 +242,7 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 	return nil
 }
 
-//
 // prepareDNSRecordFilter fetches the panic that can happen in parseDNSRecordFilter
-//
 func prepareDNSRecordFilter(d interface{}) *recordFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -259,9 +253,7 @@ func prepareDNSRecordFilter(d interface{}) *recordFilter {
 	return parseDNSRecordFilter(d)
 }
 
-//
 // parseDNSRecordFilter converts the filter data to a recordFilter struct
-//
 func parseDNSRecordFilter(d interface{}) *recordFilter {
 	cfg := d.([]interface{})
 	f := &recordFilter{}
@@ -295,9 +287,7 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 	return f
 }
 
-//
 // listDnsRecords ...
-//
 func listDnsRecords(meta interface{}, domainName string, params map[string]string) ([]myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var records []myrasec.DNSRecord
@@ -339,9 +329,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 	return records, diags
 }
 
-//
 // recordFilter struct ...
-//
 type recordFilter struct {
 	domainName string
 	name       string

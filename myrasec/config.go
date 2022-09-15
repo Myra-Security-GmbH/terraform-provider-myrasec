@@ -10,9 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-//
 // Config ...
-//
 type Config struct {
 	APIKey        string
 	Secret        string
@@ -23,9 +21,7 @@ type Config struct {
 	APIRetrySleep int
 }
 
-//
 // validate ...
-//
 func (c Config) validate() error {
 	var err *multierror.Error
 
@@ -43,9 +39,7 @@ func (c Config) validate() error {
 	return err.ErrorOrNil()
 }
 
-//
 // Client returns a new instance of myrasec API client
-//
 func (c Config) Client() (*myrasec.API, error) {
 	api, err := myrasec.New(c.APIKey, c.Secret)
 	if err != nil {

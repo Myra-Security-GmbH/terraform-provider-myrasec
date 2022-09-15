@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecIPFilters ...
-//
 func dataSourceMyrasecIPFilters() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecIPFiltersRead,
@@ -87,9 +85,7 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecIPFiltersRead ...
-//
 func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareIPFilterFilter(d.Get("filter"))
 	if f == nil {
@@ -139,9 +135,7 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 
 }
 
-//
 // prepareIPFilterFilter fetches the panic that can happen in parseIPFilterFilter
-//
 func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -152,9 +146,7 @@ func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
 	return parseIPFilterFilter(d)
 }
 
-//
 // parseRateLimitFilter converts the filter data to a rateLimitFilter struct
-//
 func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 	cfg := d.([]interface{})
 	f := &ipFilterFilter{}
@@ -179,9 +171,7 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 	return f
 }
 
-//
 // listIPFilters ...
-//
 func listIPFilters(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var filters []myrasec.IPFilter
@@ -223,9 +213,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 	return filters, diags
 }
 
-//
 // ipFilterFilter struct ...
-//
 type ipFilterFilter struct {
 	subDomainName string
 	search        string

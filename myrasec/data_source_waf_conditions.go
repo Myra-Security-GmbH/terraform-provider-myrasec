@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecWAFConditions ...
-//
 func dataSourceMyrasecWAFConditions() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecWAFConditionsRead,
@@ -91,9 +89,7 @@ func dataSourceMyrasecWAFConditions() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecWAFConditionsRead ...
-//
 func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -141,9 +137,7 @@ func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceD
 	return diags
 }
 
-//
 // prepareRedirectFilter fetches the panic that can happen in parseWAFConditionFilter
-//
 func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -154,9 +148,7 @@ func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
 	return parseWAFConditionFilter(d)
 }
 
-//
 // parseWAFConditionFilter ...
-//
 func parseWAFConditionFilter(d interface{}) *wafConditionFilter {
 	cfg := d.([]interface{})
 	f := &wafConditionFilter{}
@@ -171,9 +163,7 @@ func parseWAFConditionFilter(d interface{}) *wafConditionFilter {
 	return f
 }
 
-//
 // wafConditionFilter struct...
-//
 type wafConditionFilter struct {
 	name string
 }

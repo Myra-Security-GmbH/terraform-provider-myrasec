@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecSSLCertificates ...
-//
 func dataSourceMyrasecSSLCertificates() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecSSLCertificatesRead,
@@ -145,9 +143,7 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecSSLCertificatesRead ...
-//
 func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareSSLCertificateFilter(d.Get("filter"))
 	if f == nil {
@@ -219,9 +215,7 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 	return diags
 }
 
-//
 // prepareSSLCertificateFilter fetches the panic that can happen in parseSSLCertificateFilter
-//
 func prepareSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -232,9 +226,7 @@ func prepareSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 	return parseSSLCertificateFilter(d)
 }
 
-//
 // parseSSLCertificateFilter converts the filter data to a sslCertificateFilter struct
-//
 func parseSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 	cfg := d.([]interface{})
 	f := &sslCertificateFilter{}
@@ -249,9 +241,7 @@ func parseSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 	return f
 }
 
-//
 // listSSLCertificates ...
-//
 func listSSLCertificates(meta interface{}, domainName string, params map[string]string) ([]myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var certificates []myrasec.SSLCertificate
@@ -293,9 +283,7 @@ func listSSLCertificates(meta interface{}, domainName string, params map[string]
 	return certificates, diags
 }
 
-//
 // sslCertificateFilter ...
-//
 type sslCertificateFilter struct {
 	domainName string
 }

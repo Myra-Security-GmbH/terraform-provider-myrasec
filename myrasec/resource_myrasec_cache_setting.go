@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecCacheSetting ...
-//
 func resourceMyrasecCacheSetting() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecCacheSettingCreate,
@@ -106,9 +104,7 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecCacheSettingCreate ...
-//
 func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -160,9 +156,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 	return resourceMyrasecCacheSettingRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecCacheSettingRead ...
-//
 func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -197,9 +191,7 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 	return diags
 }
 
-//
 // resourceMyrasecCacheSettingUpdate ...
-//
 func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -257,9 +249,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-//
 // resourceMyrasecCacheSettingDelete ...
-//
 func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -310,9 +300,7 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-//
 // resourceMyrasecCacheSettingImport ...
-//
 func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	subDomainName, settingID, err := parseResourceServiceID(d.Id())
@@ -334,9 +322,7 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildCacheSetting ...
-//
 func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.CacheSetting, error) {
 	setting := &myrasec.CacheSetting{
 		Type:        d.Get("type").(string),
@@ -372,9 +358,7 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 	return setting, nil
 }
 
-//
 // findCacheSetting ...
-//
 func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -429,9 +413,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 	return nil, diags
 }
 
-//
 // setCacheSettingData ...
-//
 func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, subDomainName string) {
 	d.SetId(strconv.Itoa(setting.ID))
 	d.Set("setting_id", setting.ID)
@@ -447,9 +429,7 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 	d.Set("subdomain_name", subDomainName)
 }
 
-//
 // importExistingCacheSetting ...
-//
 func importExistingCacheSetting(setting *myrasec.CacheSetting, domainId int, subDomainName string, meta interface{}) (*myrasec.CacheSetting, error) {
 	client := meta.(*myrasec.API)
 

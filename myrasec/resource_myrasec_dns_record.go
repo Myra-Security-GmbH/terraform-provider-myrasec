@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-//
 // resourceMyrasecDNSRecord ...
-//
 func resourceMyrasecDNSRecord() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecDNSRecordCreate,
@@ -186,9 +184,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecDNSRecordCreate ...
-//
 func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -233,9 +229,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 	return resourceMyrasecDNSRecordRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecDNSRecordRead ...
-//
 func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -274,9 +268,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-//
 // resourceMyrasecDNSRecordUpdate ...
-//
 func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -334,9 +326,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecDNSRecordDelete ...
-//
 func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -387,9 +377,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-//
 // resourceMyrasecDNSRecordImport ...
-//
 func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	domainName, recordID, err := parseResourceServiceID(d.Id())
@@ -411,9 +399,7 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildDNSRecord ...
-//
 func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecord, error) {
 	record := &myrasec.DNSRecord{
 		Name:             d.Get("name").(string),
@@ -466,9 +452,7 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 	return record, nil
 }
 
-//
 // buildUpstreamOptions ...
-//
 func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error) {
 	options := &myrasec.UpstreamOptions{}
 
@@ -504,9 +488,7 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 	return options, nil
 }
 
-//
 // findDNSRecord ...
-//
 func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -543,9 +525,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 	return nil, diags
 }
 
-//
 // setDNSRecordData ...
-//
 func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainName string) {
 	d.SetId(strconv.Itoa(record.ID))
 	d.Set("record_id", record.ID)

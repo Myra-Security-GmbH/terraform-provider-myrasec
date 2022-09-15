@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-//
 // dataSourceMyrasecRateLimits ...
-//
 func dataSourceMyrasecRateLimits() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceMyrasecRateLimitsRead,
@@ -87,9 +85,7 @@ func dataSourceMyrasecRateLimits() *schema.Resource {
 	}
 }
 
-//
 // dataSourceMyrasecRateLimitsRead ...
-//
 func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	f := prepareRateLimitFilter(d.Get("filter"))
 	if f == nil {
@@ -130,9 +126,7 @@ func dataSourceMyrasecRateLimitsRead(ctx context.Context, d *schema.ResourceData
 
 }
 
-//
 // prepareRateLimitFilter fetches the panic that can happen in parseRateLimitFilter
-//
 func prepareRateLimitFilter(d interface{}) *rateLimitFilter {
 	defer func() {
 		if r := recover(); r != nil {
@@ -143,9 +137,7 @@ func prepareRateLimitFilter(d interface{}) *rateLimitFilter {
 	return parseRateLimitFilter(d)
 }
 
-//
 // parseRateLimitFilter converts the filter data to a rateLimitFilter struct
-//
 func parseRateLimitFilter(d interface{}) *rateLimitFilter {
 	cfg := d.([]interface{})
 	f := &rateLimitFilter{}
@@ -165,9 +157,7 @@ func parseRateLimitFilter(d interface{}) *rateLimitFilter {
 	return f
 }
 
-//
 // listIPFilters ...
-//
 func listRateLimits(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var limits []myrasec.RateLimit
@@ -209,9 +199,7 @@ func listRateLimits(meta interface{}, subDomainName string, params map[string]st
 	return limits, diags
 }
 
-//
 // rateLimitFilter struct ...
-//
 type rateLimitFilter struct {
 	subDomainName string
 	search        string

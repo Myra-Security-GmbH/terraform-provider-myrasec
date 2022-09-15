@@ -140,9 +140,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecSSLCertificateCreate ...
-//
 func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -187,9 +185,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 	return resourceMyrasecSSLCertificateRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecSSLCertificateRead ...
-//
 func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -224,9 +220,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-//
 // resourceMyrasecSSLCertificateUpdate ...
-//
 func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -284,9 +278,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-//
 // resourceMyrasecSSLCertificateDelete ...
-//
 func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -337,9 +329,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-//
 // resourceMyrasecSSLCertificateImport ...
-//
 func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	domainName, certID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -359,9 +349,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 	return []*schema.ResourceData{d}, nil
 }
 
-//
 // buildSSLCertificate ...
-//
 func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSLCertificate, error) {
 
 	cert := &myrasec.SSLCertificate{
@@ -433,9 +421,7 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 	return cert, nil
 }
 
-//
 // buildSSLIntermediate ...
-//
 func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, error) {
 	cert := &myrasec.SSLIntermediate{
 		Certificate: &myrasec.Certificate{
@@ -446,9 +432,7 @@ func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, e
 	return cert, nil
 }
 
-//
 // findSSLCertificate ...
-//
 func findSSLCertificate(certID int, meta interface{}, domainName string) (*myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -486,9 +470,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 	return nil, diags
 }
 
-//
 // setSSLCertificateData ...
-//
 func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate, domainName string) {
 	d.SetId(strconv.Itoa(cert.ID))
 	d.Set("certificate_id", cert.ID)

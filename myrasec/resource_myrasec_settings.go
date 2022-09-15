@@ -60,9 +60,7 @@ const (
 	defaultValueWAFPolicy                   = "allow"
 )
 
-//
 // resourceMyrasecSettings ...
-//
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecSettingsCreate,
@@ -448,9 +446,7 @@ func resourceMyrasecSettings() *schema.Resource {
 	}
 }
 
-//
 // resourceMyrasecSettingsCreate ...
-//
 func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -492,9 +488,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 	return resourceMyrasecSettingsRead(ctx, d, meta)
 }
 
-//
 // resourceMyrasecSettingsRead ...
-//
 func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -542,9 +536,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-//
 // resourceMyrasecSettingsUpdate ...
-//
 func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -589,9 +581,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // resourceMyrasecSettingsDelete restores the default setting values
-//
 func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
@@ -642,9 +632,7 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-//
 // buildSettings ...
-//
 func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings, error) {
 	settings := &myrasec.Settings{
 		AccessLog:                   d.Get("access_log").(bool),
@@ -715,9 +703,7 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 	return settings, nil
 }
 
-//
 // buildDefaultSettings ...
-//
 func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings, error) {
 	settings := &myrasec.Settings{
 		AccessLog:                   defaultValueAccessLog,
@@ -773,9 +759,7 @@ func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Se
 	return settings, nil
 }
 
-//
 // setSettingsData ...
-//
 func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDomainName string) {
 	d.Set("subdomain_name", subDomainName)
 	d.Set("access_log", settings.AccessLog)
