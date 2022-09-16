@@ -17,9 +17,9 @@ done
 
 
 # testing build for "special" darwin
-echo "Building darwin/amd64: terraform-provider-${PKG_NAME}_${VERSION}_darwin_amd64"
+echo "Building darwin/amd64: testbuild-terraform-provider-${PKG_NAME}_${VERSION}_darwin_amd64"
 env GOOS=darwin GOARCH=amd64 ${GO} build -o testbuild-terraform-provider-${PKG_NAME}_${VERSION}_darwin_amd64
-echo "Building darwin/arm64: terraform-provider-${PKG_NAME}_${VERSION}_darwin_arm64"
+echo "Building darwin/arm64: testbuild-terraform-provider-${PKG_NAME}_${VERSION}_darwin_arm64"
 env GOOS=darwin GOARCH=arm64 ${GO} build -o testbuild-terraform-provider-${PKG_NAME}_${VERSION}_darwin_arm64
 
 rm -rf testbuild-terraform-provider-${PKG_NAME}_*
