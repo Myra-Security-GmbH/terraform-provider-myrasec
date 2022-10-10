@@ -32,13 +32,13 @@ func resourceMyrasecIPFilter() *schema.Resource {
 				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					name := i.(string)
-					if isGeneralDomainName(name) {
+					if myrasec.IsGeneralDomainName(name) {
 						return name
 					}
 					return strings.ToLower(name)
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return removeTrailingDot(old) == removeTrailingDot(new)
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 				},
 				Description: "The Subdomain for the ip filter.",
 			},
@@ -116,7 +116,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -215,7 +215,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -273,7 +273,7 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -362,7 +362,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

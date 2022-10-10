@@ -31,13 +31,13 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					name := i.(string)
-					if isGeneralDomainName(name) {
+					if myrasec.IsGeneralDomainName(name) {
 						return name
 					}
 					return strings.ToLower(name)
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return removeTrailingDot(old) == removeTrailingDot(new)
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 				},
 				Description: "The Subdomain for the WAF rule.",
 			},
@@ -249,7 +249,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -341,7 +341,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -580,7 +580,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -593,7 +593,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 	page := 1
 	pageSize := 250
 	params := map[string]string{
-		"subDomain": ensureTrailingDot(subDomainName),
+		"subDomain": myrasec.EnsureTrailingDot(subDomainName),
 		"pageSize":  strconv.Itoa(pageSize),
 		"page":      strconv.Itoa(page),
 	}

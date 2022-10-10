@@ -118,7 +118,7 @@ func listMaintenanceTemplates(meta interface{}, domainName string, params map[st
 	pageSize := 100
 
 	client := meta.(*myrasec.API)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

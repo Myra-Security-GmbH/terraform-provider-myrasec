@@ -157,7 +157,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -249,7 +249,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -307,7 +307,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -438,7 +438,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

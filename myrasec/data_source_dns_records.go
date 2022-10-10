@@ -295,7 +295,7 @@ func listDnsRecords(meta interface{}, domainName string, params map[string]strin
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

@@ -159,7 +159,7 @@ func listMaintenances(meta interface{}, subdomainName string, params map[string]
 	pageSize := 100
 
 	client := meta.(*myrasec.API)
-	domain, err := fetchDomain(client, subdomainName)
+	domain, err := client.FetchDomain(subdomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

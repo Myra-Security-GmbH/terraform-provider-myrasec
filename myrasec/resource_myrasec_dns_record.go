@@ -201,7 +201,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -297,7 +297,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -355,7 +355,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -494,7 +494,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
