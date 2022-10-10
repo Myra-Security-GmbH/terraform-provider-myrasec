@@ -84,7 +84,7 @@ func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -175,7 +175,7 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -233,7 +233,7 @@ func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -315,7 +315,7 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domain
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomain(client, domainName)
+	domain, err := client.FetchDomain(domainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

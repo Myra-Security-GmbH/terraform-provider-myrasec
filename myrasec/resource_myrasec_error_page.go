@@ -32,13 +32,13 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					name := i.(string)
-					if isGeneralDomainName(name) {
+					if myrasec.IsGeneralDomainName(name) {
 						return name
 					}
 					return strings.ToLower(name)
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return removeTrailingDot(old) == removeTrailingDot(new)
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 				},
 				Description: "The Subdomain for the error page.",
 			},
@@ -88,7 +88,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -159,7 +159,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -217,7 +217,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -311,7 +311,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -326,7 +326,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 	params := map[string]string{
 		"pageSize": strconv.Itoa(pageSize),
 		"page":     strconv.Itoa(page),
-		"search":   removeTrailingDot(subDomainName),
+		"search":   myrasec.RemoveTrailingDot(subDomainName),
 	}
 	for {
 		params["page"] = strconv.Itoa(page)
@@ -341,7 +341,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 		}
 
 		for _, ep := range pages {
-			if ensureTrailingDot(ep.SubDomainName) == ensureTrailingDot(subDomainName) &&
+			if myrasec.EnsureTrailingDot(ep.SubDomainName) == myrasec.EnsureTrailingDot(subDomainName) &&
 				((idIsCode && ep.ErrorCode == id) || (!idIsCode && ep.ID == id)) {
 
 				return &ep, diags

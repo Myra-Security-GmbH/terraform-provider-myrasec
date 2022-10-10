@@ -193,7 +193,7 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if len(f.subDomainName) > 0 {
-		params["subDomain"] = ensureTrailingDot(f.subDomainName)
+		params["subDomain"] = myrasec.EnsureTrailingDot(f.subDomainName)
 	}
 
 	rules, diags := listWAFRules(meta, f.subDomainName, params)
@@ -276,7 +276,7 @@ func listWAFRules(meta interface{}, subDomainName string, params map[string]stri
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

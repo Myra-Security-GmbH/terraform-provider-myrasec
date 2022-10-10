@@ -167,7 +167,7 @@ func parseDomainFilter(d interface{}) *domainFilter {
 
 	name, ok := m["name"]
 	if ok {
-		f.name = removeTrailingDot(name.(string))
+		f.name = myrasec.RemoveTrailingDot(name.(string))
 	}
 
 	match, ok := m["match"]

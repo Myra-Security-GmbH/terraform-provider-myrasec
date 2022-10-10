@@ -32,13 +32,13 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					name := i.(string)
-					if isGeneralDomainName(name) {
+					if myrasec.IsGeneralDomainName(name) {
 						return name
 					}
 					return strings.ToLower(name)
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return removeTrailingDot(old) == removeTrailingDot(new)
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 				},
 				Description: "The Subdomain for the cache setting.",
 			},
@@ -121,7 +121,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -220,7 +220,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -278,7 +278,7 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 	}
 
 	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -364,7 +364,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,

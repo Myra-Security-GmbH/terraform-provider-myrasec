@@ -230,7 +230,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 		}
 	} else {
 		client := meta.(*myrasec.API)
-		domain, err = fetchDomain(client, d.Id())
+		domain, err = client.FetchDomain(d.Id())
 		if err != nil {
 			return nil, err
 		}

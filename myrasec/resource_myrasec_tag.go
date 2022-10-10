@@ -89,7 +89,7 @@ func resourceMyrasecTag() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								return removeTrailingDot(old) == removeTrailingDot(new)
+								return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 							},
 							Description: "The subdomain of the tag assignment",
 						},

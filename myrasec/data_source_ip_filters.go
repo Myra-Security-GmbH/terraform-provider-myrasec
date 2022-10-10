@@ -179,7 +179,7 @@ func listIPFilters(meta interface{}, subDomainName string, params map[string]str
 
 	client := meta.(*myrasec.API)
 
-	domain, err := fetchDomainForSubdomainName(client, subDomainName)
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
