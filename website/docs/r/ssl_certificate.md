@@ -84,8 +84,8 @@ The following arguments are supported:
 * `wildcard` (Computed) True if the certificate contains a wildcard domain.
 * `extended_validation` (Computed) True if the certificate has extended validation.
 * `subdomains` (Optional) List of subdomains where to assign the certificate.
-* `cert_to_refresh` (Optional) List of subdomains where to assign the certificate. Default `0`.
-* `cert_refresh_forced` (Optional) List of subdomains where to assign the certificate. Default `true`.
+* `cert_to_refresh` (Optional) ID of the certificate to refresh. Default `0`.
+* `cert_refresh_forced` (Optional) `true` to force certificate update. Default `true`.
 * `intermediate` (Optional) A list of intermediate certificate(s).
 * `intermediate.subject` (Computed) Subject of the intermediate certificate.
 * `intermediate.algorithm` (Computed) Signature algorithm of the intermediate certificate.
