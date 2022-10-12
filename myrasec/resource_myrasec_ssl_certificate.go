@@ -50,6 +50,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			"key": {
 				Type:        schema.TypeString,
 				Required:    true,
+				Sensitive:   true,
 				Description: "Unencrypted private key",
 			},
 			"subject": {
@@ -263,7 +264,18 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	// NOTE: This is a temporary "fix"
 	time.Sleep(200 * time.Millisecond)
 
-	cert, err = client.UpdateSSLCertificate(cert, domain.ID)
+	oldCert, newCert := d.GetChange("certificate")
+	oldKey, newKey := d.GetChange("key")
+
+	if oldCert == newCert && oldKey == newKey {
+		log.Println("[INFO] Update certificate")
+		cert, err = client.UpdateSSLCertificate(cert, domain.ID)
+	} else {
+		log.Println("[INFO] Replace certificate")
+		cert.ID = 0
+		cert, err = client.CreateSSLCertificate(cert, domain.ID)
+	}
+
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
