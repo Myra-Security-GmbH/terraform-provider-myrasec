@@ -142,29 +142,21 @@ func resourceMyrasecWAFRule() *schema.Resource {
 							Computed:    true,
 							Description: "Date of creation.",
 						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"available_phases": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
 						"alias": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Computed: true,
 						},
 						"category": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Computed: true,
 						},
 						"matching_type": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"name": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"key": {
 							Type:     schema.TypeString,
@@ -172,14 +164,14 @@ func resourceMyrasecWAFRule() *schema.Resource {
 						},
 						"value": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 					},
 				},
 			},
 			"actions": {
 				Type:     schema.TypeList,
-				Optional: true,
+				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"action_id": {
@@ -199,19 +191,19 @@ func resourceMyrasecWAFRule() *schema.Resource {
 						},
 						"force_custom_values": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Computed: true,
 						},
 						"available_phases": {
 							Type:     schema.TypeInt,
-							Optional: true,
+							Computed: true,
 						},
 						"name": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Computed: true,
 						},
 						"type": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Required: true,
 						},
 						"custom_key": {
 							Type:     schema.TypeString,
