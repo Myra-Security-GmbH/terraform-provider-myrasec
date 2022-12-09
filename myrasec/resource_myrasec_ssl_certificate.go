@@ -102,7 +102,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Description: "True if the certificate has extended validation",
 			},
 			"subdomains": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Description: "List of subdomains where to assign the certificate",
 				Elem: &schema.Schema{
@@ -368,11 +368,9 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 		Certificate: &myrasec.Certificate{},
 	}
 
-	subdomains, ok := d.GetOk("subdomains")
-	if ok {
-		for _, sd := range subdomains.([]interface{}) {
-			cert.Subdomains = append(cert.Subdomains, sd.(string))
-		}
+	subdomains := d.Get("subdomains").(*schema.Set)
+	for _, sd := range subdomains.List() {
+		cert.Subdomains = append(cert.Subdomains, sd.(string))
 	}
 
 	crt, ok := d.GetOk("certificate")
