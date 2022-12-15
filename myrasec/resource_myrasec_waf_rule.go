@@ -509,12 +509,8 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 				return nil, err
 			}
 			c.Created = created
-		case "force_custom_values":
-			c.ForceCustomValues = val.(bool)
 		case "alias":
 			c.Alias = val.(string)
-		case "available_phases":
-			c.AvailablePhases = val.(int)
 		case "category":
 			c.Category = val.(string)
 		case "matching_type":
@@ -550,6 +546,8 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 				return nil, err
 			}
 			a.Created = created
+		case "force_custom_values":
+			a.ForceCustomValues = val.(bool)
 		case "name":
 			a.Name = val.(string)
 		case "type":
@@ -642,15 +640,13 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule) {
 	for _, condition := range rule.Conditions {
 
 		c := map[string]interface{}{
-			"condition_id":        condition.ID,
-			"force_custom_values": condition.ForceCustomValues,
-			"available_phases":    condition.AvailablePhases,
-			"alias":               condition.Alias,
-			"category":            condition.Category,
-			"matching_type":       condition.MatchingType,
-			"name":                condition.Name,
-			"key":                 condition.Key,
-			"value":               condition.Value,
+			"condition_id":  condition.ID,
+			"alias":         condition.Alias,
+			"category":      condition.Category,
+			"matching_type": condition.MatchingType,
+			"name":          condition.Name,
+			"key":           condition.Key,
+			"value":         condition.Value,
 		}
 
 		if condition.Created != nil {
