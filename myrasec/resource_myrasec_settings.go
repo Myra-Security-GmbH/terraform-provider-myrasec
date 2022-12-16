@@ -438,6 +438,13 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
 			},
+			"proxy_host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Default:     nil,
+				Description: "Proxy host header",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -680,6 +687,13 @@ func buildSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Settings,
 		WAFPolicy:                   d.Get("waf_policy").(string),
 	}
 
+	hostHeader := d.Get("proxy_host_header").(string)
+	if hostHeader == "" {
+		settings.ProxyHostHeader = nil
+	} else {
+		settings.ProxyHostHeader = &hostHeader
+	}
+
 	for _, method := range d.Get("limit_allowed_http_method").([]interface{}) {
 		settings.LimitAllowedHTTPMethod = append(settings.LimitAllowedHTTPMethod, method.(string))
 	}
@@ -749,6 +763,7 @@ func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Se
 		SSLOriginPort:               defaultValueSSLOriginPort,
 		WAFEnable:                   defaultValueWAFEnable,
 		WAFPolicy:                   defaultValueWAFPolicy,
+		ProxyHostHeader:             nil,
 		LimitAllowedHTTPMethod:      nil,
 		NextUpstream:                []string{"error", "timeout", "invalid_header"},
 		LimitTLSVersion:             []string{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"},
@@ -810,4 +825,5 @@ func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDoma
 	d.Set("waf_enable", settings.WAFEnable)
 	d.Set("waf_levels_enable", settings.WAFLevelsEnable)
 	d.Set("waf_policy", settings.WAFPolicy)
+	d.Set("proxy_host_header", settings.ProxyHostHeader)
 }
