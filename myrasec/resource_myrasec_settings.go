@@ -444,6 +444,9 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Default:     nil,
 				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
