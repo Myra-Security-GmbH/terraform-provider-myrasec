@@ -3,6 +3,8 @@ cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Myra-Security-GmbH/myrasec-go/v2 v2.27.0 h1:2AjJcEsg7s9JUq9SAc6ZdRoFAIWoxWDqHpZFcqqUP00=
 github.com/Myra-Security-GmbH/myrasec-go/v2 v2.27.0/go.mod h1:A3VaeNipYmfNnHIJVEzyBmfHSWjK7c9aNfbpmRbFiS8=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.28.0 h1:/j5vGm0MB++gzimxjR53JCB/7PApCfxdaV52nU5FTC8=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.28.0/go.mod h1:A3VaeNipYmfNnHIJVEzyBmfHSWjK7c9aNfbpmRbFiS8=
 github.com/Myra-Security-GmbH/signature v1.0.0 h1:u46nIxnffLLb8pCe6ic2w7OmSSEJk4warn3W4Vp2GjQ=
 github.com/Myra-Security-GmbH/signature v1.0.0/go.mod h1:zgyy5MGBCezqxVOjrG3THQJqsIfJ04LWtQv3Q4Ug2+Y=
 github.com/agext/levenshtein v1.2.2 h1:0S/Yg6LYmFJ5stwQeRp6EeOcCbj7xiqQSdNelsXvaqE=
