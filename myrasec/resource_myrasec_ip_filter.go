@@ -404,7 +404,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 	d.Set("value", filter.Value)
 	d.Set("enabled", filter.Enabled)
 	d.Set("comment", filter.Comment)
-	d.Set("subdomain_name", subDomainName)
+	d.Set("subdomain_name", filter.SubDomainName)
 
 	if filter.ExpireDate != nil {
 		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
