@@ -80,3 +80,4 @@ The following arguments are supported:
 * `waf_enable` (Optional) Enables / disables the Web Application Firewall. Default `false`.
 * `waf_levels_enable` (Optional) Level of applied WAF rules. Valid values are `waf_tag`, `waf_domain` and `waf_subdomain`. Default `waf_tag`, `waf_domain` and `waf_subdomain`.
 * `waf_policy` (Optional) Default policy for the Web Application Firewall in case of rule error. Valid values are `allow` or `block`. Default `allow`.
+* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
