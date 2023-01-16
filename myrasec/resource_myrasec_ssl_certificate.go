@@ -271,11 +271,12 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		log.Println("[INFO] Update certificate")
 		cert, err = client.UpdateSSLCertificate(cert, domain.ID)
 	} else if cert.ID > 0 {
+		log.Println("[INFO] Replace certificate")
 		cert.CertToRefresh = cert.ID
 		cert.ID = 0
 		cert, err = client.CreateSSLCertificate(cert, domain.ID)
 	} else {
-		log.Println("[INFO] Replace certificate")
+		log.Println("[INFO] Create certificate")
 		cert.ID = 0
 		cert, err = client.CreateSSLCertificate(cert, domain.ID)
 	}
