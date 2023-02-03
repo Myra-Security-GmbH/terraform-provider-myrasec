@@ -182,8 +182,13 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 	}
 
 	setting, diags := findCacheSetting(settingID, meta, subDomainName)
-	if diags.HasError() || setting == nil {
+	if diags.HasError() {
 		return diags
+	}
+
+	if setting == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setCacheSettingData(d, setting, subDomainName)
