@@ -27,6 +27,11 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 			"certificate_id": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -158,21 +163,13 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateSSLCertificate(cert, domain.ID)
+	resp, err := client.CreateSSLCertificate(cert, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -211,12 +208,17 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
 	if diags.HasError() || cert == nil {
 		return diags
 	}
 
-	setSSLCertificateData(d, cert, domainName)
+	setSSLCertificateData(d, cert, domainName, domainID)
 
 	return diags
 }
@@ -250,35 +252,27 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
-	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
 
 	oldCert, newCert := d.GetChange("certificate")
 	oldKey, newKey := d.GetChange("key")
 
 	if oldCert == newCert && oldKey == newKey {
 		log.Println("[INFO] Update certificate")
-		cert, err = client.UpdateSSLCertificate(cert, domain.ID)
+		cert, err = client.UpdateSSLCertificate(cert, domainID)
 	} else if cert.ID > 0 {
 		log.Println("[INFO] Replace certificate")
 		cert.CertToRefresh = cert.ID
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domain.ID)
+		cert, err = client.CreateSSLCertificate(cert, domainID)
 	} else {
 		log.Println("[INFO] Create certificate")
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domain.ID)
+		cert, err = client.CreateSSLCertificate(cert, domainID)
 	}
 
 	if err != nil {
@@ -290,7 +284,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	setSSLCertificateData(d, cert, domainName)
+	setSSLCertificateData(d, cert, domainName, domainID)
 
 	return diags
 }
@@ -324,17 +318,13 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
+
+	domainID, diags := findDomainIDByDomainName(d, meta, domainName)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteSSLCertificate(cert, domain.ID)
+	_, err = client.DeleteSSLCertificate(cert, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -353,7 +343,12 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 		return nil, fmt.Errorf("error parsing SSL certificate ID: [%s]", err.Error())
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName)
+	domainID, diags := findDomainIDByDomainName(d, meta, domainName)
+	if diags.HasError() {
+		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
+	}
+
+	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
 	if diags.HasError() || cert == nil {
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
 	}
@@ -448,22 +443,12 @@ func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, e
 }
 
 // findSSLCertificate ...
-func findSSLCertificate(certID int, meta interface{}, domainName string) (*myrasec.SSLCertificate, diag.Diagnostics) {
+func findSSLCertificate(certID int, meta interface{}, domainName string, domainID int) (*myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
-
-	c, err := client.GetSSLCertificate(domain.ID, certID)
+	c, err := client.GetSSLCertificate(domainID, certID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -486,7 +471,7 @@ func findSSLCertificate(certID int, meta interface{}, domainName string) (*myras
 }
 
 // setSSLCertificateData ...
-func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate, domainName string) {
+func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate, domainName string, domainID int) {
 	d.SetId(strconv.Itoa(cert.ID))
 	d.Set("certificate_id", cert.ID)
 	d.Set("domain_name", domainName)
@@ -502,4 +487,5 @@ func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate,
 	d.Set("wildcard", cert.Wildcard)
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
+	d.Set("domain_id", domainID)
 }

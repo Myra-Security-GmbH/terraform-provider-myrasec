@@ -5,7 +5,118 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+// findDomainIDByDomainName ...
+func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainName string) (domainID int, diags diag.Diagnostics) {
+
+	stateDomainID, ok := d.GetOk("domain_id")
+
+	if !ok {
+		client := meta.(*myrasec.API)
+		domain, err := client.FetchDomain(domainName)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error fetching domain for given domain name",
+				Detail:   formatError(err),
+			})
+			return 0, diags
+		}
+		domainID = domain.ID
+	} else {
+		domainID = stateDomainID.(int)
+	}
+
+	return domainID, diags
+}
+
+// findDomainID ...
+func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags diag.Diagnostics) {
+
+	name, ok := d.GetOk("subdomain_name")
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
+		})
+		return 0, diags
+	}
+
+	subDomainName := name.(string)
+
+	stateDomainID, ok := d.GetOk("domain_id")
+
+	if !ok {
+		domain, diags := findDomainBySubdomainName(meta, subDomainName)
+		if diags.HasError() || domain == nil {
+			return 0, diags
+		}
+		domainID = domain.ID
+	} else {
+		domainID = stateDomainID.(int)
+	}
+
+	return domainID, diags
+}
+
+// findSubdomainNameAndDomainID ...
+func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (domainID int, subDomainName string, diags diag.Diagnostics) {
+
+	name, ok := d.GetOk("subdomain_name")
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing resource information",
+			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
+		})
+		return 0, "", diags
+	}
+
+	subDomainName = name.(string)
+
+	stateDomainID, ok := d.GetOk("domain_id")
+
+	if !ok {
+		domain, diags := findDomainBySubdomainName(meta, subDomainName)
+		if diags.HasError() || domain == nil {
+			return 0, subDomainName, diags
+		}
+		domainID = domain.ID
+	} else {
+		domainID = stateDomainID.(int)
+	}
+
+	return domainID, subDomainName, diags
+}
+
+// findDomainBySubdomainName ...
+func findDomainBySubdomainName(meta interface{}, subDomainName string) (*myrasec.Domain, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	domain, err := client.FetchDomainForSubdomainName(subDomainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given subdomain name",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
+
+	// REMOVEME
+	// NOTE: This is a temporary "fix"
+	time.Sleep(100 * time.Millisecond)
+
+	return domain, diags
+}
 
 // parseResourceServiceID splits the passed id (format like string:integer) to separate values
 func parseResourceServiceID(id string) (string, int, error) {

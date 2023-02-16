@@ -96,6 +96,11 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				Default:     false,
 				Description: "Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain ID of the subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -120,28 +125,18 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateCacheSetting(setting, domain.ID, subDomainName)
+	resp, err := client.CreateCacheSetting(setting, domainID, subDomainName)
 	if err == nil {
 		d.SetId(fmt.Sprintf("%d", resp.ID))
 		return resourceMyrasecCacheSettingRead(ctx, d, meta)
 	}
 
-	setting, errImport := importExistingCacheSetting(setting, domain.ID, subDomainName, meta)
+	setting, errImport := importExistingCacheSetting(setting, domainID, subDomainName, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
@@ -159,6 +154,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 // resourceMyrasecCacheSettingRead ...
 func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	var setting *myrasec.CacheSetting
 
 	name, ok := d.GetOk("subdomain_name")
 	if !ok {
@@ -181,7 +177,13 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	setting, diags := findCacheSetting(settingID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	setting, diags = findCacheSetting(settingID, meta, subDomainName, domainID)
+
 	if diags.HasError() {
 		return diags
 	}
@@ -191,7 +193,7 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 		return nil
 	}
 
-	setCacheSettingData(d, setting, subDomainName)
+	setCacheSettingData(d, setting, subDomainName, domainID)
 
 	return diags
 }
@@ -224,22 +226,12 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	setting, err = client.UpdateCacheSetting(setting, domain.ID, subDomainName)
+	setting, err = client.UpdateCacheSetting(setting, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -249,7 +241,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	setCacheSettingData(d, setting, subDomainName)
+	setCacheSettingData(d, setting, subDomainName, domainID)
 
 	return diags
 }
@@ -282,18 +274,12 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteCacheSetting(setting, domain.ID, subDomainName)
+	_, err = client.DeleteCacheSetting(setting, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -313,7 +299,12 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 		return nil, fmt.Errorf("error parsing cache setting ID: [%s]", err.Error())
 	}
 
-	setting, diags := findCacheSetting(settingID, meta, subDomainName)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags != nil {
+		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
+	}
+
+	setting, diags := findCacheSetting(settingID, meta, subDomainName, domain.ID)
 	if diags.HasError() || setting == nil {
 		return nil, fmt.Errorf("unable to find cache setting for subdomain [%s] with ID = [%d]", subDomainName, settingID)
 	}
@@ -364,20 +355,10 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 }
 
 // findCacheSetting ...
-func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*myrasec.CacheSetting, diag.Diagnostics) {
+func findCacheSetting(settingID int, meta interface{}, subDomainName string, domainID int) (*myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 250
@@ -388,7 +369,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListCacheSettings(domain.ID, subDomainName, params)
+		res, err := client.ListCacheSettings(domainID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -419,7 +400,7 @@ func findCacheSetting(settingID int, meta interface{}, subDomainName string) (*m
 }
 
 // setCacheSettingData ...
-func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, subDomainName string) {
+func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, subDomainName string, domainID int) {
 	d.SetId(strconv.Itoa(setting.ID))
 	d.Set("setting_id", setting.ID)
 	d.Set("created", setting.Created.Format(time.RFC3339))
@@ -432,6 +413,7 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 	d.Set("enabled", setting.Enabled)
 	d.Set("enforce", setting.Enforce)
 	d.Set("subdomain_name", subDomainName)
+	d.Set("domain_id", domainID)
 }
 
 // importExistingCacheSetting ...

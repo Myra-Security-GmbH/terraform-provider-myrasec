@@ -35,6 +35,11 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				},
 				Description: "The Domain for the DNS record.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 			"record_id": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -201,21 +206,13 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateDNSRecord(record, domain.ID)
+	resp, err := client.CreateDNSRecord(record, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -254,7 +251,12 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	record, diags := findDNSRecord(recordID, meta, domainName)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	record, diags := findDNSRecord(recordID, meta, domainName, domainID)
 	if diags.HasError() {
 		return diags
 	}
@@ -263,7 +265,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	setDNSRecordData(d, record, domainName)
+	setDNSRecordData(d, record, domainName, domainID)
 
 	return diags
 }
@@ -296,22 +298,24 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
+	name, ok := d.GetOk("domain_name")
+	if !ok {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
+			Summary:  "Error parsing resource information",
+			Detail:   formatError(fmt.Errorf("[domain_name] is not set")),
 		})
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
+	domainName := name.(string)
 
-	record, err = client.UpdateDNSRecord(record, domain.ID)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	record, err = client.UpdateDNSRecord(record, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -321,7 +325,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	setDNSRecordData(d, record, domainName)
+	setDNSRecordData(d, record, domainName, domainID)
 
 	return diags
 }
@@ -354,18 +358,24 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
+	name, ok := d.GetOk("domain_name")
+	if !ok {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
+			Summary:  "Error parsing resource information",
+			Detail:   formatError(fmt.Errorf("[domain_name] is not set")),
 		})
 		return diags
 	}
 
-	_, err = client.DeleteDNSRecord(record, domain.ID)
+	domainName := name.(string)
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	_, err = client.DeleteDNSRecord(record, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -385,7 +395,12 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 		return nil, fmt.Errorf("error parsing DNS record ID: [%s]", err.Error())
 	}
 
-	record, diags := findDNSRecord(recordID, meta, domainName)
+	domainID, diags := findDomainIDByDomainName(d, meta, domainName)
+	if diags.HasError() {
+		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
+	}
+
+	record, diags := findDNSRecord(recordID, meta, domainName, domainID)
 	if diags.HasError() || record == nil {
 		return nil, fmt.Errorf("unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
 	}
@@ -489,22 +504,12 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 }
 
 // findDNSRecord ...
-func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.DNSRecord, diag.Diagnostics) {
+func findDNSRecord(recordID int, meta interface{}, domainName string, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
-
-	r, err := client.GetDNSRecord(domain.ID, recordID)
+	r, err := client.GetDNSRecord(domainID, recordID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
@@ -526,7 +531,7 @@ func findDNSRecord(recordID int, meta interface{}, domainName string) (*myrasec.
 }
 
 // setDNSRecordData ...
-func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainName string) {
+func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainName string, domainID int) {
 	d.SetId(strconv.Itoa(record.ID))
 	d.Set("record_id", record.ID)
 	d.Set("name", record.Name)
@@ -542,6 +547,7 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.Set("modified", record.Modified.Format(time.RFC3339))
 	d.Set("comment", record.Comment)
 	d.Set("domain_name", domainName)
+	d.Set("domain_id", domainID)
 
 	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
 		d.Set("upstream_options", []map[string]interface{}{

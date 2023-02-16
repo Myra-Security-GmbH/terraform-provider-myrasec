@@ -86,6 +86,11 @@ func resourceMyrasecSettings() *schema.Resource {
 				},
 				Description: "The Subdomain for the Settings.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 			"access_log": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -472,18 +477,12 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
+	_, err = client.UpdateSettings(settings, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -521,17 +520,12 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	settings, err := client.ListSettings(domain.ID, subDomainName, nil)
+	settings, err := client.ListSettings(domainID, subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -541,7 +535,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	setSettingsData(d, settings, subDomainName)
+	setSettingsData(d, settings, subDomainName, domainID)
 
 	return diags
 }
@@ -563,18 +557,12 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 	log.Printf("[INFO] Updating settings")
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
+	_, err = client.UpdateSettings(settings, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -586,7 +574,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	setSettingsData(d, settings, subDomainName)
+	setSettingsData(d, settings, subDomainName, domainID)
 
 	return diags
 }
@@ -619,18 +607,12 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.UpdateSettings(settings, domain.ID, subDomainName)
+	_, err = client.UpdateSettings(settings, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -778,7 +760,7 @@ func buildDefaultSettings(d *schema.ResourceData, meta interface{}) (*myrasec.Se
 }
 
 // setSettingsData ...
-func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDomainName string) {
+func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDomainName string, domainID int) {
 	d.Set("subdomain_name", subDomainName)
 	d.Set("access_log", settings.AccessLog)
 	d.Set("antibot_post_flood", settings.AntibotPostFlood)
@@ -829,4 +811,5 @@ func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDoma
 	d.Set("waf_levels_enable", settings.WAFLevelsEnable)
 	d.Set("waf_policy", settings.WAFPolicy)
 	d.Set("proxy_host_header", settings.ProxyHostHeader)
+	d.Set("domain_id", domainID)
 }

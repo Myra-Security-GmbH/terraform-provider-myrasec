@@ -76,6 +76,11 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Computed:    true,
 				Description: "Status if the maintenance page is active or not.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain ID of the subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -100,22 +105,12 @@ func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVE
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateMaintenance(maintenance, domain.ID, subDomainName)
+	resp, err := client.CreateMaintenance(maintenance, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -133,16 +128,6 @@ func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceDat
 func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-	}
-
-	subDomainName := name.(string)
 	maintenanceID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -153,12 +138,17 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domainID)
 	if diags.HasError() || maintenance == nil {
 		return diags
 	}
 
-	setMaintenanceData(d, maintenance)
+	setMaintenanceData(d, maintenance, domainID)
 
 	return diags
 }
@@ -191,22 +181,12 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVE
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	maintenance, err = client.UpdateMaintenance(maintenance, domain.ID, subDomainName)
+	maintenance, err = client.UpdateMaintenance(maintenance, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -216,7 +196,7 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	setMaintenanceData(d, maintenance)
+	setMaintenanceData(d, maintenance, domainID)
 
 	return diags
 }
@@ -249,18 +229,12 @@ func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteMaintenance(maintenance, domain.ID, subDomainName)
+	_, err = client.DeleteMaintenance(maintenance, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -279,7 +253,12 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 		return nil, fmt.Errorf("error parsing maintenance ID: [%s]", err.Error())
 	}
 
-	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName)
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
+		return nil, fmt.Errorf("Unable to find domain for subdomain [%s]", subDomainName)
+	}
+
+	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domainID)
 	if diags.HasError() || maintenance == nil {
 		return nil, fmt.Errorf("unable to find maintenance for subdomain [%s] with ID = [%d]", subDomainName, maintenanceID)
 	}
@@ -340,20 +319,10 @@ func buildMaintenance(d *schema.ResourceData, meta interface{}) (*myrasec.Mainte
 }
 
 // findMaintenance
-func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) (*myrasec.Maintenance, diag.Diagnostics) {
+func findMaintenance(maintenanceID int, meta interface{}, subDomainName string, domainID int) (*myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 100
@@ -364,7 +333,7 @@ func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) 
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenances(domain.ID, subDomainName, params)
+		res, err := client.ListMaintenances(domainID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -395,7 +364,7 @@ func findMaintenance(maintenanceID int, meta interface{}, subDomainName string) 
 }
 
 // setMaintenanceData ...
-func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance) {
+func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance, domainId int) {
 	d.SetId(strconv.Itoa(maintenance.ID))
 	d.Set("maintenance_id", maintenance.ID)
 	d.Set("created", maintenance.Created.Format(time.RFC3339))
@@ -405,4 +374,5 @@ func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance
 	d.Set("content", maintenance.Content)
 	d.Set("subdomain_name", maintenance.FQDN)
 	d.Set("active", maintenance.Active)
+	d.Set("domain_id", domainId)
 }
