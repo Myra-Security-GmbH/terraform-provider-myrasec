@@ -156,17 +156,6 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 	var diags diag.Diagnostics
 	var setting *myrasec.CacheSetting
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return diags
-	}
-
-	subDomainName := name.(string)
 	settingID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{

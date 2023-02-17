@@ -38,21 +38,21 @@ func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainNa
 // findDomainID ...
 func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags diag.Diagnostics) {
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return 0, diags
-	}
-
-	subDomainName := name.(string)
-
 	stateDomainID, ok := d.GetOk("domain_id")
 
 	if !ok {
+		name, ok := d.GetOk("subdomain_name")
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error parsing resource information",
+				Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
+			})
+			return 0, diags
+		}
+
+		subDomainName := name.(string)
+
 		domain, diags := findDomainBySubdomainName(meta, subDomainName)
 		if diags.HasError() || domain == nil {
 			return 0, diags

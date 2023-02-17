@@ -254,7 +254,7 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 
 	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
 	if domainDiag.HasError() {
-		return nil, fmt.Errorf("Unable to find domainID for domainName [%s]", domainName)
+		return nil, fmt.Errorf("unable to find domainID for domainName [%s]", domainName)
 	}
 
 	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName, domainID)

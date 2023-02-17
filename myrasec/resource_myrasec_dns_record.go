@@ -256,7 +256,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 		return domainDiag
 	}
 
-	record, diags := findDNSRecord(recordID, meta, domainName, domainID)
+	record, diags := findDNSRecord(recordID, meta, domainID)
 	if diags.HasError() {
 		return diags
 	}
@@ -400,7 +400,7 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
 	}
 
-	record, diags := findDNSRecord(recordID, meta, domainName, domainID)
+	record, diags := findDNSRecord(recordID, meta, domainID)
 	if diags.HasError() || record == nil {
 		return nil, fmt.Errorf("unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
 	}
@@ -504,7 +504,7 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 }
 
 // findDNSRecord ...
-func findDNSRecord(recordID int, meta interface{}, domainName string, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
+func findDNSRecord(recordID int, meta interface{}, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
