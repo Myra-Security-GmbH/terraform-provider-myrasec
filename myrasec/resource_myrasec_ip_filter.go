@@ -131,7 +131,7 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 		return resourceMyrasecIPFilterRead(ctx, d, meta)
 	}
 
-	filter, errImport := importExistingIPFilter(filter, domainID, subDomainName, meta)
+	filter, errImport := importExistingIPFilter(filter, domainID, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
@@ -170,7 +170,7 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	setIPFilterData(d, filter, subDomainName, domainID)
+	setIPFilterData(d, filter, domainID)
 
 	return diags
 }
@@ -218,7 +218,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	setIPFilterData(d, filter, subDomainName, domainID)
+	setIPFilterData(d, filter, domainID)
 
 	return diags
 }
@@ -363,7 +363,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string, domainId
 }
 
 // setIPFilterData ...
-func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomainName string, domainId int) {
+func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, domainId int) {
 	d.SetId(strconv.Itoa(filter.ID))
 	d.Set("filter_id", filter.ID)
 	d.Set("created", filter.Created.Format(time.RFC3339))
@@ -381,7 +381,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 }
 
 // importExistingIPFilter ...
-func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainName string, meta interface{}) (*myrasec.IPFilter, error) {
+func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, meta interface{}) (*myrasec.IPFilter, error) {
 	client := meta.(*myrasec.API)
 
 	s := strings.Split(filter.Value, "/")
@@ -394,7 +394,7 @@ func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainNam
 		"search": s[0],
 	}
 
-	filters, err := client.ListIPFilters(domainId, subDomainName, params)
+	filters, err := client.ListIPFilters(domainId, filter.SubDomainName, params)
 	if err != nil {
 		return nil, err
 	}
