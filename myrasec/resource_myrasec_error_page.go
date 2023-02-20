@@ -63,6 +63,11 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Required:    true,
 				Description: "HTML content of the error page.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain ID of the subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -87,22 +92,12 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	_, err = client.CreateErrorPage(errorPage, domain.ID)
+	_, err = client.CreateErrorPage(errorPage, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -119,25 +114,19 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
+	errorCode := d.Get("error_code").(int)
+
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	subDomainName := name.(string)
-	errorCode := d.Get("error_code").(int)
-
-	errorPage, diags := findErrorPageByErrorCode(subDomainName, errorCode, meta)
+	errorPage, diags := findErrorPageByErrorCode(subDomainName, errorCode, meta, domainID)
 	if diags.HasError() || errorPage == nil {
 		return diags
 	}
 
-	setErrorPageData(d, errorPage)
+	setErrorPageData(d, errorPage, domainID)
 
 	return diags
 }
@@ -158,22 +147,12 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	errorPage, err = client.UpdateErrorPage(errorPage, domain.ID)
+	errorPage, err = client.UpdateErrorPage(errorPage, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -183,7 +162,7 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	setErrorPageData(d, errorPage)
+	setErrorPageData(d, errorPage, domainID)
 
 	return diags
 }
@@ -216,18 +195,12 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteErrorPage(errorPage, domain.ID)
+	_, err = client.DeleteErrorPage(errorPage, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -246,13 +219,17 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 		return nil, fmt.Errorf("error parsing ID or error code: [%s]", err.Error())
 	}
 
-	var diags diag.Diagnostics
 	var errorPage *myrasec.ErrorPage
 
+	domainID, diags := findDomainID(d, meta)
+	if diags.HasError() {
+		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
+	}
+
 	if IntInSlice(id, []int{400, 405, 429, 500, 502, 503, 504, 9999}) {
-		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta)
+		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domainID)
 	} else {
-		errorPage, diags = findErrorPageByID(subDomainName, id, meta)
+		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domainID)
 	}
 
 	if diags.HasError() || errorPage == nil {
@@ -296,30 +273,20 @@ func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPag
 }
 
 // findErrorPageByErrorCode ...
-func findErrorPageByErrorCode(subDomainName string, code int, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
-	return findErrorPage(subDomainName, code, true, meta)
+func findErrorPageByErrorCode(subDomainName string, code int, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
+	return findErrorPage(subDomainName, code, true, meta, domainID)
 }
 
 // findErrorPageByID ...
-func findErrorPageByID(subDomainName string, id int, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
-	return findErrorPage(subDomainName, id, false, meta)
+func findErrorPageByID(subDomainName string, id int, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
+	return findErrorPage(subDomainName, id, false, meta, domainID)
 }
 
 // findErrorPage ...
-func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}) (*myrasec.ErrorPage, diag.Diagnostics) {
+func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 250
@@ -330,7 +297,7 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 	}
 	for {
 		params["page"] = strconv.Itoa(page)
-		pages, err := client.ListErrorPages(domain.ID, params)
+		pages, err := client.ListErrorPages(domainID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -357,12 +324,12 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 }
 
 // setErrorPageData ...
-func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage) {
+func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage, domainID int) {
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
 	d.Set("content", errorPage.Content)
 	d.Set("subdomain_name", errorPage.SubDomainName)
 	d.Set("created", errorPage.Created.Format(time.RFC3339))
 	d.Set("modified", errorPage.Modified.Format(time.RFC3339))
-
+	d.Set("domain_id", domainID)
 }

@@ -102,6 +102,11 @@ func resourceMyrasecRedirect() *schema.Resource {
 				Default:     false,
 				Description: "Disable redirect loop detection.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -126,28 +131,18 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateRedirect(redirect, domain.ID, subDomainName)
+	resp, err := client.CreateRedirect(redirect, domainID, subDomainName)
 	if err == nil {
 		d.SetId(fmt.Sprintf("%d", resp.ID))
 		return resourceMyrasecRedirectRead(ctx, d, meta)
 	}
 
-	redirect, errImport := importExistingRedirect(redirect, domain.ID, subDomainName, meta)
+	redirect, errImport := importExistingRedirect(redirect, domainID, subDomainName, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
@@ -166,17 +161,6 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return diags
-	}
-
-	subDomainName := name.(string)
 	redirectID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -187,12 +171,17 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	redirect, diags := findRedirect(redirectID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	redirect, diags := findRedirect(redirectID, meta, subDomainName, domainID)
 	if diags.HasError() || redirect == nil {
 		return diags
 	}
 
-	setRedirectData(d, redirect)
+	setRedirectData(d, redirect, domainID)
 
 	return diags
 }
@@ -225,22 +214,12 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	redirect, err = client.UpdateRedirect(redirect, domain.ID, subDomainName)
+	redirect, err = client.UpdateRedirect(redirect, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -250,7 +229,7 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	setRedirectData(d, redirect)
+	setRedirectData(d, redirect, domainID)
 
 	return diags
 }
@@ -283,18 +262,12 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteRedirect(redirect, domain.ID, subDomainName)
+	_, err = client.DeleteRedirect(redirect, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -314,7 +287,12 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 		return nil, fmt.Errorf("error parsing redirect ID: [%s]", err.Error())
 	}
 
-	redirect, diags := findRedirect(redirectID, meta, subDomainName)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags != nil {
+		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
+	}
+
+	redirect, diags := findRedirect(redirectID, meta, subDomainName, domain.ID)
 	if diags.HasError() || redirect == nil {
 		return nil, fmt.Errorf("unable to find redirect for subdomain [%s] with ID = [%d]", subDomainName, redirectID)
 	}
@@ -367,22 +345,12 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 }
 
 // findRedirect ...
-func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myrasec.Redirect, diag.Diagnostics) {
+func findRedirect(redirectID int, meta interface{}, subDomainName string, domainID int) (*myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
-
-	r, err := client.GetRedirect(domain.ID, subDomainName, redirectID)
+	r, err := client.GetRedirect(domainID, subDomainName, redirectID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
@@ -405,7 +373,7 @@ func findRedirect(redirectID int, meta interface{}, subDomainName string) (*myra
 }
 
 // setRedirectData ...
-func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
+func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect, domainID int) {
 	d.SetId(strconv.Itoa(redirect.ID))
 	d.Set("redirect_id", redirect.ID)
 	d.Set("created", redirect.Created.Format(time.RFC3339))
@@ -418,6 +386,7 @@ func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect) {
 	d.Set("sort", redirect.Sort)
 	d.Set("matching_type", redirect.MatchingType)
 	d.Set("enabled", redirect.Enabled)
+	d.Set("domain_id", domainID)
 }
 
 // importExistingRedirect ...

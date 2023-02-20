@@ -91,6 +91,11 @@ func resourceMyrasecIPFilter() *schema.Resource {
 				Default:     "",
 				Description: "A comment to describe this IP filter.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -115,28 +120,18 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateIPFilter(filter, domain.ID, subDomainName)
+	resp, err := client.CreateIPFilter(filter, domainID, subDomainName)
 	if err == nil {
 		d.SetId(fmt.Sprintf("%d", resp.ID))
 		return resourceMyrasecIPFilterRead(ctx, d, meta)
 	}
 
-	filter, errImport := importExistingIPFilter(filter, domain.ID, subDomainName, meta)
+	filter, errImport := importExistingIPFilter(filter, domainID, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
@@ -155,17 +150,6 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return diags
-	}
-
-	subDomainName := name.(string)
 	filterID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -176,12 +160,17 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	filter, diags := findIPFilter(filterID, meta, subDomainName, domainID)
 	if diags.HasError() || filter == nil {
 		return diags
 	}
 
-	setIPFilterData(d, filter, subDomainName)
+	setIPFilterData(d, filter, domainID)
 
 	return diags
 }
@@ -214,22 +203,12 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	filter, err = client.UpdateIPFilter(filter, domain.ID, subDomainName)
+	filter, err = client.UpdateIPFilter(filter, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -239,7 +218,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	setIPFilterData(d, filter, subDomainName)
+	setIPFilterData(d, filter, domainID)
 
 	return diags
 }
@@ -272,18 +251,12 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteIPFilter(filter, domain.ID, subDomainName)
+	_, err = client.DeleteIPFilter(filter, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -303,7 +276,12 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 		return nil, fmt.Errorf("error parsing IP filter ID: [%s]", err.Error())
 	}
 
-	filter, diags := findIPFilter(filterID, meta, subDomainName)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags != nil {
+		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
+	}
+
+	filter, diags := findIPFilter(filterID, meta, subDomainName, domain.ID)
 	if diags.HasError() || filter == nil {
 		return nil, fmt.Errorf("unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
 	}
@@ -357,22 +335,12 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 }
 
 // findIPFilter ...
-func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrasec.IPFilter, diag.Diagnostics) {
+func findIPFilter(filterID int, meta interface{}, subDomainName string, domainId int) (*myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
-
-	f, err := client.GetIPFilter(domain.ID, subDomainName, filterID)
+	f, err := client.GetIPFilter(domainId, subDomainName, filterID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
@@ -395,7 +363,7 @@ func findIPFilter(filterID int, meta interface{}, subDomainName string) (*myrase
 }
 
 // setIPFilterData ...
-func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomainName string) {
+func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, domainId int) {
 	d.SetId(strconv.Itoa(filter.ID))
 	d.Set("filter_id", filter.ID)
 	d.Set("created", filter.Created.Format(time.RFC3339))
@@ -405,6 +373,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 	d.Set("enabled", filter.Enabled)
 	d.Set("comment", filter.Comment)
 	d.Set("subdomain_name", filter.SubDomainName)
+	d.Set("domain_id", domainId)
 
 	if filter.ExpireDate != nil {
 		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
@@ -412,7 +381,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, subDomain
 }
 
 // importExistingIPFilter ...
-func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainName string, meta interface{}) (*myrasec.IPFilter, error) {
+func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, meta interface{}) (*myrasec.IPFilter, error) {
 	client := meta.(*myrasec.API)
 
 	s := strings.Split(filter.Value, "/")
@@ -425,7 +394,7 @@ func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, subDomainNam
 		"search": s[0],
 	}
 
-	filters, err := client.ListIPFilters(domainId, subDomainName, params)
+	filters, err := client.ListIPFilters(domainId, filter.SubDomainName, params)
 	if err != nil {
 		return nil, err
 	}

@@ -34,6 +34,11 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 				},
 				Description: "The Domain for the maintenance template.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 			"maintenance_template_id": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -84,21 +89,13 @@ func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
 	}
 
-	// REMOVE
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateMaintenanceTemplate(template, domain.ID)
+	resp, err := client.CreateMaintenanceTemplate(template, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -136,12 +133,17 @@ func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.Resou
 		return diags
 	}
 
-	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName, domainID)
 	if diags.HasError() || template == nil {
 		return diags
 	}
 
-	setMaintenanceTemplateData(d, template)
+	setMaintenanceTemplateData(d, template, domainID)
 
 	return diags
 }
@@ -175,21 +177,13 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
 	}
 
-	// REMOVE
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	template, err = client.UpdateMaintenanceTemplate(template, domain.ID)
+	template, err = client.UpdateMaintenanceTemplate(template, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -199,7 +193,7 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 		return diags
 	}
 
-	setMaintenanceTemplateData(d, template)
+	setMaintenanceTemplateData(d, template, domainID)
 
 	return diags
 }
@@ -233,17 +227,13 @@ func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.Res
 	}
 
 	domainName := d.Get("domain_name").(string)
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return diags
+
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
 	}
 
-	_, err = client.DeleteMaintenanceTemplate(template, domain.ID)
+	_, err = client.DeleteMaintenanceTemplate(template, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -262,7 +252,12 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 		return nil, fmt.Errorf("error parsing maintenance template ID: [%s]", err.Error())
 	}
 
-	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	if domainDiag.HasError() {
+		return nil, fmt.Errorf("unable to find domainID for domainName [%s]", domainName)
+	}
+
+	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName, domainID)
 	if diags.HasError() || template == nil {
 		return nil, fmt.Errorf("unable to find maintenance template for domain [%s] with ID = [%d]", domainName, maintenanceTemplateID)
 	}
@@ -310,20 +305,10 @@ func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrase
 }
 
 // findMaintenanceTemplate ...
-func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domainName string) (*myrasec.MaintenanceTemplate, diag.Diagnostics) {
+func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domainName string, domainID int) (*myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomain(domainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given domain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 100
@@ -334,7 +319,7 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domain
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenanceTemplates(domain.ID, params)
+		res, err := client.ListMaintenanceTemplates(domainID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -365,11 +350,12 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domain
 }
 
 // setMaintenanceTemplateData ...
-func setMaintenanceTemplateData(d *schema.ResourceData, template *myrasec.MaintenanceTemplate) {
+func setMaintenanceTemplateData(d *schema.ResourceData, template *myrasec.MaintenanceTemplate, domainID int) {
 	d.SetId(strconv.Itoa(template.ID))
 	d.Set("maintenance_template_id", template.ID)
 	d.Set("created", template.Created.Format(time.RFC3339))
 	d.Set("modified", template.Modified.Format(time.RFC3339))
 	d.Set("name", template.Name)
 	d.Set("content", template.Content)
+	d.Set("domain_id", domainID)
 }

@@ -90,6 +90,11 @@ func resourceMyrasecRateLimit() *schema.Resource {
 				Default:      60,
 				Description:  "The affected timeframe in seconds for the rate limit.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -114,22 +119,12 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateRateLimit(ratelimit, domain.ID, subDomainName)
+	resp, err := client.CreateRateLimit(ratelimit, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -147,17 +142,6 @@ func resourceMyrasecRateLimitCreate(ctx context.Context, d *schema.ResourceData,
 func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return diags
-	}
-
-	subDomainName := name.(string)
 	rateLimitID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -168,12 +152,17 @@ func resourceMyrasecRateLimitRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName, domainID)
 	if diags.HasError() || rateLimit == nil {
 		return diags
 	}
 
-	setRateLimitData(d, rateLimit)
+	setRateLimitData(d, rateLimit, domainID)
 
 	return diags
 }
@@ -206,22 +195,12 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	ratelimit, err = client.UpdateRateLimit(ratelimit, domain.ID, subDomainName)
+	ratelimit, err = client.UpdateRateLimit(ratelimit, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -231,7 +210,7 @@ func resourceMyrasecRateLimitUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	setRateLimitData(d, ratelimit)
+	setRateLimitData(d, ratelimit, domainID)
 
 	return diags
 }
@@ -264,18 +243,12 @@ func resourceMyrasecRateLimitDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	_, err = client.DeleteRateLimit(ratelimit, domain.ID, subDomainName)
+	_, err = client.DeleteRateLimit(ratelimit, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -295,7 +268,12 @@ func resourceMyrasecRateLimitImport(ctx context.Context, d *schema.ResourceData,
 		return nil, fmt.Errorf("error parsing rate limit ID: [%s]", err.Error())
 	}
 
-	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags != nil {
+		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
+	}
+
+	rateLimit, diags := findRateLimit(rateLimitID, meta, subDomainName, domain.ID)
 	if diags.HasError() || rateLimit == nil {
 		return nil, fmt.Errorf("unable to find rate limit for subdomain [%s] with ID = [%d]", subDomainName, rateLimitID)
 	}
@@ -345,20 +323,10 @@ func buildRateLimit(d *schema.ResourceData, meta interface{}) (*myrasec.RateLimi
 }
 
 // findRateLimit ...
-func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*myrasec.RateLimit, diag.Diagnostics) {
+func findRateLimit(rateLimitID int, meta interface{}, subDomainName string, domainID int) (*myrasec.RateLimit, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 250
@@ -370,7 +338,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRateLimits(domain.ID, subDomainName, params)
+		res, err := client.ListRateLimits(domainID, subDomainName, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -401,7 +369,7 @@ func findRateLimit(rateLimitID int, meta interface{}, subDomainName string) (*my
 }
 
 // setRateLimitData ...
-func setRateLimitData(d *schema.ResourceData, rateLimit *myrasec.RateLimit) {
+func setRateLimitData(d *schema.ResourceData, rateLimit *myrasec.RateLimit, domainID int) {
 	d.SetId(strconv.Itoa(rateLimit.ID))
 	d.Set("ratelimit_id", rateLimit.ID)
 	d.Set("created", rateLimit.Created.Format(time.RFC3339))
@@ -412,4 +380,5 @@ func setRateLimitData(d *schema.ResourceData, rateLimit *myrasec.RateLimit) {
 	d.Set("burst", rateLimit.Burst)
 	d.Set("timeframe", rateLimit.Timeframe)
 	d.Set("subdomain_name", rateLimit.SubDomainName)
+	d.Set("domain_id", domainID)
 }

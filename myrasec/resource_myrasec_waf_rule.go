@@ -41,6 +41,11 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				},
 				Description: "The Subdomain for the WAF rule.",
 			},
+			"domain_id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Stores domain Id for subdomain.",
+			},
 			"rule_id": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -240,22 +245,12 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	resp, err := client.CreateWAFRule(rule, domain.ID, subDomainName)
+	resp, err := client.CreateWAFRule(rule, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -273,17 +268,6 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	name, ok := d.GetOk("subdomain_name")
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing resource information",
-			Detail:   formatError(fmt.Errorf("[subdomain_name] is not set")),
-		})
-		return diags
-	}
-
-	subDomainName := name.(string)
 	ruleID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -294,12 +278,17 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 		return diags
 	}
 
-	rule, diags := findWAFRule(ruleID, meta, subDomainName)
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
+		return diags
+	}
+
+	rule, diags := findWAFRule(ruleID, meta, subDomainName, domainID)
 	if diags.HasError() || rule == nil {
 		return diags
 	}
 
-	setWAFRuleData(d, rule)
+	setWAFRuleData(d, rule, domainID)
 
 	return diags
 }
@@ -332,22 +321,12 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	subDomainName := d.Get("subdomain_name").(string)
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
+	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
+	if diags.HasError() {
 		return diags
 	}
 
-	// REMOVEME
-	// NOTE: This is a temporary "fix"
-	time.Sleep(200 * time.Millisecond)
-
-	rule, err = client.UpdateWAFRule(rule, domain.ID, subDomainName)
+	rule, err = client.UpdateWAFRule(rule, domainID, subDomainName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -357,7 +336,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	setWAFRuleData(d, rule)
+	setWAFRuleData(d, rule, domainID)
 
 	return diags
 }
@@ -410,7 +389,12 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 		return nil, fmt.Errorf("error parsing WAF rule ID: [%s]", err.Error())
 	}
 
-	rule, diags := findWAFRule(ruleID, meta, subDomainName)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags != nil {
+		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
+	}
+
+	rule, diags := findWAFRule(ruleID, meta, subDomainName, domain.ID)
 	if diags.HasError() || rule == nil {
 		return nil, fmt.Errorf("unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
 	}
@@ -565,20 +549,10 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 }
 
 // findWAFRule ...
-func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrasec.WAFRule, diag.Diagnostics) {
+func findWAFRule(wafRuleID int, meta interface{}, subDomainName string, domainID int) (*myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
-
-	domain, err := client.FetchDomainForSubdomainName(subDomainName)
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching domain for given subdomain name",
-			Detail:   formatError(err),
-		})
-		return nil, diags
-	}
 
 	page := 1
 	pageSize := 250
@@ -590,7 +564,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 
 	for {
 		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWAFRules(domain.ID, params)
+		res, err := client.ListWAFRules(domainID, params)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
@@ -621,7 +595,7 @@ func findWAFRule(wafRuleID int, meta interface{}, subDomainName string) (*myrase
 }
 
 // setWAFRuleData ...
-func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule) {
+func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int) {
 	d.SetId(strconv.Itoa(rule.ID))
 	d.Set("rule_id", rule.ID)
 	d.Set("created", rule.Created.Format(time.RFC3339))
@@ -635,6 +609,7 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule) {
 	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
+	d.Set("domain_id", domainID)
 
 	conditions := []interface{}{}
 	for _, condition := range rule.Conditions {
