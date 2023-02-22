@@ -35,7 +35,7 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       with:
         version: latest
-        args: release --clean --snapshot
+        args: release --clean --prepare
       env:
         GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
         # GitHub sets this automatically
