@@ -62,6 +62,9 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "HTML content of the error page.",
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return strings.TrimSpace(newValue) == strings.TrimSpace(oldValue)
+				},
 			},
 			"domain_id": {
 				Type:        schema.TypeInt,
@@ -221,15 +224,15 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 
 	var errorPage *myrasec.ErrorPage
 
-	domainID, diags := findDomainID(d, meta)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
 	if diags.HasError() {
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
 	if IntInSlice(id, []int{400, 405, 429, 500, 502, 503, 504, 9999}) {
-		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domainID)
+		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domain.ID)
 	} else {
-		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domainID)
+		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domain.ID)
 	}
 
 	if diags.HasError() || errorPage == nil {
@@ -311,7 +314,16 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 			if myrasec.EnsureTrailingDot(ep.SubDomainName) == myrasec.EnsureTrailingDot(subDomainName) &&
 				((idIsCode && ep.ErrorCode == id) || (!idIsCode && ep.ID == id)) {
 
-				return &ep, diags
+				epx, err := client.GetErrorPage(domainID, ep.ID)
+				if err != nil {
+					diags = append(diags, diag.Diagnostic{
+						Severity: diag.Error,
+						Summary:  "Error loading error page content",
+						Detail:   formatError(err),
+					})
+				}
+
+				return epx, diags
 			}
 		}
 		if len(pages) < pageSize {
