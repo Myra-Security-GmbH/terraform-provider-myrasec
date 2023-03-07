@@ -221,15 +221,15 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 
 	var errorPage *myrasec.ErrorPage
 
-	domainID, diags := findDomainID(d, meta)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
 	if diags.HasError() {
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
 	if IntInSlice(id, []int{400, 405, 429, 500, 502, 503, 504, 9999}) {
-		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domainID)
+		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domain.ID)
 	} else {
-		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domainID)
+		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domain.ID)
 	}
 
 	if diags.HasError() || errorPage == nil {

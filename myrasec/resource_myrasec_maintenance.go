@@ -253,12 +253,12 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 		return nil, fmt.Errorf("error parsing maintenance ID: [%s]", err.Error())
 	}
 
-	domainID, diags := findDomainID(d, meta)
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
 	if diags.HasError() {
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
-	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domainID)
+	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domain.ID)
 	if diags.HasError() || maintenance == nil {
 		return nil, fmt.Errorf("unable to find maintenance for subdomain [%s] with ID = [%d]", subDomainName, maintenanceID)
 	}

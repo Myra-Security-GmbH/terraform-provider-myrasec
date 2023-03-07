@@ -509,6 +509,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		subDomainName = name.(string)
 	} else {
 		subDomainName = d.Id()
+		d.Set("subdomain_name", subDomainName)
 	}
 
 	if len(subDomainName) < 4 {
