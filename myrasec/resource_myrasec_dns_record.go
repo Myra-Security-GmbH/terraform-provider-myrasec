@@ -61,6 +61,9 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToLower(i.(string))
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
+				},
 				Description: "Subdomain name of a DNS record.",
 			},
 			"ttl": {
