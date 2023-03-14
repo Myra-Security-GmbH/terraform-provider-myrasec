@@ -2,6 +2,11 @@
 
 Provides a Myra Security IP filter resource.
 
+You can create 3 different types of IP filters:
+* BLACKLIST
+* WHITELIST
+* WHITELIST_REQUEST_LIMITER
+
 ## Example usage
 
 ```hcl
