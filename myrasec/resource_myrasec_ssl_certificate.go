@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Myra-Security-GmbH/myrasec-go/v2"
@@ -107,12 +108,16 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Description: "True if the certificate has extended validation",
 			},
 			"subdomains": {
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Description: "List of subdomains where to assign the certificate",
+				Type:     schema.TypeSet,
+				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
+					StateFunc: func(i interface{}) string {
+						return strings.ToLower(myrasec.RemoveTrailingDot(i.(string)))
+					},
 				},
+				Set:         schema.HashString,
+				Description: "List of subdomains where to assign the certificate",
 			},
 			"cert_refresh_forced": {
 				Type:     schema.TypeBool,
