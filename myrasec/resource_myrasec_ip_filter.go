@@ -166,8 +166,9 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	filter, diags := findIPFilter(filterID, meta, subDomainName, domainID)
-	if diags.HasError() || filter == nil {
-		return diags
+	if filter == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setIPFilterData(d, filter, domainID)
