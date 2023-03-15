@@ -116,7 +116,6 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 						return strings.ToLower(myrasec.RemoveTrailingDot(i.(string)))
 					},
 				},
-				Set:         schema.HashString,
 				Description: "List of subdomains where to assign the certificate",
 			},
 			"cert_refresh_forced": {
