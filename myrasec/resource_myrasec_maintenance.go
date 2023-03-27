@@ -144,8 +144,13 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 	}
 
 	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domainID)
-	if diags.HasError() || maintenance == nil {
+	if diags.HasError() {
 		return diags
+	}
+
+	if maintenance == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setMaintenanceData(d, maintenance, domainID)
