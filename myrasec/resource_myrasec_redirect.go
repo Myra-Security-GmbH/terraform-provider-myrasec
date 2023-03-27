@@ -177,8 +177,13 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	redirect, diags := findRedirect(redirectID, meta, subDomainName, domainID)
-	if diags.HasError() || redirect == nil {
+	if diags.HasError() {
 		return diags
+	}
+
+	if redirect == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setRedirectData(d, redirect, domainID)
