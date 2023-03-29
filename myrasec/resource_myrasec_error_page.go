@@ -57,6 +57,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Required:     true,
 				Description:  "Error code of the error page.",
 				ValidateFunc: validation.IntInSlice([]int{400, 405, 429, 500, 502, 503, 504, 9999}),
+				ForceNew:     true,
 			},
 			"content": {
 				Type:        schema.TypeString,
