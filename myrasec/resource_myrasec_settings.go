@@ -422,7 +422,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 
 	var diags diag.Diagnostics
 
-	settings, err := buildSettings(d, meta)
+	settings, err := buildSettings(d, false)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -502,7 +502,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	var diags diag.Diagnostics
 
-	settings, err := buildSettings(d, meta)
+	settings, err := buildSettings(d, false)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -530,9 +530,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
 
-	setSettingsDataByMap(d, settings, subDomainName, domainID)
-
-	return diags
+	return resourceMyrasecSettingsRead(ctx, d, meta)
 }
 
 // resourceMyrasecSettingsDelete restores the default setting values
@@ -553,7 +551,15 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[INFO] Deleting settings: %v", settingID)
 
-	settings := make(map[string]interface{})
+	settings, err := buildSettings(d, true)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building settings",
+			Detail:   formatError(err),
+		})
+		return diags
+	}
 
 	domainID, subDomainName, diags := findSubdomainNameAndDomainID(d, meta)
 	if diags.HasError() {
@@ -573,140 +579,39 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // buildSettings ...
-func buildSettings(d *schema.ResourceData, meta interface{}) (map[string]interface{}, error) {
+func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, error) {
 	settingsMap := make(map[string]interface{})
-	attributeMap := map[string]string{
-		"access_log":                      "bool",
-		"antibot_post_flood":              "bool",
-		"antibot_post_flood_threshold":    "int",
-		"antibot_proof_of_work":           "bool",
-		"antibot_proof_of_work_threshold": "int",
-		"balancing_method":                "string",
-		"block_not_whitelisted":           "bool",
-		"block_tor_network":               "bool",
-		"cache_enabled":                   "bool",
-		"cache_revalidate":                "bool",
-		"cdn":                             "bool",
-		"client_max_body_size":            "int",
-		"diffie_hellman_exchange":         "int",
-		"enable_origin_sni":               "bool",
-		"forwarded_for_replacement":       "string",
-		"hsts":                            "bool",
-		"hsts_include_subdomains":         "bool",
-		"hsts_max_age":                    "int",
-		"hsts_preload":                    "bool",
-		"http_origin_port":                "int",
-		"ignore_nocache":                  "bool",
-		"image_optimization":              "bool",
-		"ipv6_active":                     "bool",
-		"log_format":                      "string",
-		"monitoring_alert_threshold":      "int",
-		"monitoring_contact_email":        "string",
-		"monitoring_send_alert":           "bool",
-		"myra_ssl_header":                 "bool",
-		"only_https":                      "bool",
-		"origin_connection_header":        "string",
-		"proxy_cache_bypass":              "string",
-		"proxy_connect_timeout":           "int",
-		"proxy_read_timeout":              "int",
-		"request_limit_block":             "string",
-		"request_limit_level":             "int",
-		"request_limit_report":            "bool",
-		"request_limit_report_email":      "string",
-		"rewrite":                         "bool",
-		"source_protocol":                 "string",
-		"spdy":                            "bool",
-		"ssl_origin_port":                 "int",
-		"waf_enable":                      "bool",
-		"waf_policy":                      "string",
-	}
 
-	for k, t := range attributeMap {
-		value, ok := d.GetOk(k)
-		if ok {
-			switch t {
-			case "bool":
-				settingsMap[k] = value.(bool)
-			case "int":
-				settingsMap[k] = value.(int)
-			case "string":
-				settingsMap[k] = value.(string)
+	resource := resourceMyrasecSettings()
+	for name, attr := range resource.Schema {
+		if name == "domain_id" || name == "subdomain_name" {
+			continue
+		}
+		if name == "proxy_host_header" {
+			name = "host_header"
+		}
+		value, ok := d.GetOk(name)
+		if ok && !clean {
+			switch attr.Type {
+			case schema.TypeBool:
+				settingsMap[name] = value.(bool)
+			case schema.TypeInt:
+				settingsMap[name] = value.(int)
+			case schema.TypeString:
+				settingsMap[name] = value.(string)
+			case schema.TypeList:
+				settingsList := []string{}
+				for _, item := range value.([]interface{}) {
+					settingsList = append(settingsList, item.(string))
+				}
+				settingsMap[name] = settingsList
 			}
 		} else {
-			settingsMap[k] = nil
+			settingsMap[name] = nil
 		}
-	}
-	hostHeader := d.Get("proxy_host_header").(string)
-	if hostHeader == "" {
-		settingsMap["host_header"] = nil
-	} else {
-		settingsMap["host_header"] = &hostHeader
-	}
-
-	limitAllowedHttpMethodList, ok := d.GetOk("limit_allowed_http_method")
-	if ok {
-		limitAllowedHttpMethod := []string{}
-		for _, method := range limitAllowedHttpMethodList.([]interface{}) {
-			limitAllowedHttpMethod = append(limitAllowedHttpMethod, method.(string))
-		}
-		settingsMap["limit_allowed_http_method"] = limitAllowedHttpMethod
-	} else {
-		settingsMap["limit_allowed_http_method"] = nil
-	}
-
-	nextUpstreamList, ok := d.GetOk("next_upstream")
-	if ok {
-		nextUpstream := []string{}
-		for _, upstream := range nextUpstreamList.([]interface{}) {
-			nextUpstream = append(nextUpstream, upstream.(string))
-		}
-		settingsMap["next_upstream"] = nextUpstream
-	} else {
-		settingsMap["next_upstream"] = nil
-	}
-
-	limitTlsVersionList, ok := d.GetOk("limit_tls_version")
-	if ok {
-		limitTlsVersion := []string{}
-		for _, version := range limitTlsVersionList.([]interface{}) {
-			limitTlsVersion = append(limitTlsVersion, version.(string))
-		}
-		settingsMap["limit_tls_version"] = limitTlsVersion
-	} else {
-		settingsMap["limit_tls_version"] = nil
-	}
-
-	proxyCacheStaleList, ok := d.GetOk("proxy_cache_stale")
-	if ok {
-		proxyCacheStale := []string{}
-		for _, stale := range proxyCacheStaleList.([]interface{}) {
-			proxyCacheStale = append(proxyCacheStale, stale.(string))
-		}
-		settingsMap["proxy_cache_stale"] = proxyCacheStale
-	} else {
-		settingsMap["proxy_cache_stale"] = nil
-	}
-
-	wafLevelsEnableList, ok := d.GetOk("waf_levels_enable")
-	if ok {
-		wafLevelsEnable := []string{}
-		for _, level := range wafLevelsEnableList.([]interface{}) {
-			wafLevelsEnable = append(wafLevelsEnable, level.(string))
-		}
-		settingsMap["waf_levels_enable"] = wafLevelsEnable
-	} else {
-		settingsMap["waf_levels_enable"] = nil
 	}
 
 	return settingsMap, nil
-}
-
-func setSettingsDataByMap(d *schema.ResourceData, settings map[string]interface{}, subDomainName string, domainID int) {
-	d.Set("subdomain_name", subDomainName)
-	d.Set("domain_id", domainID)
-	for k, v := range settings {
-		d.Set(k, v)
-	}
 }
 
 // setSettingsData ...
@@ -714,66 +619,208 @@ func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDoma
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
-	nextUpsteam, ok := d.GetOk("next_upstream")
+	_, ok := d.GetOk("access_log")
 	if ok {
-		d.Set("next_upstream", nextUpsteam)
+		d.Set("access_log", settings.AccessLog)
 	}
-	proxyConnectTimeout, ok := d.GetOk("proxy_connect_timeout")
+	_, ok = d.GetOk("antibot_post_flood")
 	if ok {
-		d.Set("proxy_connect_timeout", proxyConnectTimeout)
+		d.Set("antibot_post_flood", settings.AntibotPostFlood)
 	}
-	accessLog, ok := d.GetOk("access_log")
+	_, ok = d.GetOk("antibot_post_flood_threshold")
 	if ok {
-		d.Set("access_log", accessLog)
+		d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
 	}
-
-	//d.Set("access_log", settings.AccessLog)
-	//d.Set("antibot_post_flood", settings.AntibotPostFlood)
-	//d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
-	//d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
-	//d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
-	//d.Set("balancing_method", settings.BalancingMethod)
-	//d.Set("block_not_whitelisted", settings.BlockNotWhitelisted)
-	//d.Set("block_tor_network", settings.BlockTorNetwork)
-	//d.Set("cache_enabled", settings.CacheEnabled)
-	//d.Set("cache_revalidate", settings.CacheRevalidate)
-	//d.Set("cdn", settings.CDN)
-	//d.Set("client_max_body_size", settings.ClientMaxBodySize)
-	//d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
-	//d.Set("enable_origin_sni", settings.EnableOriginSNI)
-	//d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
-	//d.Set("hsts", settings.HSTS)
-	//d.Set("hsts_include_subdomains", settings.HSTSIncludeSubdomains)
-	//d.Set("hsts_max_age", settings.HSTSMaxAge)
-	//d.Set("hsts_preload", settings.HSTSPreload)
-	//d.Set("http_origin_port", settings.HTTPOriginPort)
-	//d.Set("ignore_nocache", settings.IgnoreNoCache)
-	//d.Set("image_optimization", settings.ImageOptimization)
-	//d.Set("ipv6_active", settings.IPv6Active)
-	//d.Set("limit_allowed_http_method", settings.LimitAllowedHTTPMethod)
-	//d.Set("limit_tls_version", settings.LimitTLSVersion)
-	//d.Set("log_format", settings.LogFormat)
-	//d.Set("monitoring_alert_threshold", settings.MonitoringAlertThreshold)
-	//d.Set("monitoring_contact_email", settings.MonitoringContactEMail)
-	//d.Set("monitoring_send_alert", settings.MonitoringSendAlert)
-	//d.Set("myra_ssl_header", settings.MyraSSLHeader)
-	//d.Set("next_upstream", settings.NextUpstream)
-	//d.Set("only_https", settings.OnlyHTTPS)
-	//d.Set("origin_connection_header", settings.OriginConnectionHeader)
-	//d.Set("proxy_cache_bypass", settings.ProxyCacheBypass)
-	//d.Set("proxy_cache_stale", settings.ProxyCacheStale)
-	//d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
-	//d.Set("proxy_read_timeout", settings.ProxyReadTimeout)
-	//d.Set("request_limit_block", settings.RequestLimitBlock)
-	//d.Set("request_limit_level", settings.RequestLimitLevel)
-	//d.Set("request_limit_report", settings.RequestLimitReport)
-	//d.Set("request_limit_report_email", settings.RequestLimitReportEMail)
-	//d.Set("rewrite", settings.Rewrite)
-	//d.Set("source_protocol", settings.SourceProtocol)
-	//d.Set("spdy", settings.Spdy)
-	//d.Set("ssl_origin_port", settings.SSLOriginPort)
-	//d.Set("waf_enable", settings.WAFEnable)
-	//d.Set("waf_levels_enable", settings.WAFLevelsEnable)
-	//d.Set("waf_policy", settings.WAFPolicy)
-	//d.Set("proxy_host_header", settings.ProxyHostHeader)
+	_, ok = d.GetOk("antibot_proof_of_work")
+	if ok {
+		d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
+	}
+	_, ok = d.GetOk("antibot_proof_of_work_threshold")
+	if ok {
+		d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
+	}
+	_, ok = d.GetOk("balancing_method")
+	if ok {
+		d.Set("balancing_method", settings.BalancingMethod)
+	}
+	_, ok = d.GetOk("block_not_whitelisted")
+	if ok {
+		d.Set("block_not_whitelisted", settings.BlockNotWhitelisted)
+	}
+	_, ok = d.GetOk("block_tor_network")
+	if ok {
+		d.Set("block_tor_network", settings.BlockTorNetwork)
+	}
+	_, ok = d.GetOk("cache_enabled")
+	if ok {
+		d.Set("cache_enabled", settings.CacheEnabled)
+	}
+	_, ok = d.GetOk("cache_revalidate")
+	if ok {
+		d.Set("cache_revalidate", settings.CacheRevalidate)
+	}
+	_, ok = d.GetOk("cdn")
+	if ok {
+		d.Set("cdn", settings.CDN)
+	}
+	_, ok = d.GetOk("client_max_body_size")
+	if ok {
+		d.Set("client_max_body_size", settings.ClientMaxBodySize)
+	}
+	_, ok = d.GetOk("client_max_body_size")
+	if ok {
+		d.Set("client_max_body_size", settings.ClientMaxBodySize)
+	}
+	_, ok = d.GetOk("diffie_hellman_exchange")
+	if ok {
+		d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
+	}
+	_, ok = d.GetOk("enable_origin_sni")
+	if ok {
+		d.Set("enable_origin_sni", settings.EnableOriginSNI)
+	}
+	_, ok = d.GetOk("forwarded_for_replacement")
+	if ok {
+		d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
+	}
+	_, ok = d.GetOk("hsts")
+	if ok {
+		d.Set("hsts", settings.HSTS)
+	}
+	_, ok = d.GetOk("hsts_include_subdomains")
+	if ok {
+		d.Set("hsts_include_subdomains", settings.HSTSIncludeSubdomains)
+	}
+	_, ok = d.GetOk("hsts_max_age")
+	if ok {
+		d.Set("hsts_max_age", settings.HSTSMaxAge)
+	}
+	_, ok = d.GetOk("hsts_preload")
+	if ok {
+		d.Set("hsts_preload", settings.HSTSPreload)
+	}
+	_, ok = d.GetOk("http_origin_port")
+	if ok {
+		d.Set("http_origin_port", settings.HTTPOriginPort)
+	}
+	_, ok = d.GetOk("ignore_nocache")
+	if ok {
+		d.Set("ignore_nocache", settings.IgnoreNoCache)
+	}
+	_, ok = d.GetOk("image_optimization")
+	if ok {
+		d.Set("image_optimization", settings.ImageOptimization)
+	}
+	_, ok = d.GetOk("ipv6_active")
+	if ok {
+		d.Set("ipv6_active", settings.IPv6Active)
+	}
+	_, ok = d.GetOk("limit_allowed_http_method")
+	if ok {
+		d.Set("limit_allowed_http_method", settings.LimitAllowedHTTPMethod)
+	}
+	_, ok = d.GetOk("limit_tls_version")
+	if ok {
+		d.Set("limit_tls_version", settings.LimitTLSVersion)
+	}
+	_, ok = d.GetOk("log_format")
+	if ok {
+		d.Set("log_format", settings.LogFormat)
+	}
+	_, ok = d.GetOk("monitoring_alert_threshold")
+	if ok {
+		d.Set("monitoring_alert_threshold", settings.MonitoringAlertThreshold)
+	}
+	_, ok = d.GetOk("monitoring_contact_email")
+	if ok {
+		d.Set("monitoring_contact_email", settings.MonitoringContactEMail)
+	}
+	_, ok = d.GetOk("monitoring_send_alert")
+	if ok {
+		d.Set("monitoring_send_alert", settings.MonitoringSendAlert)
+	}
+	_, ok = d.GetOk("myra_ssl_header")
+	if ok {
+		d.Set("myra_ssl_header", settings.MyraSSLHeader)
+	}
+	_, ok = d.GetOk("next_upstream")
+	if ok {
+		d.Set("next_upstream", settings.NextUpstream)
+	}
+	_, ok = d.GetOk("only_https")
+	if ok {
+		d.Set("only_https", settings.OnlyHTTPS)
+	}
+	_, ok = d.GetOk("origin_connection_header")
+	if ok {
+		d.Set("origin_connection_header", settings.OriginConnectionHeader)
+	}
+	_, ok = d.GetOk("proxy_cache_bypass")
+	if ok {
+		d.Set("proxy_cache_bypass", settings.ProxyCacheBypass)
+	}
+	_, ok = d.GetOk("proxy_cache_stale")
+	if ok {
+		d.Set("proxy_cache_stale", settings.ProxyCacheStale)
+	}
+	_, ok = d.GetOk("proxy_connect_timeout")
+	if ok {
+		d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
+	}
+	_, ok = d.GetOk("proxy_connect_timeout")
+	if ok {
+		d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
+	}
+	_, ok = d.GetOk("proxy_read_timeout")
+	if ok {
+		d.Set("proxy_read_timeout", settings.ProxyReadTimeout)
+	}
+	_, ok = d.GetOk("request_limit_block")
+	if ok {
+		d.Set("request_limit_block", settings.RequestLimitBlock)
+	}
+	_, ok = d.GetOk("request_limit_level")
+	if ok {
+		d.Set("request_limit_level", settings.RequestLimitLevel)
+	}
+	_, ok = d.GetOk("request_limit_report")
+	if ok {
+		d.Set("request_limit_report", settings.RequestLimitReport)
+	}
+	_, ok = d.GetOk("request_limit_report_email")
+	if ok {
+		d.Set("request_limit_report_email", settings.RequestLimitReportEMail)
+	}
+	_, ok = d.GetOk("rewrite")
+	if ok {
+		d.Set("rewrite", settings.Rewrite)
+	}
+	_, ok = d.GetOk("source_protocol")
+	if ok {
+		d.Set("source_protocol", settings.SourceProtocol)
+	}
+	_, ok = d.GetOk("spdy")
+	if ok {
+		d.Set("spdy", settings.Spdy)
+	}
+	_, ok = d.GetOk("ssl_origin_port")
+	if ok {
+		d.Set("ssl_origin_port", settings.SSLOriginPort)
+	}
+	_, ok = d.GetOk("waf_enable")
+	if ok {
+		d.Set("waf_enable", settings.WAFEnable)
+	}
+	_, ok = d.GetOk("waf_levels_enable")
+	if ok {
+		d.Set("waf_levels_enable", settings.WAFLevelsEnable)
+	}
+	_, ok = d.GetOk("waf_policy")
+	if ok {
+		d.Set("waf_policy", settings.WAFPolicy)
+	}
+	_, ok = d.GetOk("proxy_host_header")
+	if ok {
+		d.Set("proxy_host_header", settings.ProxyHostHeader)
+	}
 }
