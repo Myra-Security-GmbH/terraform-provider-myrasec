@@ -14,52 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const (
-	defaultValueAccessLog                   = true
-	defaultValueAntibotPostFlood            = false
-	defaultValueAntibotPostFloodThreshold   = 540
-	defaultValueAntibotProofOfWork          = true
-	defaultValueAntibotProofOfWorkThreshold = 1800
-	defaultValueBalancingMethod             = "round_robin"
-	defaultValueBlockNotWhitelisted         = false
-	defaultValueBlockTorNetwork             = false
-	defaultValueCacheEnabled                = false
-	defaultValueCacheRevalidate             = false
-	defaultValueCDN                         = false
-	defaultValueClientMaxBodySize           = 10
-	defaultValueDiffieHellmanExchange       = 2048
-	defaultValueEnableOriginSNI             = true
-	defaultValueForwardedForReplacement     = "X-Forwarded-For"
-	defaultValueHSTS                        = false
-	defaultValueHSTSIncludeSubdomains       = false
-	defaultValueHSTSMaxAge                  = 31536000
-	defaultValueHSTSPreload                 = false
-	defaultValueHTTPOriginPort              = 80
-	defaultValueIgnoreNoCache               = false
-	defaultValueImageOptimization           = true
-	defaultValueIPv6Active                  = true
-	defaultValueLogFormat                   = "myra-combined-waf"
-	defaultValueMonitoringAlertThreshold    = 300
-	defaultValueMonitoringContactEMail      = ""
-	defaultValueMonitoringSendAlert         = false
-	defaultValueMyraSSLHeader               = false
-	defaultValueOnlyHTTPS                   = false
-	defaultValueOriginConnectionHeader      = "none"
-	defaultValueProxyCacheBypass            = ""
-	defaultValueProxyConnectTimeout         = 60
-	defaultValueProxyReadTimeout            = 600
-	defaultValueRequestLimitBlock           = "CAPTCHA"
-	defaultValueRequestLimitLevel           = 6000
-	defaultValueRequestLimitReport          = false
-	defaultValueRequestLimitReportEMail     = ""
-	defaultValueRewrite                     = false
-	defaultValueSourceProtocol              = "same"
-	defaultValueSpdy                        = true
-	defaultValueSSLOriginPort               = 443
-	defaultValueWAFEnable                   = false
-	defaultValueWAFPolicy                   = "allow"
-)
-
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{

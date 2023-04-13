@@ -10,6 +10,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"golang.org/x/net/context"
 )
 
@@ -50,7 +51,8 @@ func resourceMyrasecTag() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
-				Description: "The Type of the tag",
+				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF"}, true),
+				Description:  "The Type of the tag",
 			},
 			"assignments": {
 				Type:     schema.TypeList,
@@ -78,7 +80,8 @@ func resourceMyrasecTag() *schema.Resource {
 							StateFunc: func(i interface{}) string {
 								return strings.ToUpper(i.(string))
 							},
-							Description: "The Type of the tag assignment",
+							ValidateFunc: validation.StringInSlice([]string{"DOMAIN", "SUBDOMAIN"}, true),
+							Description:  "The Type of the tag assignment",
 						},
 						"title": {
 							Type:        schema.TypeString,
