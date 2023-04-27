@@ -152,7 +152,8 @@ func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	tag, diags := findTag(tagId, meta)
-	if diags.HasError() || tag == nil {
+	if tag == nil {
+		d.SetId("")
 		return diags
 	}
 
@@ -208,7 +209,7 @@ func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diags
 	}
 
-	resp, err := client.DeleteTag(tag)
+	_, err = client.DeleteTag(tag)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -218,8 +219,7 @@ func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecTagRead(ctx, d, meta)
+	return diags
 }
 
 // resourceMyrasecTagImport
@@ -249,7 +249,7 @@ func findTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
 	t, err := client.GetTag(tagId)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error loading tag",
 			Detail:   formatError(err),
 		})
