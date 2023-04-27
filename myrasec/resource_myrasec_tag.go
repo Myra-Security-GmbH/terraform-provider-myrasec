@@ -1,6 +1,8 @@
 package myrasec
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strconv"
 	"strings"
@@ -55,7 +57,7 @@ func resourceMyrasecTag() *schema.Resource {
 				Description:  "The Type of the tag",
 			},
 			"assignments": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -103,6 +105,21 @@ func resourceMyrasecTag() *schema.Resource {
 							Description: "The subdomain of the tag assignment",
 						},
 					},
+				},
+				Set: func(a interface{}) int {
+					obj := a.(map[string]interface{})
+
+					assignmentType := strings.ToUpper(obj["type"].(string))
+					title := myrasec.RemoveTrailingDot(obj["title"].(string))
+					name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
+
+					h := sha256.New()
+					h.Write([]byte(assignmentType))
+					h.Write([]byte(title))
+					h.Write([]byte(name))
+
+					hash := int(binary.BigEndian.Uint64(h.Sum(nil)))
+					return hash
 				},
 			},
 		},
@@ -302,12 +319,8 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 	}
 	tag.Modified = modified
 
-	assignments, ok := d.GetOk("assignments")
-	if !ok {
-		return tag, nil
-	}
-
-	for _, assignment := range assignments.([]interface{}) {
+	assignments := d.Get("assignments").(*schema.Set)
+	for _, assignment := range assignments.List() {
 		tagAssignment, err := buildTagAssignments(assignment)
 		if err != nil {
 			return nil, err
@@ -356,6 +369,9 @@ func setTagData(d *schema.ResourceData, tag *myrasec.Tag) {
 
 	assignments := make([]interface{}, 0)
 	for _, a := range tag.Assignments {
+		if a.SubDomainName == "" {
+			a.SubDomainName = a.Title
+		}
 		assignment := map[string]interface{}{
 			"id":             a.ID,
 			"created":        a.Created.Format(time.RFC3339),
