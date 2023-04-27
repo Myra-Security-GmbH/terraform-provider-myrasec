@@ -84,13 +84,19 @@ func resourceMyrasecTag() *schema.Resource {
 							Description:  "The Type of the tag assignment",
 						},
 						"title": {
-							Type:        schema.TypeString,
-							Required:    true,
+							Type:     schema.TypeString,
+							Required: true,
+							StateFunc: func(i interface{}) string {
+								return myrasec.RemoveTrailingDot(i.(string))
+							},
 							Description: "The Title of the tag assignment",
 						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
 							Required: true,
+							StateFunc: func(i interface{}) string {
+								return myrasec.RemoveTrailingDot(i.(string))
+							},
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 							},
