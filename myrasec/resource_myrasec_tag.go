@@ -50,6 +50,7 @@ func resourceMyrasecTag() *schema.Resource {
 			"type": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
