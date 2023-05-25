@@ -186,7 +186,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Allow connections via IPv6 to your systems.",
 			},
 			"limit_allowed_http_method": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -195,7 +195,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Not selected HTTP methods will be blocked.",
 			},
 			"limit_tls_version": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -234,7 +234,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -262,7 +262,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
 			},
 			"proxy_cache_stale": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -338,7 +338,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Enables / disables the Web Application Firewall.",
 			},
 			"waf_levels_enable": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -560,6 +560,13 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 				settingsList := []string{}
 				for _, item := range value.([]interface{}) {
 					settingsList = append(settingsList, item.(string))
+				}
+				settingsMap[name] = settingsList
+			case schema.TypeSet:
+				settingsList := []string{}
+				for _, v := range value.(*schema.Set).List() {
+					log.Println(v)
+					settingsList = append(settingsList, v.(string))
 				}
 				settingsMap[name] = settingsList
 			}
