@@ -362,12 +362,52 @@ func resourceMyrasecSettings() *schema.Resource {
 					return old == "$myra_host" && new == ""
 				},
 			},
+			"available_attributes": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
+		CustomizeDiff: resourceCustomizeDiff,
 	}
+}
+
+func resourceCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+	currentlySetAttributes := d.Get("available_attributes").(*schema.Set)
+
+	availableAttribtues := []string{}
+	resource := resourceMyrasecSettings()
+	for name, attr := range resource.Schema {
+		if attr.Type == schema.TypeBool {
+			notSet := d.GetRawConfig().GetAttr(name).IsNull()
+
+			inList := isInList(name, currentlySetAttributes.List())
+			if (inList && !notSet) || (!notSet && !inList) {
+				availableAttribtues = append(availableAttribtues, name)
+			} else {
+				log.Println("not in list")
+			}
+		}
+	}
+
+	d.SetNew("available_attributes", availableAttribtues)
+
+	return nil
+}
+
+func isInList(value string, list []interface{}) bool {
+	for _, item := range list {
+		if item.(string) == value {
+			return true
+		}
+	}
+	return false
 }
 
 // resourceMyrasecSettingsCreate ...
@@ -538,7 +578,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
-		if name == "domain_id" || name == "subdomain_name" {
+		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
 		if name == "proxy_host_header" {
@@ -586,7 +626,12 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	allSettings, _ := settingsData.(*map[string]interface{})
 	domainSettings := (*allSettings)["domain"]
 
+	availableAttribtues := []string{}
 	for k, v := range domainSettings.(map[string]interface{}) {
 		d.Set(k, v)
+		if _, ok := v.(bool); ok {
+			availableAttribtues = append(availableAttribtues, k)
+		}
 	}
+	d.Set("available_attributes", availableAttribtues)
 }
