@@ -435,7 +435,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	settings, err := client.ListSettings(domainID, subDomainName, nil)
+	settings, err := client.ListSettingsSimple(domainID, subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -545,6 +545,9 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			name = "host_header"
 		}
 		value, ok := d.GetOk(name)
+		if attr.Type == schema.TypeBool {
+			ok = !d.GetRawConfig().GetAttr(name).IsNull()
+		}
 		if ok && !clean {
 			switch attr.Type {
 			case schema.TypeBool:
@@ -569,212 +572,14 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 }
 
 // setSettingsData ...
-func setSettingsData(d *schema.ResourceData, settings *myrasec.Settings, subDomainName string, domainID int) {
+func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomainName string, domainID int) {
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
-	_, ok := d.GetOk("access_log")
-	if ok {
-		d.Set("access_log", settings.AccessLog)
-	}
-	_, ok = d.GetOk("antibot_post_flood")
-	if ok {
-		d.Set("antibot_post_flood", settings.AntibotPostFlood)
-	}
-	_, ok = d.GetOk("antibot_post_flood_threshold")
-	if ok {
-		d.Set("antibot_post_flood_threshold", settings.AntibotPostFloodThreshold)
-	}
-	_, ok = d.GetOk("antibot_proof_of_work")
-	if ok {
-		d.Set("antibot_proof_of_work", settings.AntibotProofOfWork)
-	}
-	_, ok = d.GetOk("antibot_proof_of_work_threshold")
-	if ok {
-		d.Set("antibot_proof_of_work_threshold", settings.AntibotProofOfWorkThreshold)
-	}
-	_, ok = d.GetOk("balancing_method")
-	if ok {
-		d.Set("balancing_method", settings.BalancingMethod)
-	}
-	_, ok = d.GetOk("block_not_whitelisted")
-	if ok {
-		d.Set("block_not_whitelisted", settings.BlockNotWhitelisted)
-	}
-	_, ok = d.GetOk("block_tor_network")
-	if ok {
-		d.Set("block_tor_network", settings.BlockTorNetwork)
-	}
-	_, ok = d.GetOk("cache_enabled")
-	if ok {
-		d.Set("cache_enabled", settings.CacheEnabled)
-	}
-	_, ok = d.GetOk("cache_revalidate")
-	if ok {
-		d.Set("cache_revalidate", settings.CacheRevalidate)
-	}
-	_, ok = d.GetOk("cdn")
-	if ok {
-		d.Set("cdn", settings.CDN)
-	}
-	_, ok = d.GetOk("client_max_body_size")
-	if ok {
-		d.Set("client_max_body_size", settings.ClientMaxBodySize)
-	}
-	_, ok = d.GetOk("client_max_body_size")
-	if ok {
-		d.Set("client_max_body_size", settings.ClientMaxBodySize)
-	}
-	_, ok = d.GetOk("diffie_hellman_exchange")
-	if ok {
-		d.Set("diffie_hellman_exchange", settings.DiffieHellmanExchange)
-	}
-	_, ok = d.GetOk("enable_origin_sni")
-	if ok {
-		d.Set("enable_origin_sni", settings.EnableOriginSNI)
-	}
-	_, ok = d.GetOk("forwarded_for_replacement")
-	if ok {
-		d.Set("forwarded_for_replacement", settings.ForwardedForReplacement)
-	}
-	_, ok = d.GetOk("hsts")
-	if ok {
-		d.Set("hsts", settings.HSTS)
-	}
-	_, ok = d.GetOk("hsts_include_subdomains")
-	if ok {
-		d.Set("hsts_include_subdomains", settings.HSTSIncludeSubdomains)
-	}
-	_, ok = d.GetOk("hsts_max_age")
-	if ok {
-		d.Set("hsts_max_age", settings.HSTSMaxAge)
-	}
-	_, ok = d.GetOk("hsts_preload")
-	if ok {
-		d.Set("hsts_preload", settings.HSTSPreload)
-	}
-	_, ok = d.GetOk("http_origin_port")
-	if ok {
-		d.Set("http_origin_port", settings.HTTPOriginPort)
-	}
-	_, ok = d.GetOk("ignore_nocache")
-	if ok {
-		d.Set("ignore_nocache", settings.IgnoreNoCache)
-	}
-	_, ok = d.GetOk("image_optimization")
-	if ok {
-		d.Set("image_optimization", settings.ImageOptimization)
-	}
-	_, ok = d.GetOk("ipv6_active")
-	if ok {
-		d.Set("ipv6_active", settings.IPv6Active)
-	}
-	_, ok = d.GetOk("limit_allowed_http_method")
-	if ok {
-		d.Set("limit_allowed_http_method", settings.LimitAllowedHTTPMethod)
-	}
-	_, ok = d.GetOk("limit_tls_version")
-	if ok {
-		d.Set("limit_tls_version", settings.LimitTLSVersion)
-	}
-	_, ok = d.GetOk("log_format")
-	if ok {
-		d.Set("log_format", settings.LogFormat)
-	}
-	_, ok = d.GetOk("monitoring_alert_threshold")
-	if ok {
-		d.Set("monitoring_alert_threshold", settings.MonitoringAlertThreshold)
-	}
-	_, ok = d.GetOk("monitoring_contact_email")
-	if ok {
-		d.Set("monitoring_contact_email", settings.MonitoringContactEMail)
-	}
-	_, ok = d.GetOk("monitoring_send_alert")
-	if ok {
-		d.Set("monitoring_send_alert", settings.MonitoringSendAlert)
-	}
-	_, ok = d.GetOk("myra_ssl_header")
-	if ok {
-		d.Set("myra_ssl_header", settings.MyraSSLHeader)
-	}
-	_, ok = d.GetOk("next_upstream")
-	if ok {
-		d.Set("next_upstream", settings.NextUpstream)
-	}
-	_, ok = d.GetOk("only_https")
-	if ok {
-		d.Set("only_https", settings.OnlyHTTPS)
-	}
-	_, ok = d.GetOk("origin_connection_header")
-	if ok {
-		d.Set("origin_connection_header", settings.OriginConnectionHeader)
-	}
-	_, ok = d.GetOk("proxy_cache_bypass")
-	if ok {
-		d.Set("proxy_cache_bypass", settings.ProxyCacheBypass)
-	}
-	_, ok = d.GetOk("proxy_cache_stale")
-	if ok {
-		d.Set("proxy_cache_stale", settings.ProxyCacheStale)
-	}
-	_, ok = d.GetOk("proxy_connect_timeout")
-	if ok {
-		d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
-	}
-	_, ok = d.GetOk("proxy_connect_timeout")
-	if ok {
-		d.Set("proxy_connect_timeout", settings.ProxyConnectTimeout)
-	}
-	_, ok = d.GetOk("proxy_read_timeout")
-	if ok {
-		d.Set("proxy_read_timeout", settings.ProxyReadTimeout)
-	}
-	_, ok = d.GetOk("request_limit_block")
-	if ok {
-		d.Set("request_limit_block", settings.RequestLimitBlock)
-	}
-	_, ok = d.GetOk("request_limit_level")
-	if ok {
-		d.Set("request_limit_level", settings.RequestLimitLevel)
-	}
-	_, ok = d.GetOk("request_limit_report")
-	if ok {
-		d.Set("request_limit_report", settings.RequestLimitReport)
-	}
-	_, ok = d.GetOk("request_limit_report_email")
-	if ok {
-		d.Set("request_limit_report_email", settings.RequestLimitReportEMail)
-	}
-	_, ok = d.GetOk("rewrite")
-	if ok {
-		d.Set("rewrite", settings.Rewrite)
-	}
-	_, ok = d.GetOk("source_protocol")
-	if ok {
-		d.Set("source_protocol", settings.SourceProtocol)
-	}
-	_, ok = d.GetOk("spdy")
-	if ok {
-		d.Set("spdy", settings.Spdy)
-	}
-	_, ok = d.GetOk("ssl_origin_port")
-	if ok {
-		d.Set("ssl_origin_port", settings.SSLOriginPort)
-	}
-	_, ok = d.GetOk("waf_enable")
-	if ok {
-		d.Set("waf_enable", settings.WAFEnable)
-	}
-	_, ok = d.GetOk("waf_levels_enable")
-	if ok {
-		d.Set("waf_levels_enable", settings.WAFLevelsEnable)
-	}
-	_, ok = d.GetOk("waf_policy")
-	if ok {
-		d.Set("waf_policy", settings.WAFPolicy)
-	}
-	_, ok = d.GetOk("proxy_host_header")
-	if ok {
-		d.Set("proxy_host_header", settings.ProxyHostHeader)
+	allSettings, _ := settingsData.(*map[string]interface{})
+	domainSettings := (*allSettings)["domain"]
+
+	for k, v := range domainSettings.(map[string]interface{}) {
+		d.Set(k, v)
 	}
 }
