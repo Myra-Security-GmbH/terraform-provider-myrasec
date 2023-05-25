@@ -1,6 +1,8 @@
 package myrasec
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strconv"
 	"strings"
@@ -48,6 +50,7 @@ func resourceMyrasecTag() *schema.Resource {
 			"type": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
@@ -55,7 +58,7 @@ func resourceMyrasecTag() *schema.Resource {
 				Description:  "The Type of the tag",
 			},
 			"assignments": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -84,19 +87,40 @@ func resourceMyrasecTag() *schema.Resource {
 							Description:  "The Type of the tag assignment",
 						},
 						"title": {
-							Type:        schema.TypeString,
-							Required:    true,
+							Type:     schema.TypeString,
+							Required: true,
+							StateFunc: func(i interface{}) string {
+								return myrasec.RemoveTrailingDot(i.(string))
+							},
 							Description: "The Title of the tag assignment",
 						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
 							Required: true,
+							StateFunc: func(i interface{}) string {
+								return myrasec.RemoveTrailingDot(i.(string))
+							},
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
 							},
 							Description: "The subdomain of the tag assignment",
 						},
 					},
+				},
+				Set: func(a interface{}) int {
+					obj := a.(map[string]interface{})
+
+					assignmentType := strings.ToUpper(obj["type"].(string))
+					title := myrasec.RemoveTrailingDot(obj["title"].(string))
+					name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
+
+					h := sha256.New()
+					h.Write([]byte(assignmentType))
+					h.Write([]byte(title))
+					h.Write([]byte(name))
+
+					hash := int(binary.BigEndian.Uint64(h.Sum(nil)))
+					return hash
 				},
 			},
 		},
@@ -152,7 +176,8 @@ func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	tag, diags := findTag(tagId, meta)
-	if diags.HasError() || tag == nil {
+	if tag == nil {
+		d.SetId("")
 		return diags
 	}
 
@@ -208,7 +233,7 @@ func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diags
 	}
 
-	resp, err := client.DeleteTag(tag)
+	_, err = client.DeleteTag(tag)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -218,8 +243,7 @@ func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecTagRead(ctx, d, meta)
+	return diags
 }
 
 // resourceMyrasecTagImport
@@ -249,7 +273,7 @@ func findTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
 	t, err := client.GetTag(tagId)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
+			Severity: diag.Warning,
 			Summary:  "Error loading tag",
 			Detail:   formatError(err),
 		})
@@ -296,12 +320,8 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 	}
 	tag.Modified = modified
 
-	assignments, ok := d.GetOk("assignments")
-	if !ok {
-		return tag, nil
-	}
-
-	for _, assignment := range assignments.([]interface{}) {
+	assignments := d.Get("assignments").(*schema.Set)
+	for _, assignment := range assignments.List() {
 		tagAssignment, err := buildTagAssignments(assignment)
 		if err != nil {
 			return nil, err
@@ -350,6 +370,9 @@ func setTagData(d *schema.ResourceData, tag *myrasec.Tag) {
 
 	assignments := make([]interface{}, 0)
 	for _, a := range tag.Assignments {
+		if a.SubDomainName == "" {
+			a.SubDomainName = a.Title
+		}
 		assignment := map[string]interface{}{
 			"id":             a.ID,
 			"created":        a.Created.Format(time.RFC3339),
