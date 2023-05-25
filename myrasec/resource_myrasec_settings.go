@@ -435,7 +435,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	settings, err := client.ListSettingsSimple(domainID, subDomainName, nil)
+	settings, err := client.ListSettingsFull(domainID, subDomainName, nil)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
