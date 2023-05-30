@@ -132,7 +132,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return k == "upstream_options.#"
+					return k == "upstream_options.#" && old == new
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
