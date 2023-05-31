@@ -35,7 +35,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 					if myrasec.IsGeneralDomainName(name) {
 						return name
 					}
-					return strings.ToLower(name)
+					return myrasec.RemoveTrailingDot(strings.ToLower(name))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
@@ -110,6 +110,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 		})
 		return diags
 	}
+	client.PruneCache()
 
 	return resourceMyrasecErrorPageRead(ctx, d, meta)
 }
