@@ -379,35 +379,22 @@ func resourceMyrasecSettings() *schema.Resource {
 }
 
 func resourceCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
-	currentlySetAttributes := d.Get("available_attributes").(*schema.Set)
+	availableAttributes := []string{}
 
-	availableAttribtues := []string{}
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
 		if attr.Type == schema.TypeBool {
-			notSet := d.GetRawConfig().GetAttr(name).IsNull()
+			isNullValue := d.GetRawConfig().GetAttr(name).IsNull()
 
-			inList := isInList(name, currentlySetAttributes.List())
-			if (inList && !notSet) || (!notSet && !inList) {
-				availableAttribtues = append(availableAttribtues, name)
-			} else {
-				log.Println("not in list")
+			if !isNullValue {
+				availableAttributes = append(availableAttributes, name)
 			}
 		}
 	}
 
-	d.SetNew("available_attributes", availableAttribtues)
+	d.SetNew("available_attributes", availableAttributes)
 
 	return nil
-}
-
-func isInList(value string, list []interface{}) bool {
-	for _, item := range list {
-		if item.(string) == value {
-			return true
-		}
-	}
-	return false
 }
 
 // resourceMyrasecSettingsCreate ...
