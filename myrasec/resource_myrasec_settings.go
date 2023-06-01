@@ -374,11 +374,12 @@ func resourceMyrasecSettings() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
-		CustomizeDiff: resourceCustomizeDiff,
+		CustomizeDiff: resourceCustomizeDiffSettings,
 	}
 }
 
-func resourceCustomizeDiff(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+// resourceCustomizeDiffSettings
+func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	availableAttributes := []string{}
 
 	resource := resourceMyrasecSettings()
