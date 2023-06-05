@@ -358,7 +358,7 @@ func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 
 	tagId := d.Get("tag_id")
-	settings, err := client.ListTagSettings(tagId.(int))
+	settings, err := client.ListTagSettingsMap(tagId.(int))
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -470,7 +470,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
-		if name == "tag_id" {
+		if name == "tag_id" || name == "available_attributes" {
 			continue
 		}
 		value, ok := d.GetOk(name)
@@ -511,8 +511,11 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId int) {
 	d.Set("tag_id", tagId)
 
+	settings, _ := settingsData.(*map[string]interface{})
+	log.Println(settings)
+
 	availableAttributes := []string{}
-	for k, v := range settingsData.(map[string]interface{}) {
+	for k, v := range (*settings)["settings"].(map[string]interface{}) {
 		d.Set(k, v)
 		if _, ok := v.(bool); ok {
 			availableAttributes = append(availableAttributes, k)
