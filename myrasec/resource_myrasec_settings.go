@@ -113,10 +113,11 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
-				Type:        schema.TypeInt,
-				Required:    false,
-				Optional:    true,
-				Description: "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB.",
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(0, 250),
+				Description:  "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 250MB.",
 			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
