@@ -60,6 +60,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
 			"myrasec_tags":                  dataSourceMyrasecTags(),
 			"myrasec_tag_cache_settings":    dataSourceMyrasecTagCacheSettings(),
+			"myrasec_tag_settings":          dataSourceMyrasecTagSettings(),
 			"myrasec_tag_waf_rules":         dataSourceMyrasecTagWAFRules(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
