@@ -79,8 +79,13 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
+			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
 			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
@@ -381,7 +386,6 @@ func resourceMyrasecSettings() *schema.Resource {
 // resourceCustomizeDiffSettings
 func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	availableAttributes := []string{}
-
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
 		if attr.Type == schema.TypeBool {
@@ -392,9 +396,15 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 			}
 		}
 	}
-
 	d.SetNew("available_attributes", availableAttributes)
 
+	method := d.Get("balancing_method")
+	if method == "cookie_based" {
+		cookie := d.Get("cookie_name")
+		if cookie == "" {
+			return fmt.Errorf("cookie_name is required when balancing_method is cookie_based")
+		}
+	}
 	return nil
 }
 
