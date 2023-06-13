@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -399,11 +400,17 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 	d.SetNew("available_attributes", availableAttributes)
 
 	method := d.Get("balancing_method")
+	cookie := d.Get("cookie_name")
 	if method == "cookie_based" {
-		cookie := d.Get("cookie_name")
 		if cookie == "" {
 			return fmt.Errorf("cookie_name is required when balancing_method is cookie_based")
 		}
+		re := regexp.MustCompile("^[a-zA-Z0-9]*$")
+		if !re.MatchString(cookie.(string)) {
+			return fmt.Errorf("cookie_name can only contain alphanumeric characters")
+		}
+	} else if cookie != "" {
+		return fmt.Errorf("cookie_name is not allowed when balancing_method is not cookie_based")
 	}
 	return nil
 }
