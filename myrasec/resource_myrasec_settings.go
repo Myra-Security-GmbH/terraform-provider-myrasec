@@ -615,10 +615,13 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	domainSettings := (*allSettings)["domain"]
 
 	availableAttribtues := []string{}
-	for k, v := range domainSettings.(map[string]interface{}) {
-		d.Set(k, v)
-		if _, ok := v.(bool); ok {
-			availableAttribtues = append(availableAttribtues, k)
+	mapSettings, ok := domainSettings.(map[string]interface{})
+	if ok {
+		for k, v := range mapSettings {
+			d.Set(k, v)
+			if _, ok := v.(bool); ok {
+				availableAttribtues = append(availableAttribtues, k)
+			}
 		}
 	}
 	d.Set("available_attributes", availableAttribtues)
