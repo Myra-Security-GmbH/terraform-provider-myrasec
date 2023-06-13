@@ -2,6 +2,9 @@ package myrasec
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"strconv"
@@ -146,6 +149,57 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
+		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			var errors error
+
+			certificate := rd.Get("certificate")
+			privateKey := rd.Get("key")
+
+			certBlock, _ := pem.Decode([]byte(certificate.(string)))
+			if certBlock == nil {
+				log.Fatal("Failed to decode PEM block for certificate")
+			}
+
+			cert, err := x509.ParseCertificate(certBlock.Bytes)
+			if err != nil {
+				return fmt.Errorf(formatError(err))
+			}
+
+			keyBlock, _ := pem.Decode([]byte(privateKey.(string)))
+			if keyBlock == nil {
+				return fmt.Errorf("Failed to decode PEM block for private key")
+			}
+
+			var key *rsa.PrivateKey
+			if keyBlock.Type == "RSA PRIVATE KEY" {
+				pkey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+				if err != nil {
+					return fmt.Errorf(formatError(err))
+				}
+				key = pkey
+			} else if keyBlock.Type == "PRIVATE KEY" {
+				pkey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+				if err != nil {
+					return fmt.Errorf(formatError(err))
+				}
+
+				switch pkey := pkey.(type) {
+				case *rsa.PrivateKey:
+					key = pkey
+				default:
+					return fmt.Errorf("Unsupported private key type")
+				}
+			} else {
+				return fmt.Errorf("Unsupported private key format")
+			}
+
+			matches := key.N.Cmp(cert.PublicKey.(*rsa.PublicKey).N) == 0 && key.E == cert.PublicKey.(*rsa.PublicKey).E
+			if !matches {
+				return fmt.Errorf("Private key does not match to certifcate")
+			}
+
+			return errors
 		},
 	}
 }
