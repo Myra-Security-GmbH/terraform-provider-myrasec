@@ -569,12 +569,12 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
+		value, ok := d.GetOk(name)
+		if attr.Type == schema.TypeBool && !clean {
+			ok = !d.GetRawConfig().GetAttr(name).IsNull()
+		}
 		if name == "proxy_host_header" {
 			name = "host_header"
-		}
-		value, ok := d.GetOk(name)
-		if attr.Type == schema.TypeBool {
-			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if ok && !clean {
 			switch attr.Type {
