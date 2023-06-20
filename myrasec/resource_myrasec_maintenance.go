@@ -65,6 +65,16 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "End Date for the maintenance.",
+				ValidateFunc: func(i interface{}, s string) (warn []string, errors []error) {
+					end, _ := types.ParseDate(i.(string))
+					now := time.Now()
+
+					if end.Before(now) {
+						warn = append(warn, "This maintenance page is expired you can remove this from your configuration")
+					}
+
+					return warn, errors
+				},
 			},
 			"content": {
 				Type:        schema.TypeString,
