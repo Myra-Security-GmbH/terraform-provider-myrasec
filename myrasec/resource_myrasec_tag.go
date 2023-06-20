@@ -54,12 +54,12 @@ func resourceMyrasecTag() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
-				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF"}, false),
 				Description:  "The Type of the tag",
 			},
 			"assignments": {
 				Type:     schema.TypeSet,
-				Required: true,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -320,6 +320,7 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 	}
 	tag.Modified = modified
 
+	tag.Assignments = make([]myrasec.TagAssignment, 0)
 	assignments := d.Get("assignments").(*schema.Set)
 	for _, assignment := range assignments.List() {
 		tagAssignment, err := buildTagAssignments(assignment)
