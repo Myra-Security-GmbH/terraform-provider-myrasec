@@ -76,6 +76,11 @@ func resourceMyrasecDomain() *schema.Resource {
 			},
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i interface{}) error {
+			currentDomainName, newDomainName := d.GetChange("name")
+			if currentDomainName != "" && currentDomainName != newDomainName {
+				return fmt.Errorf("it's not allowed to change domain name")
+			}
+
 			paused := d.Get("paused")
 			pausedUntil := d.Get("paused_until")
 
