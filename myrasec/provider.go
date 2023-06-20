@@ -47,6 +47,7 @@ func Provider() *schema.Provider {
 			"myrasec_dns_records":           dataSourceMyrasecDNSRecords(),
 			"myrasec_cache_settings":        dataSourceMyrasecCacheSettings(),
 			"myrasec_redirects":             dataSourceMyrasecRedirects(),
+			"myrasec_settings":              dataSourceMyrasecSettings(),
 			"myrasec_ip_filters":            dataSourceMyrasecIPFilters(),
 			"myrasec_ratelimits":            dataSourceMyrasecRateLimits(),
 			"myrasec_waf_rules":             dataSourceMyrasecWAFRules(),
@@ -59,6 +60,7 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
 			"myrasec_tags":                  dataSourceMyrasecTags(),
 			"myrasec_tag_cache_settings":    dataSourceMyrasecTagCacheSettings(),
+			"myrasec_tag_settings":          dataSourceMyrasecTagSettings(),
 			"myrasec_tag_waf_rules":         dataSourceMyrasecTagWAFRules(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
