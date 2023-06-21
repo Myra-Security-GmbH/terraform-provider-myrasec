@@ -88,9 +88,14 @@ func resourceMyrasecTag() *schema.Resource {
 						},
 						"title": {
 							Type:     schema.TypeString,
-							Required: true,
-							StateFunc: func(i interface{}) string {
-								return myrasec.RemoveTrailingDot(i.(string))
+							Optional: true,
+							Computed: true,
+							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+								if new != "" && old == "" {
+									return false
+								} else {
+									return true
+								}
 							},
 							Description: "The Title of the tag assignment",
 						},
@@ -111,12 +116,10 @@ func resourceMyrasecTag() *schema.Resource {
 					obj := a.(map[string]interface{})
 
 					assignmentType := strings.ToUpper(obj["type"].(string))
-					title := myrasec.RemoveTrailingDot(obj["title"].(string))
 					name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
 
 					h := sha256.New()
 					h.Write([]byte(assignmentType))
-					h.Write([]byte(title))
 					h.Write([]byte(name))
 
 					hash := int(binary.BigEndian.Uint64(h.Sum(nil)))
@@ -337,7 +340,6 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 func buildTagAssignments(assignment interface{}) (*myrasec.TagAssignment, error) {
 	tagAssignment := &myrasec.TagAssignment{
 		Type:          assignment.(map[string]interface{})["type"].(string),
-		Title:         assignment.(map[string]interface{})["title"].(string),
 		SubDomainName: assignment.(map[string]interface{})["subdomain_name"].(string),
 	}
 
@@ -356,6 +358,8 @@ func buildTagAssignments(assignment interface{}) (*myrasec.TagAssignment, error)
 		return nil, err
 	}
 	tagAssignment.Modified = modified
+
+	tagAssignment.Title = myrasec.RemoveTrailingDot(tagAssignment.SubDomainName)
 
 	return tagAssignment, nil
 }
