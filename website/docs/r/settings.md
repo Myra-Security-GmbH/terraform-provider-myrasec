@@ -43,7 +43,7 @@ The following arguments are supported:
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
 * `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`.
-* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 250MB. Default `10`.
+* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024` or `2048`. Default `2048`.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
