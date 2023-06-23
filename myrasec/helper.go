@@ -11,10 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	ClientMaxBodySize = 5120
-)
-
 // findDomainIDByDomainName ...
 func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainName string) (domainID int, diags diag.Diagnostics) {
 
