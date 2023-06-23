@@ -116,7 +116,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntBetween(0, 250),
+				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
 				Description:  "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 250MB.",
 			},
 			"diffie_hellman_exchange": {
@@ -475,6 +475,16 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setSettingsData(d, settings, subDomainName, domainID)
+
+	clientMaxBodySize := d.Get("client_max_body_size")
+
+	if clientMaxBodySize.(int) > ClientMaxBodySize {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "client_max_body_size for " + subDomainName,
+			Detail:   fmt.Sprintf("Value of this setting was set by Myra support to %d MB will now be changed.", clientMaxBodySize.(int)),
+		})
+	}
 
 	return diags
 }

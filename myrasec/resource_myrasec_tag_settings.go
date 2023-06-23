@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -99,7 +100,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntBetween(0, 250),
+				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
 				Description:  "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 250MB.",
 			},
 			"diffie_hellman_exchange": {
@@ -370,6 +371,16 @@ func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData,
 	}
 
 	setTagSettingsData(d, settings, tagId.(int))
+
+	clientMaxBodySize := d.Get("client_max_body_size")
+
+	if clientMaxBodySize.(int) > ClientMaxBodySize {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "client_max_body_size",
+			Detail:   fmt.Sprintf("Value of this setting was set by Myra support to %d will now be changed.", clientMaxBodySize.(int)),
+		})
+	}
 
 	return diags
 }
