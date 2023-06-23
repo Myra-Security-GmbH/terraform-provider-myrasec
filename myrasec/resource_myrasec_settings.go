@@ -117,7 +117,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
-				Description:  "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 250MB.",
+				Description:  fmt.Sprintf("Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum %d MB.", ClientMaxBodySize),
 			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
