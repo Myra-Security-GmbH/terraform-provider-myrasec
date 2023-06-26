@@ -62,6 +62,12 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Required:     true,
 				Description:  "Start Date for the maintenance.",
 				ValidateFunc: validation.IsRFC3339Time,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldDate, _ := types.ParseDate(oldValue)
+					newDate, _ := types.ParseDate(newValue)
+
+					return oldDate.Equal(newDate.Time)
+				},
 			},
 			"end": {
 				Type:        schema.TypeString,
@@ -81,11 +87,18 @@ func resourceMyrasecMaintenance() *schema.Resource {
 
 					return warn, errors
 				},
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldDate, _ := types.ParseDate(oldValue)
+					newDate, _ := types.ParseDate(newValue)
+
+					return oldDate.Equal(newDate.Time)
+				},
 			},
 			"content": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "HTML content of the maintenance.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "HTML content of the maintenance.",
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"active": {
 				Type:        schema.TypeBool,
