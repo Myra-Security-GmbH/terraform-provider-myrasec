@@ -102,6 +102,23 @@ func resourceMyrasecMaintenance() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			startString := rd.Get("start")
+			endStringOld, endStringNew := rd.GetChange("end")
+
+			startDate, _ := types.ParseDate(startString.(string))
+			endDate, _ := types.ParseDate(endStringNew.(string))
+			now := time.Now()
+
+			if endStringOld.(string) == "" && endDate.Before(now) {
+				return fmt.Errorf("This maintenance page can not be created in the past")
+
+			} else if endDate.Before(startDate.Time) {
+				return fmt.Errorf("end should not be before start")
+			}
+
+			return nil
+		},
 	}
 }
 
