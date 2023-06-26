@@ -12,6 +12,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // resourceMyrasecMaintenance ...
@@ -57,14 +58,29 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"start": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Start Date for the maintenance.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Start Date for the maintenance.",
+				ValidateFunc: validation.IsRFC3339Time,
 			},
 			"end": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "End Date for the maintenance.",
+				ValidateFunc: func(i interface{}, s string) (warn []string, errors []error) {
+					warn, errors = validation.IsRFC3339Time(i, s)
+					if errors != nil {
+						return nil, errors
+					}
+
+					end, _ := types.ParseDate(i.(string))
+					now := time.Now()
+					if end.Before(now) {
+						warn = append(warn, "This maintenance page is expired you can remove this from your configuration")
+					}
+
+					return warn, errors
+				},
 			},
 			"content": {
 				Type:        schema.TypeString,
