@@ -12,6 +12,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // resourceMyrasecDomain ...
@@ -61,18 +62,10 @@ func resourceMyrasecDomain() *schema.Resource {
 				Description: "Shows if Myra is paused for this domain.",
 			},
 			"paused_until": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Date until Myra will be automatically reactivated.",
-				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
-					datetimeString := i.(string)
-					_, err := time.Parse(time.RFC3339, datetimeString)
-					if err != nil && datetimeString != "" {
-						message := fmt.Errorf("'paused_until' must be a valid RFC3339 date time string or empty")
-						errors = append(errors, message)
-					}
-					return warnings, errors
-				},
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "Date until Myra will be automatically reactivated.",
+				ValidateFunc: validation.IsRFC3339Time,
 			},
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i interface{}) error {
@@ -84,20 +77,18 @@ func resourceMyrasecDomain() *schema.Resource {
 			paused := d.Get("paused")
 			pausedUntil := d.Get("paused_until")
 
-			if !paused.(bool) {
+			if !paused.(bool) && pausedUntil.(string) != "" {
+				return fmt.Errorf("'paused_until' is not allowed when 'paused' is set to false")
+			} else if !paused.(bool) {
 				return nil
 			}
 			if pausedUntil == "" {
 				return fmt.Errorf("'paused_until' is required when 'paused' is set to true")
 			}
-			datetimeString, ok := pausedUntil.(string)
-			if !ok {
-				return fmt.Errorf("'paused_until' field must be a string")
-			}
 
-			_, err := time.Parse(time.RFC3339, datetimeString)
+			_, err := time.Parse(time.RFC3339, pausedUntil.(string))
 			if err != nil {
-				return fmt.Errorf("'paused_until' must be a valid RFC3339 date time string")
+				return err
 			}
 
 			return nil

@@ -68,8 +68,19 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Description: "Subdomain name of a DNS record.",
 			},
 			"ttl": {
-				Type:        schema.TypeInt,
-				Required:    true,
+				Type:     schema.TypeInt,
+				Required: true,
+				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
+
+					values := []int{300, 600, 900, 1800, 3600, 7200, 18000, 43200, 86400}
+
+					valid := IntInSlice(i.(int), values)
+					if !valid {
+						warnings = append(warnings, fmt.Sprintf("value is not a valid ttl, must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ",")))
+					}
+
+					return warnings, errors
+				},
 				Description: "Time to live.",
 			},
 			"record_type": {
