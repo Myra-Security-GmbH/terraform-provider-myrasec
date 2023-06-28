@@ -62,7 +62,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 					return strings.ToLower(i.(string))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
+					domainName := d.Get("domain_name")
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new) || myrasec.RemoveTrailingDot(old) == fmt.Sprintf("%s.%s", new, domainName)
 				},
 				Description: "Subdomain name of a DNS record.",
 			},
@@ -265,7 +266,8 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if record == nil {
-		return diags
+		d.SetId("")
+		return nil
 	}
 
 	setDNSRecordData(d, record, domainName, domainID)

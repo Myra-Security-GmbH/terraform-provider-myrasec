@@ -167,8 +167,10 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	domain, diags := findDomain(domainID, meta)
-	if diags.HasError() || domain == nil {
-		return diags
+
+	if domain == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setDomainData(d, domain)
