@@ -611,6 +611,14 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
+	// reset attributes befor setting them
+	for name := range resourceMyrasecSettings().Schema {
+		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
+			continue
+		}
+		d.Set(name, nil)
+	}
+
 	allSettings, _ := settingsData.(*map[string]interface{})
 	domainSettings := (*allSettings)["domain"]
 
@@ -618,6 +626,9 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	mapSettings, ok := domainSettings.(map[string]interface{})
 	if ok {
 		for k, v := range mapSettings {
+			if k == "host_header" {
+				k = "proxy_host_header"
+			}
 			d.Set(k, v)
 			if _, ok := v.(bool); ok {
 				availableAttribtues = append(availableAttribtues, k)
