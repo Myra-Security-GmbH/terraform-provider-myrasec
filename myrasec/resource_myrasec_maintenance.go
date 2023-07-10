@@ -66,7 +66,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 					oldDate, _ := types.ParseDate(oldValue)
 					newDate, _ := types.ParseDate(newValue)
 
-					return oldDate.Equal(newDate.Time)
+					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
 				},
 			},
 			"end": {
@@ -91,7 +91,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 					oldDate, _ := types.ParseDate(oldValue)
 					newDate, _ := types.ParseDate(newValue)
 
-					return oldDate.Equal(newDate.Time)
+					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
 				},
 			},
 			"content": {
@@ -124,7 +124,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 			now := time.Now()
 
 			if endStringOld.(string) == "" && endDate.Before(now) {
-				return fmt.Errorf("This maintenance page can not be created in the past")
+				return fmt.Errorf("this maintenance page can not be created in the past")
 
 			} else if endDate.Before(startDate.Time) {
 				return fmt.Errorf("end should not be before start")
