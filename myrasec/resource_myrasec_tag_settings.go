@@ -62,8 +62,13 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
+			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
 			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
@@ -307,7 +312,7 @@ func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDif
 
 	d.SetNew("available_attributes", availableAttributes)
 
-	return nil
+	return validateCookieBasedName(d)
 }
 
 // resourceMyrasecTagSettingsCreate
@@ -405,6 +410,7 @@ func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceDat
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating tag settings",
+			Detail:   formatError(err),
 		})
 		return diags
 	}
@@ -522,4 +528,9 @@ func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId 
 		}
 	}
 	d.Set("available_attributes", availableAttributes)
+
+	method := d.Get("balancing_method")
+	if method != "cookie_based" {
+		d.Set("cookie_name", "")
+	}
 }
