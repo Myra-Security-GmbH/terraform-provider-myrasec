@@ -659,7 +659,7 @@ func validateCookieBasedName(d *schema.ResourceDiff) error {
 			return fmt.Errorf("cookie_name can only contain alphanumeric characters")
 		}
 	} else if cookie != "" {
-		return fmt.Errorf("cookie_name is not allowed when balancing_method is not cookie_based")
+		return fmt.Errorf("cookie_name is only allowed when balancing_method is cookie_based")
 	}
 
 	return nil
