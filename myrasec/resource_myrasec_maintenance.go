@@ -127,7 +127,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				return fmt.Errorf("this maintenance page can not be created in the past")
 
 			} else if endDate.Before(startDate.Time) {
-				return fmt.Errorf("end should not be before start")
+				return fmt.Errorf("end date should not be before start date")
 			}
 
 			return nil
