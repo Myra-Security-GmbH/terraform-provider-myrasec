@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -83,8 +84,13 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
+			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
 			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
@@ -388,7 +394,6 @@ func resourceMyrasecSettings() *schema.Resource {
 // resourceCustomizeDiffSettings
 func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	availableAttributes := []string{}
-
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
 		if attr.Type == schema.TypeBool {
@@ -399,10 +404,9 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 			}
 		}
 	}
-
 	d.SetNew("available_attributes", availableAttributes)
 
-	return nil
+	return validateCookieBasedName(d)
 }
 
 // resourceMyrasecSettingsCreate ...
@@ -653,4 +657,27 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 		}
 	}
 	d.Set("available_attributes", availableAttribtues)
+
+	method := d.Get("balancing_method")
+	if method != "cookie_based" {
+		d.Set("cookie_name", "")
+	}
+}
+
+func validateCookieBasedName(d *schema.ResourceDiff) error {
+	method := d.Get("balancing_method")
+	cookie := d.Get("cookie_name")
+	if method == "cookie_based" {
+		if cookie == "" {
+			return fmt.Errorf("cookie_name is required when balancing_method is cookie_based")
+		}
+		re := regexp.MustCompile("^[a-zA-Z0-9]*$")
+		if !re.MatchString(cookie.(string)) {
+			return fmt.Errorf("cookie_name can only contain alphanumeric characters")
+		}
+	} else if cookie != "" {
+		return fmt.Errorf("cookie_name is only allowed when balancing_method is cookie_based")
+	}
+
+	return nil
 }
