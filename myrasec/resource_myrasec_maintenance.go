@@ -12,6 +12,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // resourceMyrasecMaintenance ...
@@ -57,19 +58,47 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"start": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Start Date for the maintenance.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Start Date for the maintenance.",
+				ValidateFunc: validation.IsRFC3339Time,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldDate, _ := types.ParseDate(oldValue)
+					newDate, _ := types.ParseDate(newValue)
+
+					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
+				},
 			},
 			"end": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "End Date for the maintenance.",
+				ValidateFunc: func(i interface{}, s string) (warn []string, errors []error) {
+					warn, errors = validation.IsRFC3339Time(i, s)
+					if errors != nil {
+						return nil, errors
+					}
+
+					end, _ := types.ParseDate(i.(string))
+					now := time.Now()
+					if end.Before(now) {
+						warn = append(warn, "This maintenance page is expired you can remove this from your configuration")
+					}
+
+					return warn, errors
+				},
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldDate, _ := types.ParseDate(oldValue)
+					newDate, _ := types.ParseDate(newValue)
+
+					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
+				},
 			},
 			"content": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "HTML content of the maintenance.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "HTML content of the maintenance.",
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"active": {
 				Type:        schema.TypeBool,
@@ -85,6 +114,23 @@ func resourceMyrasecMaintenance() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
+		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			startString := rd.Get("start")
+			endStringOld, endStringNew := rd.GetChange("end")
+
+			startDate, _ := types.ParseDate(startString.(string))
+			endDate, _ := types.ParseDate(endStringNew.(string))
+			now := time.Now()
+
+			if endStringOld.(string) == "" && endDate.Before(now) {
+				return fmt.Errorf("this maintenance page can not be created in the past")
+
+			} else if endDate.Before(startDate.Time) {
+				return fmt.Errorf("end date should not be before start date")
+			}
+
+			return nil
 		},
 	}
 }
