@@ -14,6 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	ClientMaxBodySize = 5120
+)
+
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
@@ -113,10 +117,11 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
-				Type:        schema.TypeInt,
-				Required:    false,
-				Optional:    true,
-				Description: "Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB.",
+				Type:         schema.TypeInt,
+				Required:     false,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
+				Description:  fmt.Sprintf("Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum %d MB.", ClientMaxBodySize),
 			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
@@ -474,6 +479,16 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setSettingsData(d, settings, subDomainName, domainID)
+
+	clientMaxBodySize := d.Get("client_max_body_size")
+
+	if clientMaxBodySize.(int) > ClientMaxBodySize {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "client_max_body_size for " + subDomainName,
+			Detail:   fmt.Sprintf("Value of this setting was set by Myra support to %d MB will now be changed.", clientMaxBodySize.(int)),
+		})
+	}
 
 	return diags
 }
