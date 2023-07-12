@@ -11,7 +11,7 @@ resource "myrasec_tag "tag_cache" {
   type = "CACHE"
   assignments  {
     type           = "subdomain"
-    title          = "example.com"
+    title          = "www.example.com"
     subdomain_name = "www.example.com"
   }
 }
@@ -33,5 +33,5 @@ The following arguments are supported:
 * `type` (Required) Type of the tag. Valid types are: `CACHE`, `CONFIG`, `RATE_LIMIT` and `WAF`.
 * `assignments` (Required) The domain/subDomain the tag is assigned to.
 * `assignments.type` (Required) the type of the assignment. Valid types are: `domain`, `subdomain`.
-* `assignments.title` (Required on type `domain`) The domain name of the assigned domain.
-* `assignments.subdomain_name` (Required on type `subdomain`) The subdomain name of the assigned subdomain.
+* `assignments.title` (Required) The domain name or subdomain name depending on the type.
+* `assignments.subdomain_name` (Required) The domain name or subdomain name depending on the type.
