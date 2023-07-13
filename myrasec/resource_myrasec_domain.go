@@ -62,10 +62,15 @@ func resourceMyrasecDomain() *schema.Resource {
 				Description: "Shows if Myra is paused for this domain.",
 			},
 			"paused_until": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Description:  "Date until Myra will be automatically reactivated.",
-				ValidateFunc: validation.IsRFC3339Time,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Date until Myra will be automatically reactivated.",
+				ValidateFunc: func(i interface{}, s string) (Warning []string, errors []error) {
+					if i.(string) != "" {
+						return validation.IsRFC3339Time(i, s)
+					}
+					return Warning, errors
+				},
 			},
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i interface{}) error {

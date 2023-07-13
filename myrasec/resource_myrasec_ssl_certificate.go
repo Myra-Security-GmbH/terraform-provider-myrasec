@@ -168,7 +168,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 
 			keyBlock, _ := pem.Decode([]byte(privateKey.(string)))
 			if keyBlock == nil {
-				return fmt.Errorf("Failed to decode PEM block for private key")
+				return fmt.Errorf("failed to decode PEM block for private key")
 			}
 
 			var key *rsa.PrivateKey
