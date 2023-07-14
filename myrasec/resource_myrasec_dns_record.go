@@ -142,9 +142,22 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			},
 			"upstream_options": {
 				Type:     schema.TypeList,
+				MaxItems: 1,
 				Optional: true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return k == "upstream_options.#" && old == new
+					oldUpstream, newUpstream := d.GetChange("upstream_options.0")
+
+					uoOld, _ := oldUpstream.(map[string]interface{})
+					uoNew, _ := newUpstream.(map[string]interface{})
+
+					maxFailsOld, maxFailsOk := uoOld["max_fails"].(int)
+					weighOld, weightOk := uoOld["weight"].(int)
+
+					return maxFailsOk && maxFailsOld == uoNew["max_fails"].(int) &&
+						weightOk && weighOld == uoNew["weight"].(int) &&
+						uoOld["backup"].(bool) == uoNew["backup"].(bool) &&
+						uoOld["down"].(bool) == uoNew["down"].(bool) &&
+						uoOld["fail_timeout"].(string) == uoNew["fail_timeout"].(string)
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
