@@ -614,7 +614,6 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			case schema.TypeSet:
 				settingsList := []string{}
 				for _, v := range value.(*schema.Set).List() {
-					log.Println(v)
 					settingsList = append(settingsList, v.(string))
 				}
 				settingsMap[name] = settingsList
@@ -640,6 +639,8 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 		d.Set(name, nil)
 	}
 
+	resource := resourceMyrasecSettings().Schema
+
 	allSettings, _ := settingsData.(*map[string]interface{})
 	domainSettings := (*allSettings)["domain"]
 
@@ -652,7 +653,9 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 			}
 			d.Set(k, v)
 			if _, ok := v.(bool); ok {
-				availableAttribtues = append(availableAttribtues, k)
+				if _, ok := resource[k]; ok {
+					availableAttribtues = append(availableAttribtues, k)
+				}
 			}
 		}
 	}
