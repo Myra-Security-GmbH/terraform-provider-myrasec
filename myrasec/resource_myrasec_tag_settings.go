@@ -534,11 +534,14 @@ func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId 
 	settings, _ := settingsData.(*map[string]interface{})
 	log.Println(settings)
 
+	resource := resourceMyrasecSettings().Schema
 	availableAttributes := []string{}
 	for k, v := range (*settings)["settings"].(map[string]interface{}) {
 		d.Set(k, v)
 		if _, ok := v.(bool); ok {
-			availableAttributes = append(availableAttributes, k)
+			if _, ok := resource[k]; ok {
+				availableAttributes = append(availableAttributes, k)
+			}
 		}
 	}
 	d.Set("available_attributes", availableAttributes)
