@@ -200,6 +200,10 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
+	if errorPage.ID == 0 {
+		return diags
+	}
+
 	domainID, diags := findDomainID(d, meta)
 	if diags.HasError() {
 		return diags
