@@ -30,6 +30,8 @@ resource "myrasec_waf_rule" "waf" {
 }
 ```
 
+**NOTE** The `sort` parameter has to be different for every WAF rule belonging to a specific subdomain - two of the WAF rules cannot share the same sort value.
+
 ## Import example
 Importing an existing WAF rule requires the subdomain and the ID of the WAF rule you want to import.
 ```hcl
@@ -49,7 +51,7 @@ The following arguments are supported:
 * `description` (Optional) Your notes on this rule. Default `""`.
 * `log_identifier` (Optional) A comment to identify the matching rule in the access log. Default `""`.
 * `expire_date` (Optional) Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.
-* `sort` (Optional) The order in which the rules take action. Default `1`.
+* `sort` (Optional) The order in which the rules take action. Default `1`. Sort has to be unique to the WAF rule, two rules for same ```subdomain_name``` cannot share the same `sort` value
 * `process_next` (Optional) After a rule has been applied, the rule chain will be executed as determined. Default `false`.
 * `enabled` Define wether this rule is enabled or not. (Optional) Default `true`.
 * `conditions` (Required) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.
