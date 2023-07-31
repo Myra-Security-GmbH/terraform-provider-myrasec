@@ -86,8 +86,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"record_type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA"}, false),
-				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV and CAA.",
+				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA", "PTR"}, false),
+				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV, CAA and PTR.",
 			},
 			"alternative_cname": {
 				Type:        schema.TypeString,
@@ -126,8 +126,17 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Description: "A comment to describe this DNS record.",
 			},
 			"value": {
-				Type:        schema.TypeString,
-				Required:    true,
+				Type:     schema.TypeString,
+				Required: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					recordType := d.Get("record_type")
+
+					if recordType == "PTR" {
+						return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
+					} else {
+						return old == new
+					}
+				},
 				Description: "Depends on the record type. Typically an IPv4/6 address or a domain entry.",
 			},
 			"priority": {
@@ -235,12 +244,21 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 
 	domainName := d.Get("domain_name").(string)
 
-	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
+	domain, domainDiag := findDomainByDomainName(meta, domainName)
 	if domainDiag.HasError() {
 		return domainDiag
 	}
 
-	resp, err := client.CreateDNSRecord(record, domainID)
+	if domain.Reversed != true && record.RecordType == "PTR" || domain.Reversed == true && record.RecordType != "PTR" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error creating DNS record",
+			Detail:   "PTR records are possible only for reversed domains. Reversed domains can only have PTR records.",
+		})
+		return diags
+	}
+
+	resp, err := client.CreateDNSRecord(record, domain.ID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -338,6 +356,20 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := name.(string)
+
+	domain, domainDiag := findDomainByDomainName(meta, domainName)
+	if domainDiag.HasError() {
+		return domainDiag
+	}
+
+	if domain.Reversed != true && record.RecordType == "PTR" || domain.Reversed == true && record.RecordType != "PTR" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error updating DNS record",
+			Detail:   "PTR records are possible only for reversed domains. Reversed domains can only have PTR records.",
+		})
+		return diags
+	}
 
 	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
 	if domainDiag.HasError() {
@@ -564,7 +596,13 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.SetId(strconv.Itoa(record.ID))
 	d.Set("record_id", record.ID)
 	d.Set("name", record.Name)
-	d.Set("value", record.Value)
+
+	if record.RecordType == "PTR" {
+		d.Set("value", myrasec.RemoveTrailingDot(record.Value))
+	} else {
+		d.Set("value", record.Value)
+	}
+
 	d.Set("record_type", record.RecordType)
 	d.Set("ttl", record.TTL)
 	d.Set("alternative_cname", record.AlternativeCNAME)
