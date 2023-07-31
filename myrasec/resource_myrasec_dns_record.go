@@ -223,7 +223,25 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
+		CustomizeDiff: checkRecordTypeAndReversedDomain,
 	}
+}
+
+func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+
+	domainName := d.Get("domain_name").(string)
+	recordType := d.Get("record_type").(string)
+
+	domain, domainDiag := findDomainByDomainName(meta, domainName)
+	if domainDiag.HasError() {
+		return fmt.Errorf("Domain not found.")
+	}
+
+	if domain.Reversed == false && recordType == "PTR" || domain.Reversed == true && recordType != "PTR" {
+		return fmt.Errorf("PTR records are possible only for reversed domains. Reversed domains can only have PTR records.")
+	}
+
+	return nil
 }
 
 // resourceMyrasecDNSRecordCreate ...
@@ -244,21 +262,12 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 
 	domainName := d.Get("domain_name").(string)
 
-	domain, domainDiag := findDomainByDomainName(meta, domainName)
+	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
 	if domainDiag.HasError() {
 		return domainDiag
 	}
 
-	if domain.Reversed != true && record.RecordType == "PTR" || domain.Reversed == true && record.RecordType != "PTR" {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error creating DNS record",
-			Detail:   "PTR records are possible only for reversed domains. Reversed domains can only have PTR records.",
-		})
-		return diags
-	}
-
-	resp, err := client.CreateDNSRecord(record, domain.ID)
+	resp, err := client.CreateDNSRecord(record, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -356,20 +365,6 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 	}
 
 	domainName := name.(string)
-
-	domain, domainDiag := findDomainByDomainName(meta, domainName)
-	if domainDiag.HasError() {
-		return domainDiag
-	}
-
-	if domain.Reversed != true && record.RecordType == "PTR" || domain.Reversed == true && record.RecordType != "PTR" {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error updating DNS record",
-			Detail:   "PTR records are possible only for reversed domains. Reversed domains can only have PTR records.",
-		})
-		return diags
-	}
 
 	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
 	if domainDiag.HasError() {
