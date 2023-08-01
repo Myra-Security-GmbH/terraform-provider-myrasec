@@ -11,20 +11,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// findDomainByDomainName ...
+func findDomainByDomainName(meta interface{}, domainName string) (domain *myrasec.Domain, diags diag.Diagnostics) {
+
+	client := meta.(*myrasec.API)
+	domain, err := client.FetchDomain(domainName)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domain for given domain name",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
+
+	return domain, diags
+}
+
 // findDomainIDByDomainName ...
 func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainName string) (domainID int, diags diag.Diagnostics) {
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
 	if !ok {
-		client := meta.(*myrasec.API)
-		domain, err := client.FetchDomain(domainName)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching domain for given domain name",
-				Detail:   formatError(err),
-			})
+		domain, diags := findDomainByDomainName(meta, domainName)
+		if diags.HasError() {
 			return 0, diags
 		}
 		domainID = domain.ID
