@@ -8,7 +8,9 @@ Use this data source to look up Domain records.
 # Look for the "example.com" domain
 data "myrasec_domains" "example" {
     filter {
-        name = "example.com"
+        name  = "example.com"
+        id    = 1
+        match = "example"
     }
 }
 ```
@@ -17,7 +19,7 @@ data "myrasec_domains" "example" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the domains.
+* `filter` (**Required**) One or more values to filter the domains.
 
 ### filter
 * `id` (Optional) The ID of the domain filter for.

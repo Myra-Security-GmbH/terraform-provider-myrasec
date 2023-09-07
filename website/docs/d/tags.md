@@ -16,7 +16,7 @@ data "myrasec_tags" "www" {
 
 The following argument is supported
 
-* `filter` (Required) One or more values to filter the tags.
+* `filter` (**Required**) One or more values to filter the tags.
 
 ### filter
 * `name` (Optional) The tag name to filter for.

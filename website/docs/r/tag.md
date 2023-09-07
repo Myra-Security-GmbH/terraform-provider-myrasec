@@ -10,7 +10,7 @@ resource "myrasec_tag "tag_cache" {
   name = "cache tag name"
   type = "CACHE"
   assignments  {
-    type           = "subdomain"
+    type           = "SUBDOMAIN"
     title          = "www.example.com"
     subdomain_name = "www.example.com"
   }
@@ -27,11 +27,11 @@ terraform import myrasec_tag.tag_cache tag_cache:0000000
 
 The following arguments are supported:
 
-* `tag_id` (computed) ID of the tag.
-* `created` (computed) Date of creation.
-* `modified` (computed) Date of last modification.
-* `type` (Required) Type of the tag. Valid types are: `CACHE`, `CONFIG`, `RATE_LIMIT` and `WAF`.
-* `assignments` (Required) The domain/subDomain the tag is assigned to.
-* `assignments.type` (Required) the type of the assignment. Valid types are: `domain`, `subdomain`.
-* `assignments.title` (Required) The domain name or subdomain name depending on the type.
-* `assignments.subdomain_name` (Required) The domain name or subdomain name depending on the type.
+* `tag_id` (*Computed*) ID of the tag.
+* `created` (*Computed*) Date of creation.
+* `modified` (*Computed*) Date of last modification.
+* `type` (**Required**) Type of the tag. Valid types are: `CACHE`, `CONFIG`, `RATE_LIMIT` and `WAF`.
+* `assignments` (**Required**) The domain/subDomain the tag is assigned to.
+* `assignments.type` (**Required**) the type of the assignment. Valid types are: `domain`, `subdomain`.
+* `assignments.title` (**Required**) The domain name or subdomain name depending on the type.
+* `assignments.subdomain_name` (**Required**) The domain name or subdomain name depending on the type.

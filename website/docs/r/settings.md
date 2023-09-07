@@ -7,16 +7,12 @@ Provides a Myra Security settings resource.
 ```hcl
 # Configure settings for a subdomain
 resource "myrasec_settings" "settings" {
-  subdomain_name = "www.example.com"
-  only_https = true
-  cache_enabled = true
+  subdomain_name    = "www.example.com"
+  only_https        = true
+  cache_enabled     = true
   limit_tls_version = [
     "TLSv1.2",
     "TLSv1.3"
-  ]
-
-  depends_on = [
-    myrasec_dns_record.www
   ]
 }
 ```
@@ -31,13 +27,13 @@ terraform import myrasec_settings.settings www.example.com
 
 The following arguments are supported:
 
-* `subdomain_name` (Required) The Subdomain for the setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
+* `subdomain_name` (**Required**) The Subdomain for the setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
 * `access_log` (Optional) Activate separated access log. Default `false`.
 * `antibot_post_flood` (Optional) Detection of POST floods by using a JavaScript based puzzle.. Default `false`.
 * `antibot_post_flood_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `540`.
 * `antibot_proof_of_work` (Optional) Detection of valid clients by using a JavaScript based puzzle.. Default `true`.
 * `antibot_proof_of_work_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `1800`.
-* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash` or `least_conn`. Default `round_robin`.
+* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash`, `least_conn` or `cookie_based`. Default `round_robin`.
 * `block_not_whitelisted` (Optional) Block all IPs, which are not whitelisted. Default `false`.
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
@@ -68,6 +64,7 @@ The following arguments are supported:
 * `proxy_cache_bypass` (Optional) Name of the cookie which forces Myra to deliver the response not from cache. Default `""`.
 * `proxy_cache_stale` (Optional) Determines in which cases a stale cached response can be used when an error occurs. Valid values are `error`, `timeout`, `invalid_header`, `updating`, `http_500`, `http_502`, `http_503`, `http_504`, `http_403`, `http_404` and `off`. Default `updating`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
+* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `proxy_read_timeout` (Optional) Timeout for reading the upstream response. Default `600`.
 * `request_limit_block` (Optional) Show CAPTCHA after exceeding the configured request limit. Valid values are `CAPTCHA`, `HTTP429` or `no`. Default `CAPTCHA`.
 * `request_limit_level` (Optional) Sets how many requests are allowed from an IP per minute. Default `6000`.
@@ -80,4 +77,3 @@ The following arguments are supported:
 * `waf_enable` (Optional) Enables / disables the Web Application Firewall. Default `false`.
 * `waf_levels_enable` (Optional) Level of applied WAF rules. Valid values are `waf_tag`, `waf_domain` and `waf_subdomain`. Default `waf_tag`, `waf_domain` and `waf_subdomain`.
 * `waf_policy` (Optional) Default policy for the Web Application Firewall in case of rule error. Valid values are `allow` or `block`. Default `allow`.
-* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.

@@ -9,7 +9,7 @@ Use this data source to look up redirects.
 data "myrasec_redirects" "redirect" {
   filter {
     subdomain_name = "www.example.com"
-    search = "redirectme"
+    search         = "redirectme"
   }
 }
 ```
@@ -18,10 +18,10 @@ data "myrasec_redirects" "redirect" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the redirects.
+* `filter` (**Required**) One or more values to filter the redirects.
 
 ### filter
-* `subdomain_name` (Required) The subdomain name from the redirects. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
+* `subdomain_name` (**Required**) The subdomain name from the redirects. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
 * `search` (Optional) A search string to filter the redirects. Filers on the `source` and the `destination` fields.
 
 ## Attributes Reference

@@ -7,6 +7,10 @@ Use this data source to look up IP ranges.
 ```hcl
 # Look for ip ranges
 data "myrasec_ip_ranges" "ipranges" {
+    filter {
+        search = "192.168.1."
+        type   = "ipv4"
+    }
 }
 ```
 
@@ -14,7 +18,7 @@ data "myrasec_ip_ranges" "ipranges" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the IP ranges.
+* `filter` (Optional)) One or more values to filter the IP ranges.
 
 ### filter
 * `search` (Optional) A search string to filter the IP ranges.

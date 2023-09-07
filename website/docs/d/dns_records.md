@@ -9,7 +9,7 @@ Use this data source to look up DNS records.
 data "myrasec_dns_records" "records" {
   filter {
     domain_name = "example.com"
-    name = "www"
+    name        = "www"
   }
 }
 ```
@@ -18,10 +18,10 @@ data "myrasec_dns_records" "records" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the dns records.
+* `filter` (**Required**) One or more values to filter the dns records.
 
 ### filter
-* `domain_name` (Required) The domain name to filter the DNS records.
+* `domain_name` (**Required**) The domain name to filter the DNS records.
 * `name` (Optional) The record name to filter for.
 * `match` (Optional) A regex to filter DNS records. The regex is applied on the name field. NOTE: If you specify a match/regex, the `name` filter has no effect!
 
@@ -32,7 +32,6 @@ The following arguments are supported:
 * `id` ID of the DNS record.
 * `created` Date of creation.
 * `modified` Date of last modification.
-* `domain_name` The Domain for the DNS record.
 * `record_type` A record type to identify the type of a record.
 * `name` Subdomain name of a DNS record.
 * `value` Depends on the record type. Typically an IPv4/6 address or a domain entry.

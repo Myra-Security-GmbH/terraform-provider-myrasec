@@ -2,24 +2,27 @@
 
 Provides a Myra Security DNS record resource.
 
+-> To manage DNS records, you need a domain. You can create a new domain, import an existing one or load an existring one as a data source as described [here](domain.md)
+
 ## Example usage
 
 ```hcl
 # Create a DNS record
-resource "myrasec_dns_record" "www" {
+resource "myrasec_dns_record" "www-example-domain" {
     domain_name = "example.com"
-    name = "www"
+    name        = "www"
     record_type = "A"
-    value = "192.168.0.1"
-    ttl = 300
-    active = true
-    enabled = true
+    value       = "192.168.0.1"
+    ttl         = 300
+    active      = true
+    enabled     = true
+
     upstream_options {
-        backup = false
-        down = false
+        backup       = false
+        down         = false
         fail_timeout = "1"
-        max_fails = 100
-        weight = 1
+        max_fails    = 100
+        weight       = 1
     }
 }
 ```
@@ -34,24 +37,24 @@ terraform import myrasec_dns_record.www example.com:0000000
 
 The following arguments are supported:
 
-* `record_id` (Computed) ID of the DNS record.
-* `created` (Computed) Date of creation.
-* `modified` (Computed) Date of last modification.
-* `domain_name` (Required) The Domain for the DNS record.
-* `record_type` (Required) A record type to identify the type of a record. Valid types are: `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SRV`, `CAA` and `PTR`.
-* `name` (Required) Subdomain name of a DNS record.
-* `value` (Required) Depends on the record type. Typically an IPv4/6 address or a domain entry.
-* `ttl` (Required) Time to live.
-* `alternative_cname` (Optional) The alternative CNAME that points to the record.
+* `record_id` (*Computed*) ID of the DNS record.
+* `created` (*Computed*) Date of creation.
+* `modified` (*Computed*) Date of last modification.
+* `domain_name` (**Required**) The Domain for the DNS record.
+* `record_type` (**Required**) A record type to identify the type of a record. Valid types are: `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SRV`, `CAA` and `PTR`.
+* `name` (**Required**) Subdomain name of a DNS record.
+* `value` (**Required**) Depends on the record type. Typically an IPv4/6 address or a domain entry.
+* `ttl` (**Required**) Time to live.
+* `alternative_cname` (*Computed*) The alternative CNAME that points to the record.
 * `active` (Optional) Define wether this subdomain should be protected by Myra or not. Default `true`.
 * `enabled` (Optional) Define wether this DNS record is enabled or not. Default `true`.
 * `priority` (Optional) Priority of MX records.
 * `port` (Optional) Port for SRV records.
 * `comment` (Optional) A comment to describe this DNS record. Default `""`.
 * `upstream_options` (Optional) Loadbalancing settings.
-* `upstream_options.upstream_id` (Computed) ID of the upstream settings.
-* `upstream_options.created` (Computed) Date of creation.
-* `upstream_options.modified` (Computed) Date of last modification.
+* `upstream_options.upstream_id` (*Computed*) ID of the upstream settings.
+* `upstream_options.created` (*Computed*) Date of creation.
+* `upstream_options.modified` (*Computed*) Date of last modification.
 * `upstream_options.backup` (Optional) Marks the server as a backup server. It will be used when the primary servers are unavailable. Cannot be used in combination with "Preserve client IP on the same upstream". Default `false`.
 * `upstream_options.down` (Optional) Marks the server as unavailable. Default `false`.
 * `upstream_options.fail_timeout` (Optional) Double usage: 1. Time period in which the max_fails must occur until the upstream is deactivated. 2. Time period the upstream is deactivated until it is reactivated. The time during which the specified number of unsuccessful attempts "Max fails" to communicate with the server should happen to consider the server unavailable. Also the period of time the server will be considered unavailable. Default `"1"`.

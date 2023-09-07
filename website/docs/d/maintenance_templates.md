@@ -17,10 +17,10 @@ data "myrasec_maintenance_templates" "example_com" {
 
 The following arguments are supported
 
-* `filter` (Required) One or more values to filter the maintenance templates
+* `filter` (**Required**) One or more values to filter the maintenance templates
 
 ### filter
-* `domain_name` (Required) The domain name from the maintenance templates.
+* `domain_name` (**Required**) The domain name from the maintenance templates.
 
 ## Attributes References
 * `maintenance_templates` A list of maintenance templates.

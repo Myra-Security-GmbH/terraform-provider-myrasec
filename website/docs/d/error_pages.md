@@ -17,10 +17,10 @@ data "myrasec_error_pages" "example_com" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the error pages.
+* `filter` (**Required**) One or more values to filter the error pages.
 
 ### filter
-* `domain_name` (Required) The domain name from the error pages.
+* `domain_name` (**Required**) The domain name from the error pages.
 
 ## Attributes Reference
 * `error_pages` A list of error pages.

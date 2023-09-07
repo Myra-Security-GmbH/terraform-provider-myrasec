@@ -2,31 +2,30 @@
 
 Provides a Myra Security WAF rule resource.
 
+-> **WAF rules are not fully supported, please use api instead**
+
 ## Example usage
 
 ```hcl
 # Create a new WAF rule
 resource "myrasec_waf_rule" "waf" {
   subdomain_name = "www.example.com"
-  name = "WAF rule name"
-  description = "Some description of this WAF rule"
+  name           = "WAF rule name"
+  description    = "Some description of this WAF rule"
   log_identifier = "IDENTIFY_ME"
-  direction = "in"
-  sort = 1
-  process_next = false
-  enabled = true
+  direction      = "in"
+  sort           = 1
+  process_next   = false
+  enabled        = true
   conditions {
       matching_type = "IREGEX"
-      name = "url"
-      value = "blockme"
+      name          = "url"
+      value         = "blockme"
   }
   actions {
     name = "Block"
     type = "block"
   }
-  depends_on = [
-    myrasec_dns_record.www
-  ]
 }
 ```
 
@@ -41,43 +40,43 @@ terraform import myrasec_waf_rule.waf www.example.com:0000000
 ## Argument Reference
 
 The following arguments are supported:
-* `rule_id` (Computed) ID of the rule.
-* `created` (Computed) Date of creation.
-* `modified` (Computed) Date of last modification.
-* `rule_type` (Computed) The type of the rule.
-* `subdomain_name` (Required) The subdomain for the rule. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
-* `name` (Required) The rule name identifies each rule.
-* `direction` (Required) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
+* `rule_id` (*Computed*) ID of the rule.
+* `created` (*Computed*) Date of creation.
+* `modified` (*Computed*) Date of last modification.
+* `rule_type` (*Computed*) The type of the rule.
+* `subdomain_name` (**Required**) The subdomain for the rule. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
+* `name` (**Required**) The rule name identifies each rule.
+* `direction` (**Required**) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` (Optional) Your notes on this rule. Default `""`.
 * `log_identifier` (Optional) A comment to identify the matching rule in the access log. Default `""`.
 * `expire_date` (Optional) Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.
 * `sort` (Optional) The order in which the rules take action. Default `1`. Sort has to be unique to the WAF rule, two rules for same ```subdomain_name``` cannot share the same `sort` value
 * `process_next` (Optional) After a rule has been applied, the rule chain will be executed as determined. Default `false`.
 * `enabled` Define wether this rule is enabled or not. (Optional) Default `true`.
-* `conditions` (Required) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.
-* `actions` (Optional) Refers to actions that are executed when all conditions of a rule are true. See below for argument reference.
+* `conditions` (**Required**) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.
+* `actions` (**Required**) Refers to actions that are executed when all conditions of a rule are true. See below for argument reference.
 
 ### WAF rule conditions arguments
-* `conditions.condition_id` (Computed) ID of the WAF rule condition.
-* `conditions.created` (Computed) Date of creation.
-* `conditions.modified` (Computed) Date of last modification.
-* `conditions.name` (Required)
-* `conditions.matching_type` (Required)
+* `conditions.condition_id` (*Computed*) ID of the WAF rule condition.
+* `conditions.created` (*Computed*) Date of creation.
+* `conditions.modified` (*Computed*) Date of last modification.
+* `conditions.name` (**Required**)
+* `conditions.matching_type` (**Required**)
     IREGEX - Pattern matching using case insensitive regex  
     REGEX - Pattern matching using case sensitive regex
 
     EXACT - String matching using the whole string verbatim  
     SUFFIX - String matching at the end  
     PREFIX - String matching from the beginning  
-* `conditions.value` (Required)
+* `conditions.value` (**Required**)
 * `conditions.key` (Depends on the type)
 
 ### WAF rule actions arguments
-* `actions.action_id` (Computed) ID of the WAF rule action.
-* `actions.created` (Computed) Date of creation.
-* `actions.modified` (Computed) Date of last modification.
-* `actions.type` (Required)
-* `actions.value` (Required)
+* `actions.action_id` (*Computed*) ID of the WAF rule action.
+* `actions.created` (*Computed*) Date of creation.
+* `actions.modified` (*Computed*) Date of last modification.
+* `actions.type` (**Required**)
+* `actions.value` (**Required**)
 * `actions.custom_key` (Depends on the type)
 
 

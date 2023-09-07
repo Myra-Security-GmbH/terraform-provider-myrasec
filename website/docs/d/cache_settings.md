@@ -9,7 +9,7 @@ Use this data source to look up cache settings.
 data "myrasec_cache_settings" "cache" {
   filter {
     subdomain_name = "www.example.com"
-    path = "index"
+    path           = "index"
   }
 }
 ```
@@ -18,10 +18,10 @@ data "myrasec_cache_settings" "cache" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the cache settings.
+* `filter` (**Required**) One or more values to filter the cache settings.
 
 ### filter
-* `subdomain_name` (Required) The subdomain name from the cache setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain) or the `ALL:example.com` annotation.
+* `subdomain_name` (**Required**) The subdomain name from the cache setting. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
 * `path` (Optional) The path of the cache setting to filter for.
 
 ## Attributes Reference
@@ -31,7 +31,6 @@ The following arguments are supported:
 * `id` The ID of the cache setting.
 * `created` Date of creation.
 * `modified` Date of last modification.
-* `subdomain_name` The Subdomain for the cache setting.
 * `type` Type how path should match.
 * `path` Path which must match to cache response.
 * `ttl` Time to live.

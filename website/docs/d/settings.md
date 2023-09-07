@@ -14,10 +14,10 @@ data "myrasec_settings" "my-settings" {
 
 ## Argument Reference
 The following arguments are supported:
-* `filter` (Required) add values to filter the settings
+* `filter` (**Required**) add values to filter the settings
 
 ### filter
-* `subdomain_name` (Required) The subdomain name for the settings. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
+* `subdomain_name` (**Required**) The subdomain name for the settings. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
 
 ## Attributes Reference
 * `settings` A list of settings

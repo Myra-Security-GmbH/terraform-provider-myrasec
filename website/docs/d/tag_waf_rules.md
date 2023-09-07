@@ -16,10 +16,10 @@ data "myrasec_tag_waf_rules" "example_tag_waf_rule" {
 
 The following arguments are supported:
 
-* `filter` (Required) Filter the WAF rules.
+* `filter` (**Required**) Filter the WAF rules.
 
 ### filter
-* `tag_id` (Required) The tag to filter for.
+* `tag_id` (**Required**) The tag to filter for.
 * `search` (Optional) A search string to filter the WAF rules.
 
 ## Attributes Reference
@@ -39,5 +39,5 @@ The following arguments are supported:
 * `sort` The order in which the rules take action.
 * `process_next` After a rule has been applied, the rule chain will be executed as determined.
 * `enabled` Define wether this rule is enabled or not.
-* `conditions` ll conditions of a rule have to be true for a rule to be executed.
+* `conditions` The conditions of a rule have to be true for a rule to be executed.
 * `actions` Refers to actions that are executed when all conditions of a rule are true.

@@ -17,10 +17,10 @@ data "myrasec_maintenances" "example_com" {
 
 The following arguments are supported
 
-* `filter` (Required) One or more values to filter the maintenances
+* `filter` (**Required**) One or more values to filter the maintenances
 
 ### filter
-* `subdomain_name` (Required) The subdomain name from the maintenances.
+* `subdomain_name` (**Required**) The subdomain name from the maintenances.
 
 ## Attributes References
 * `maintenances` A list of maintenances.

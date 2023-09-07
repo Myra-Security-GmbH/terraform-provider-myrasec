@@ -17,7 +17,7 @@ data "myrasec_waf_conditions" "url" {
 
 The following arguments are supported:
 
-* `filter` (Required) Filter the WAF conditions.
+* `filter` (**Required**) Filter the WAF conditions.
 
 ### filter
 * `name` (Optional) The condition name to filter for.

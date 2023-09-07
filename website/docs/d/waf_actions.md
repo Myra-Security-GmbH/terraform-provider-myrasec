@@ -17,13 +17,13 @@ data "myrasec_waf_actions" "upstream" {
 
 The following arguments are supported:
 
-* `filter` (Required) Filter the WAF actions.
+* `filter` (**Required**) Filter the WAF actions.
 
 ### filter
 * `type` (Optional) The action type to filter for.
 
 ## Attributes Reference
-* `actions` A list of WAF actions.
+* `waf_actions` A list of WAF actions.
 
 ### actions
 * `id` The ID of the WAF action.

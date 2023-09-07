@@ -9,7 +9,7 @@ Use this data source to look up tag cache settings.
 data "myrasec_tag_cache_settings" "tag_cache" {
   filter {
     tag_id = "0000"
-    path = "index"
+    path   = "index"
   }
 }
 ```
@@ -18,7 +18,7 @@ data "myrasec_tag_cache_settings" "tag_cache" {
 
 The following arguments are supported:
 
-* `filter` (Required) One or more values to filter the tag cache settings.
+* `filter` (**Required**) One or more values to filter the tag cache settings.
 
 ### filter
 * `tag_id` (Optional) The tagId from the tag cache setting.

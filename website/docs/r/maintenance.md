@@ -7,10 +7,10 @@ Provides a Myra Security maintenance resource.
 ```hcl
 # Create a new maintenance
 resource "myrasec_maintenance" "maintenance" {
-    content = "<html><body>Page</body></html>"
+    content        = "<html><body>Page</body></html>"
     subdomain_name = "www.example.com"
-    start = "2022-07-01T00:00:00+02:00"
-    end = "2022-07-31T23:59:59+02:00"
+    start          = "2022-07-01T00:00:00+02:00"
+    end            = "2022-07-31T23:59:59+02:00"
 }
 ```
 
@@ -24,11 +24,11 @@ terraform import myrasec_maintenance.maintenance www.example.com:00000000
 
 The following arguments are supporeted:
 
-* `maintenance_id` (Computed) ID of the maintenance.
-* `created` (Computed) Date of creation.
-* `modified` (Computed) Date of last modification.
-* `subdomain_name` (Required) The subdomain name for the maintenance.
-* `start` (Required) The scheduled start date for the maintenance.
-* `end` (Required) The planed end date for the maintenance.
-* `content` (Required)) The HTML content of the maintenance.
-* `active` (Computed) Status if the maintenance page is active or not.
+* `maintenance_id` (*Computed*) ID of the maintenance.
+* `created` (*Computed*) Date of creation.
+* `modified` (*Computed*) Date of last modification.
+* `subdomain_name` (**Required**) The subdomain name for the maintenance.
+* `start` (**Required**) The scheduled start date for the maintenance.
+* `end` (**Required**) The planed end date for the maintenance.
+* `content` (**Required**) The HTML content of the maintenance.
+* `active` (*Computed*) Status if the maintenance page is active or not.

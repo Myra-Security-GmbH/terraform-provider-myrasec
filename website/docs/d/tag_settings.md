@@ -14,10 +14,10 @@ data "myrasec_tag_settings" "my-tag-settings" {
 
 ## Argument Reference
 The following arguments are supported:
-* `filter` (Required) add values to filter the tag settings
+* `filter` (**Required**) add values to filter the tag settings
 
 ### filter
-* `id` (Required) The id of the tag for the settings
+* `id` (**Required**) The id of the tag for the settings
 
 ## Attributes Reference
 * `settings` A list of settings
