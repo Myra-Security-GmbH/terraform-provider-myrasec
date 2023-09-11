@@ -36,5 +36,5 @@ The following arguments are supported:
 * `type` (**Required**) Type of the IP filter. Valid types are: `BLACKLIST`, `WHITELIST` and `WHITELIST_REQUEST_LIMITER`.
 * `value` (**Required**) The value of an IP filter rule can contain a single IP address or a CIDR notation. IPv4 and IPv6 are both supported. An IP filter for IPv6 can only contain a /128 subnet. An IPv4 IP filter for the `Whitelist Request Limiter` can only contain a /32 subnet.
 * `enabled` (Optional) Enable or disable a filter. Default `true`.
-* `expire_date` (Optional) Expire date schedules the deaktivation of the filter. If none is set, the filter will be active until manual deactivation.
+* `expire_date` (Optional) Expiry date schedules the deactivation of the filter. If none is set, the filter will be active until manual deactivation.
 * `comment` (Optional) A comment to describe this IP filter. Default `""`.

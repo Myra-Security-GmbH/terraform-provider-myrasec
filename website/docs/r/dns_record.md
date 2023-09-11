@@ -46,8 +46,8 @@ The following arguments are supported:
 * `value` (**Required**) Depends on the record type. Typically an IPv4/6 address or a domain entry.
 * `ttl` (**Required**) Time to live.
 * `alternative_cname` (*Computed*) The alternative CNAME that points to the record.
-* `active` (Optional) Define wether this subdomain should be protected by Myra or not. Default `true`.
-* `enabled` (Optional) Define wether this DNS record is enabled or not. Default `true`.
+* `active` (Optional) Define whether this subdomain should be protected by Myra or not. Default `true`.
+* `enabled` (Optional) Define whether this DNS record is enabled or not. Default `true`.
 * `priority` (Optional) Priority of MX records.
 * `port` (Optional) Port for SRV records.
 * `comment` (Optional) A comment to describe this DNS record. Default `""`.

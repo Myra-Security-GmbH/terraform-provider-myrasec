@@ -29,6 +29,6 @@ The following arguments are supporeted:
 * `modified` (*Computed*) Date of last modification.
 * `subdomain_name` (**Required**) The subdomain name for the maintenance.
 * `start` (**Required**) The scheduled start date for the maintenance.
-* `end` (**Required**) The planed end date for the maintenance.
+* `end` (**Required**) The planned end date for the maintenance.
 * `content` (**Required**) The HTML content of the maintenance.
 * `active` (*Computed*) Status if the maintenance page is active or not.
