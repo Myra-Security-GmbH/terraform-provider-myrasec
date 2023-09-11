@@ -33,5 +33,5 @@ The following arguments are supported:
 * `type` (**Required**) Type of the tag. Valid types are: `CACHE`, `CONFIG`, `RATE_LIMIT` and `WAF`.
 * `assignments` (**Required**) The domain/subDomain the tag is assigned to.
 * `assignments.type` (**Required**) the type of the assignment. Valid types are: `domain`, `subdomain`.
-* `assignments.title` (**Required**) The domain name or subdomain name depending on the type.
+* `assignments.title` (*Computed*) The domain name or subdomain name depending on the type.
 * `assignments.subdomain_name` (**Required**) The domain name or subdomain name depending on the type.
