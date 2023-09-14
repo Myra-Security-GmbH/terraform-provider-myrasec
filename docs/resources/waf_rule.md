@@ -100,14 +100,9 @@ value = "SOME VALUE"
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
-name = "content_type|fingerprint|remote_addr|set_cookie"
+name = "content_type|set_cookie"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
 value = "SOME VALUE"
-```
-```hcl
-name = "score"
-matching_type = "EQUALS|GREATER_THAN|LESS_THAN"
-value = "1"
 ```
 ```hcl
 name = "custom_header"
