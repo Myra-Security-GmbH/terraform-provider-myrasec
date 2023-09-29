@@ -28,13 +28,14 @@ The following arguments are supported:
 * `antibot_post_flood_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `540`.
 * `antibot_proof_of_work` (Optional) Detection of valid clients by using a JavaScript based puzzle.. Default `true`.
 * `antibot_proof_of_work_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `1800`.
-* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash` or `least_conn`. Default `round_robin`.
+* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash`, `least_conn` or `cookie_based`. Default `round_robin`.
 * `block_not_whitelisted` (Optional) Block all IPs, which are not whitelisted. Default `false`.
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
 * `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`.
-* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB. Default `10`.
+* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
+* `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024` or `2048`. Default `2048`.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
@@ -59,6 +60,7 @@ The following arguments are supported:
 * `proxy_cache_bypass` (Optional) Name of the cookie which forces Myra to deliver the response not from cache. Default `""`.
 * `proxy_cache_stale` (Optional) Determines in which cases a stale cached response can be used when an error occurs. Valid values are `error`, `timeout`, `invalid_header`, `updating`, `http_500`, `http_502`, `http_503`, `http_504`, `http_403`, `http_404` and `off`. Default `updating`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
+* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `proxy_read_timeout` (Optional) Timeout for reading the upstream response. Default `600`.
 * `request_limit_block` (Optional) Show CAPTCHA after exceeding the configured request limit. Valid values are `CAPTCHA`, `HTTP429` or `no`. Default `CAPTCHA`.
 * `request_limit_level` (Optional) Sets how many requests are allowed from an IP per minute. Default `6000`.
