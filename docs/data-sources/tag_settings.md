@@ -28,13 +28,14 @@ The following arguments are supported:
 * `antibot_post_flood_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `540`.
 * `antibot_proof_of_work` (Optional) Detection of valid clients by using a JavaScript based puzzle.. Default `true`.
 * `antibot_proof_of_work_threshold` (Optional) This parameter determines the frequency how often the puzzle has to be solved. The higher the value the less likely the puzzle needs to be solved. Default `1800`.
-* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash` or `least_conn`. Default `round_robin`.
+* `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash`, `least_conn` or `cookie_based`. Default `round_robin`.
 * `block_not_whitelisted` (Optional) Block all IPs, which are not whitelisted. Default `false`.
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
 * `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`.
-* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 100MB. Default `10`.
+* `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
+* `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024` or `2048`. Default `2048`.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.

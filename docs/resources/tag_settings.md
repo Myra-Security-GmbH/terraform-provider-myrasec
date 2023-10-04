@@ -49,6 +49,7 @@ The following arguments are supported:
 * `only_https` (Optional) Shall the origin server always be requested via HTTPS? Default `false`.
 * `origin_connection_header` (Optional) Connection header. Valid values are `none`, `close` or `upgrade`. Default `none`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
+* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `proxy_read_timeout` (Optional) Timeout for reading the upstream response. Default `600`.
 * `request_limit_block` (Optional) Show CAPTCHA after exceeding the configured request limit. Valid values are `CAPTCHA`, `HTTP429` or `no`. Default `CAPTCHA`.
 * `request_limit_level` (Optional) Sets how many requests are allowed from an IP per minute. Default `6000`.
