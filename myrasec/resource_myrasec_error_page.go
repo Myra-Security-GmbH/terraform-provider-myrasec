@@ -127,7 +127,11 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	errorPage, diags := findErrorPageByErrorCode(subDomainName, errorCode, meta, domainID)
-	if diags.HasError() || errorPage == nil {
+	if errorPage == nil {
+		d.SetId("")
+		return nil
+	}
+	if diags.HasError() {
 		return diags
 	}
 
