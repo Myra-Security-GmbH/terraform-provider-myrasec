@@ -195,6 +195,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[INFO] Deleting error page: %v", pageId)
 
 	errorPage, err := buildErrorPage(d, meta)
+	errorPage.ID = pageId
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
