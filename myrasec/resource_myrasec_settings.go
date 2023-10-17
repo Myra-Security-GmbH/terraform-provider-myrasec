@@ -88,10 +88,9 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
 			},
 			"cookie_name": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.NoZeroValues,
-				Description:  "Specifies the cookie name when balancing_method is cookie_based",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
 			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
@@ -144,11 +143,10 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Enable or disable origin SNI.",
 			},
 			"forwarded_for_replacement": {
-				Type:         schema.TypeString,
-				Required:     false,
-				Optional:     true,
-				ValidateFunc: validation.NoZeroValues,
-				Description:  "Set your own X-Forwarded-For header.",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Set your own X-Forwarded-For header.",
 			},
 			"hsts": {
 				Type:        schema.TypeBool,
@@ -217,11 +215,10 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Only selected TLS versions will be used.",
 			},
 			"log_format": {
-				Type:         schema.TypeString,
-				Required:     false,
-				Optional:     true,
-				ValidateFunc: validation.NoZeroValues,
-				Description:  "Use a different log format.",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Use a different log format.",
 			},
 			"monitoring_alert_threshold": {
 				Type:        schema.TypeInt,
@@ -230,11 +227,10 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Errors per minute that must occur until a report is sent.",
 			},
 			"monitoring_contact_email": {
-				Type:         schema.TypeString,
-				Required:     false,
-				Optional:     true,
-				ValidateFunc: validation.NoZeroValues,
-				Description:  "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
 			},
 			"monitoring_send_alert": {
 				Type:        schema.TypeBool,
@@ -399,11 +395,26 @@ func resourceMyrasecSettings() *schema.Resource {
 func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	availableAttributes := []string{}
 	resource := resourceMyrasecSettings()
-	for name, _ := range resource.Schema {
-		if name == "subdomain_name" {
+	for name, attr := range resource.Schema {
+		if name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
-		isNullValue := d.GetRawConfig().GetAttr(name).IsNull()
+		isNullValue := false
+		if attr.Type == schema.TypeBool || attr.Type == schema.TypeInt {
+			isNullValue = d.GetRawConfig().GetAttr(name).IsNull()
+		}
+		if attr.Type == schema.TypeSet {
+			size := len(d.Get(name).(*schema.Set).List())
+			isNullValue = size == 0
+		}
+		if attr.Type == schema.TypeList {
+			size := len(d.Get(name).([]interface{}))
+			isNullValue = size == 0
+		}
+		if attr.Type == schema.TypeString {
+			value := d.Get(name)
+			isNullValue = value == nil || value == ""
+		}
 
 		if !isNullValue {
 			availableAttributes = append(availableAttributes, name)
@@ -660,11 +671,17 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 			if k == "host_header" {
 				k = "proxy_host_header"
 			}
+			if _, ok := resource[k]; !ok {
+				continue
+			}
 			d.Set(k, v)
 			if _, ok := v.(bool); ok {
 				if _, ok := resource[k]; ok {
 					availableAttribtues = append(availableAttribtues, k)
 				}
+			}
+			if _, ok := v.(string); ok && v != "" {
+				availableAttribtues = append(availableAttribtues, k)
 			}
 		}
 	}
