@@ -396,12 +396,19 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 	availableAttributes := []string{}
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
-		if name == "subdomain_name" || name == "available_attributes" {
+		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
 		isNullValue := false
-		if attr.Type == schema.TypeBool || attr.Type == schema.TypeInt {
+		if attr.Type == schema.TypeBool {
 			isNullValue = d.GetRawConfig().GetAttr(name).IsNull()
+		}
+		if attr.Type == schema.TypeInt {
+			value, ok := d.GetOk(name)
+			log.Println(value)
+			if !ok {
+				isNullValue = d.GetRawConfig().GetAttr(name).IsNull()
+			}
 		}
 		if attr.Type == schema.TypeSet {
 			size := len(d.Get(name).(*schema.Set).List())
@@ -679,6 +686,15 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 				if _, ok := resource[k]; ok {
 					availableAttribtues = append(availableAttribtues, k)
 				}
+			}
+			if _, ok := v.(int); ok {
+				availableAttribtues = append(availableAttribtues, k)
+			}
+			if _, ok := v.(float32); ok {
+				availableAttribtues = append(availableAttribtues, k)
+			}
+			if _, ok := v.(float64); ok {
+				availableAttribtues = append(availableAttribtues, k)
 			}
 			if _, ok := v.(string); ok && v != "" {
 				availableAttribtues = append(availableAttribtues, k)
