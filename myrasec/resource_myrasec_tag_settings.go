@@ -121,10 +121,25 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enable or disable origin SNI.",
 			},
-			"forwarded_for_replacement": {
-				Type:        schema.TypeString,
-				Required:    false,
+			"disable_forwarded_for": {
+				Type:        schema.TypeBool,
 				Optional:    true,
+				Description: "Disable the forwarded for replacement.",
+			},
+			"forwarded_for_replacement": {
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					disable, ok := d.GetOk("disable_forwarded_for")
+					if !ok {
+						return false
+					}
+					if disable.(bool) {
+						return true
+					}
+					return false
+				},
 				Description: "Set your own X-Forwarded-For header.",
 			},
 			"hsts": {
@@ -496,6 +511,12 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 		value, ok := d.GetOk(name)
 		if attr.Type == schema.TypeBool {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
+		}
+		if name == "forwarded_for_replacement" {
+			disable := d.Get("disable_forwarded_for")
+			if disable.(bool) {
+				ok = false
+			}
 		}
 		if ok && !clean {
 			switch attr.Type {
