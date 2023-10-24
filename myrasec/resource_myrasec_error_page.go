@@ -127,7 +127,11 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	errorPage, diags := findErrorPageByErrorCode(subDomainName, errorCode, meta, domainID)
-	if diags.HasError() || errorPage == nil {
+	if errorPage == nil {
+		d.SetId("")
+		return nil
+	}
+	if diags.HasError() {
 		return diags
 	}
 
@@ -191,6 +195,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 	log.Printf("[INFO] Deleting error page: %v", pageId)
 
 	errorPage, err := buildErrorPage(d, meta)
+	errorPage.ID = pageId
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
