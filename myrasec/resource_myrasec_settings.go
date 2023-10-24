@@ -411,17 +411,41 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 	availableAttributes := []string{}
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
-		if attr.Type == schema.TypeBool {
-			isNullValue := d.GetRawConfig().GetAttr(name).IsNull()
+		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
+			continue
+		}
 
-			if !isNullValue {
-				availableAttributes = append(availableAttributes, name)
-			}
+		isNullValue := isNullValue(attr, d, name)
+		if !isNullValue {
+			availableAttributes = append(availableAttributes, name)
 		}
 	}
 	d.SetNew("available_attributes", availableAttributes)
 
 	return validateCookieBasedName(d)
+}
+
+func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
+	isNullValue := false
+	switch t.Type {
+	case schema.TypeBool:
+		isNullValue = d.GetRawConfig().GetAttr(name).IsNull()
+	case schema.TypeInt:
+		_, ok := d.GetOk(name)
+		if !ok {
+			isNullValue = d.GetRawConfig().GetAttr(name).IsNull()
+		}
+	case schema.TypeSet:
+		size := len(d.Get(name).(*schema.Set).List())
+		isNullValue = size == 0
+	case schema.TypeList:
+		size := len(d.Get(name).([]interface{}))
+		isNullValue = size == 0
+	case schema.TypeString:
+		value := d.Get(name)
+		isNullValue = value == nil || value == ""
+	}
+	return isNullValue
 }
 
 // resourceMyrasecSettingsCreate ...
@@ -606,7 +630,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			continue
 		}
 		value, ok := d.GetOk(name)
-		if attr.Type == schema.TypeBool && !clean {
+		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if name == "proxy_host_header" {
@@ -625,7 +649,11 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			case schema.TypeInt:
 				settingsMap[name] = value.(int)
 			case schema.TypeString:
-				settingsMap[name] = value.(string)
+				if value.(string) != "" {
+					settingsMap[name] = value.(string)
+				} else {
+					settingsMap[name] = nil
+				}
 			case schema.TypeList:
 				settingsList := []string{}
 				for _, item := range value.([]interface{}) {
@@ -665,27 +693,56 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	allSettings, _ := settingsData.(*map[string]interface{})
 	domainSettings := (*allSettings)["domain"]
 
-	availableAttribtues := []string{}
+	availableAttributes := []string{}
 	mapSettings, ok := domainSettings.(map[string]interface{})
 	if ok {
 		for k, v := range mapSettings {
 			if k == "host_header" {
 				k = "proxy_host_header"
 			}
+			if _, ok := resource[k]; !ok {
+				continue
+			}
 			d.Set(k, v)
-			if _, ok := v.(bool); ok {
-				if _, ok := resource[k]; ok {
-					availableAttribtues = append(availableAttribtues, k)
-				}
+			doAppend := appendAvailableAttributes(v, k, resource)
+			if doAppend {
+				availableAttributes = append(availableAttributes, k)
 			}
 		}
 	}
-	d.Set("available_attributes", availableAttribtues)
+	d.Set("available_attributes", availableAttributes)
 
 	method := d.Get("balancing_method")
 	if method != "cookie_based" {
 		d.Set("cookie_name", "")
 	}
+}
+
+func appendAvailableAttributes(v interface{}, k string, resource map[string]*schema.Schema) bool {
+	append := false
+
+	if _, ok := resource[k]; !ok {
+		return append
+	}
+	if _, ok := v.(bool); ok {
+		if _, ok := resource[k]; ok {
+			append = true
+		}
+	}
+	if _, ok := v.(int); ok {
+		append = true
+	}
+	if _, ok := v.(float32); ok {
+		append = true
+	}
+	if _, ok := v.(float64); ok {
+		append = true
+	}
+	if _, ok := v.(string); ok && v != "" {
+		append = true
+	}
+
+	return append
 }
 
 func validateCookieBasedName(d *schema.ResourceDiff) error {

@@ -317,15 +317,15 @@ func resourceMyrasecTagSettings() *schema.Resource {
 // resourceCustomizeDiffTagSettings
 func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
 	availableAttributes := []string{}
-
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
-		if attr.Type == schema.TypeBool {
-			isNullValue := d.GetRawConfig().GetAttr(name).IsNull()
+		if name == "tag_id" || name == "available_attributes" {
+			continue
+		}
 
-			if !isNullValue {
-				availableAttributes = append(availableAttributes, name)
-			}
+		isNullValue := isNullValue(attr, d, name)
+		if !isNullValue {
+			availableAttributes = append(availableAttributes, name)
 		}
 	}
 
@@ -509,7 +509,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 			continue
 		}
 		value, ok := d.GetOk(name)
-		if attr.Type == schema.TypeBool {
+		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if name == "forwarded_for_replacement" {
@@ -525,7 +525,11 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 			case schema.TypeInt:
 				tagSettingsMap[name] = value.(int)
 			case schema.TypeString:
-				tagSettingsMap[name] = value.(string)
+				if value.(string) != "" {
+					tagSettingsMap[name] = value.(string)
+				} else {
+					tagSettingsMap[name] = nil
+				}
 			case schema.TypeList:
 				settingsList := []string{}
 				for _, item := range value.([]interface{}) {
@@ -559,10 +563,9 @@ func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId 
 	availableAttributes := []string{}
 	for k, v := range (*settings)["settings"].(map[string]interface{}) {
 		d.Set(k, v)
-		if _, ok := v.(bool); ok {
-			if _, ok := resource[k]; ok {
-				availableAttributes = append(availableAttributes, k)
-			}
+		doAppend := appendAvailableAttributes(v, k, resource)
+		if doAppend {
+			availableAttributes = append(availableAttributes, k)
 		}
 	}
 	d.Set("available_attributes", availableAttributes)
