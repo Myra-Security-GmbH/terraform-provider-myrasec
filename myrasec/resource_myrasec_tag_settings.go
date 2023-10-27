@@ -324,6 +324,12 @@ func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDif
 		}
 
 		isNullValue := isNullValue(attr, d, name)
+		if name == "forwarded_for_replacement" {
+			disable, ok := d.GetOk("disable_forwarded_for")
+			if ok && disable.(bool) {
+				isNullValue = true
+			}
+		}
 		if !isNullValue {
 			availableAttributes = append(availableAttributes, name)
 		}
