@@ -416,6 +416,12 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 		}
 
 		isNullValue := isNullValue(attr, d, name)
+		if name == "forwarded_for_replacement" {
+			disable, ok := d.GetOk("disable_forwarded_for")
+			if ok && disable.(bool) {
+				isNullValue = true
+			}
+		}
 		if !isNullValue {
 			availableAttributes = append(availableAttributes, name)
 		}
@@ -739,6 +745,9 @@ func appendAvailableAttributes(v interface{}, k string, resource map[string]*sch
 		append = true
 	}
 	if _, ok := v.(string); ok && v != "" {
+		append = true
+	}
+	if _, ok := v.([]interface{}); ok {
 		append = true
 	}
 
