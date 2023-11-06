@@ -232,9 +232,9 @@ func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDif
 	domainName := d.Get("domain_name").(string)
 	recordType := d.Get("record_type").(string)
 
-	domain, domainDiag := findDomainByDomainName(meta, domainName)
-	if domainDiag.HasError() {
-		return fmt.Errorf("Domain not found.")
+	domain, _ := findDomainByDomainName(meta, domainName)
+	if domain == nil {
+		return nil
 	}
 
 	if domain.Reversed == false && recordType == "PTR" || domain.Reversed == true && recordType != "PTR" {
