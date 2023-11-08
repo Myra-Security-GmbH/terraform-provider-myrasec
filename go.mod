@@ -1,6 +1,6 @@
 module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 
-go 1.18
+go 1.19
 
 require (
 	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.32.0
