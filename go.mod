@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.32.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
 	golang.org/x/net v0.17.0
 )
 
