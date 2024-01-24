@@ -19,6 +19,8 @@ const (
 	ClientMaxBodySize = 5120
 )
 
+var proxyReadTimeoutValues = []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 2400, 3600, 7200}
+
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
@@ -307,7 +309,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 2400}),
+				ValidateFunc: validation.IntInSlice(proxyReadTimeoutValues),
 				Description:  "Timeout for reading the upstream response.",
 			},
 			"request_limit_block": {
