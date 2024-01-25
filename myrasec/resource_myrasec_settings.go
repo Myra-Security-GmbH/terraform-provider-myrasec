@@ -19,6 +19,8 @@ const (
 	ClientMaxBodySize = 5120
 )
 
+var diffieHellmanExchangeValues = []int{1024, 2048, 4096}
+
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
@@ -133,7 +135,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
+				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
 			},
 			"enable_origin_sni": {
