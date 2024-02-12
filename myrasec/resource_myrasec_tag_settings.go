@@ -112,7 +112,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
+				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
 			},
 			"enable_origin_sni": {
