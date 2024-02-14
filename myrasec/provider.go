@@ -55,6 +55,7 @@ func Provider() *schema.Provider {
 			"myrasec_waf_actions":           dataSourceMyrasecWAFActions(),
 			"myrasec_ip_ranges":             dataSourceMyrasecIPRanges(),
 			"myrasec_ssl_certificates":      dataSourceMyrasecSSLCertificates(),
+			"myrasec_ssl_configurations":    dataSourceMyrasecSSLConfigurations(),
 			"myrasec_error_pages":           dataSourceMyrasecErrorPages(),
 			"myrasec_maintenances":          dataSourceMyrasecMaintenances(),
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),

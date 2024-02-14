@@ -145,6 +145,14 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 					},
 				},
 			},
+			"configuration_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Set specific ssl configuration for ciphers and protocols",
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return newValue == ""
+				},
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -460,6 +468,11 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 		}
 	}
 
+	configurationName, ok := d.GetOk("configuration_name")
+	if ok {
+		cert.SslConfigurationName = configurationName.(string)
+	}
+
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
 		return nil, err
@@ -546,4 +559,5 @@ func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate,
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
 	d.Set("domain_id", domainID)
+	d.Set("configuration_name", cert.SslConfigurationName)
 }
