@@ -15,6 +15,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMyrasecSSLCertificate() *schema.Resource {
@@ -146,11 +147,12 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				},
 			},
 			"configuration_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Set specific ssl configuration for ciphers and protocols",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "Set specific ssl configuration for ciphers and protocols",
+				ValidateFunc: validation.StringInSlice([]string{"Myra-Global-TLS-Default", "2023-mozilla-intermediate", "2023-mozilla-modern"}, true),
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-					return newValue == ""
+					return newValue == "" || strings.EqualFold(oldValue, newValue)
 				},
 			},
 		},
