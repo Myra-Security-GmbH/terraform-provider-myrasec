@@ -372,6 +372,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating tag settings",
+			Detail:   formatError(err),
 		})
 		return diags
 	}
