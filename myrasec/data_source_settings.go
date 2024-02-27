@@ -136,6 +136,20 @@ func dataSourceMyrasecSettings() *schema.Resource {
 								Type: schema.TypeString,
 							},
 						},
+						"myra_ssl_certificate": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"myra_ssl_certificate_key": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
 						"limit_tls_version": {
 							Type:     schema.TypeSet,
 							Computed: true,
@@ -303,6 +317,8 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"monitoring_contact_email":        settings.MonitoringContactEMail,
 		"monitoring_send_alert":           settings.MonitoringSendAlert,
 		"myra_ssl_header":                 settings.MyraSSLHeader,
+		"myra_ssl_certificate":            settings.MyraSSLCertificate,
+		"myra_ssl_certificate_key":        settings.MyraSSLCertificateKey,
 		"next_upstream":                   settings.NextUpstream,
 		"only_https":                      settings.OnlyHTTPS,
 		"origin_connection_header":        settings.OriginConnectionHeader,
