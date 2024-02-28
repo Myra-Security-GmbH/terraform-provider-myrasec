@@ -137,14 +137,14 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							},
 						},
 						"myra_ssl_certificate": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
 						},
 						"myra_ssl_certificate_key": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
 							Elem: &schema.Schema{
 								Type: schema.TypeString,

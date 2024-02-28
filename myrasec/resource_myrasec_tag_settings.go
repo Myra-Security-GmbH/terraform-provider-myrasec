@@ -215,7 +215,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"myra_ssl_certificate": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -224,7 +224,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
 			},
 			"myra_ssl_certificate_key": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Required: false,
 				Optional: true,
 				Elem: &schema.Schema{
