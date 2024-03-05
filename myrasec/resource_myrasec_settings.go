@@ -262,6 +262,24 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Activates the X-Myra-SSL Header.",
 			},
+			"myra_ssl_certificate": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+			},
+			"myra_ssl_certificate_key": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "The private key for the SSL Certificate",
+			},
 			"next_upstream": {
 				Type:     schema.TypeSet,
 				Required: false,
@@ -533,7 +551,6 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setSettingsData(d, settings, subDomainName, domainID)
-
 	clientMaxBodySize := d.Get("client_max_body_size")
 
 	if clientMaxBodySize.(int) > ClientMaxBodySize {

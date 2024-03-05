@@ -214,6 +214,24 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Activates the X-Myra-SSL Header.",
 			},
+			"myra_ssl_certificate": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+			},
+			"myra_ssl_certificate_key": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "The private key for the SSL Certificate",
+			},
 			"only_https": {
 				Type:        schema.TypeBool,
 				Required:    false,

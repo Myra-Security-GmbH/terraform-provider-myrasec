@@ -46,6 +46,8 @@ The following arguments are supported:
 * `monitoring_alert_threshold` (Optional) Errors per minute that must occur until a report is sent. Default `300`.
 * `monitoring_send_alert` (Optional) Enables / disables the upstream error reporting. Default `false`.
 * `myra_ssl_header` (Optional) Activates the X-Myra-SSL Header. Default `false`.
+* `myra_ssl_certificate` (Optional) An SSL Certificate (and chain) to be used to make requests on the origin. Default `[]`
+* `myra_ssl_certificate_key` (Optional) The private key(s) for the SSL Certificate(s). Default `[]`
 * `only_https` (Optional) Shall the origin server always be requested via HTTPS? Default `false`.
 * `origin_connection_header` (Optional) Connection header. Valid values are `none`, `close` or `upgrade`. Default `none`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
