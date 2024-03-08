@@ -60,11 +60,13 @@ func resourceMyrasecDomain() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				Description: "Shows if Myra is paused for this domain.",
+				Deprecated:  "Attribute `paused` is deprecated and has no effect anymore",
 			},
 			"paused_until": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Date until Myra will be automatically reactivated.",
+				Deprecated:  "Attribute `paused_until` is deprecated and has no effect anymore",
 				ValidateFunc: func(i interface{}, s string) (Warning []string, errors []error) {
 					if i.(string) != "" {
 						return validation.IsRFC3339Time(i, s)
