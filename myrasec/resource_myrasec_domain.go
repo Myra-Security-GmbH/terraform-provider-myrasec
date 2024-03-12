@@ -12,7 +12,6 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // resourceMyrasecDomain ...
@@ -67,35 +66,12 @@ func resourceMyrasecDomain() *schema.Resource {
 				Optional:    true,
 				Description: "Date until Myra will be automatically reactivated.",
 				Deprecated:  "Attribute `paused_until` is deprecated and has no effect anymore",
-				ValidateFunc: func(i interface{}, s string) (Warning []string, errors []error) {
-					if i.(string) != "" {
-						return validation.IsRFC3339Time(i, s)
-					}
-					return Warning, errors
-				},
 			},
 		},
 		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i interface{}) error {
 			currentDomainName, newDomainName := d.GetChange("name")
 			if currentDomainName != "" && currentDomainName != newDomainName {
 				return fmt.Errorf("it's not allowed to change domain name")
-			}
-
-			paused := d.Get("paused")
-			pausedUntil := d.Get("paused_until")
-
-			if !paused.(bool) && pausedUntil.(string) != "" {
-				return fmt.Errorf("'paused_until' is not allowed when 'paused' is set to false")
-			} else if !paused.(bool) {
-				return nil
-			}
-			if pausedUntil == "" {
-				return fmt.Errorf("'paused_until' is required when 'paused' is set to true")
-			}
-
-			_, err := time.Parse(time.RFC3339, pausedUntil.(string))
-			if err != nil {
-				return err
 			}
 
 			return nil
@@ -286,7 +262,6 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 		Name:       d.Get("name").(string),
 		AutoUpdate: d.Get("auto_update").(bool),
 		AutoDNS:    false,
-		Paused:     d.Get("paused").(bool),
 	}
 
 	if d.Get("domain_id").(int) > 0 {
@@ -309,12 +284,6 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 		return nil, err
 	}
 	domain.Modified = modified
-
-	pausedUntil, err := types.ParseDate(d.Get("paused_until").(string))
-	if err != nil {
-		return nil, err
-	}
-	domain.PausedUntil = pausedUntil
 
 	return domain, nil
 }
@@ -352,8 +321,6 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.Set("domain_id", domain.ID)
 	d.Set("name", domain.Name)
 	d.Set("auto_update", domain.AutoUpdate)
-	d.Set("paused", domain.Paused)
-	d.Set("paused_until", domain.PausedUntil)
 	d.Set("created", domain.Created.Format(time.RFC3339))
 	d.Set("modified", domain.Modified.Format(time.RFC3339))
 }

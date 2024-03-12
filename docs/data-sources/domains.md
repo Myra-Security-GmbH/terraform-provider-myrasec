@@ -35,5 +35,3 @@ The following arguments are supported:
 * `modified` Date of last modification.
 * `name` The Domain name.
 * `auto_update` Auto update flag from the domain.
-* `paused` Shows if Myra is paused for this domain.
-* `paused_until` Date until Myra will be automatically reactivated.
