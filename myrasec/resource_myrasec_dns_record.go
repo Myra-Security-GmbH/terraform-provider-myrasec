@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
+	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -140,9 +143,10 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Description: "Depends on the record type. Typically an IPv4/6 address or a domain entry.",
 			},
 			"priority": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "Priority of MX records.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Description:  "Priority of MX records.",
+				ValidateFunc: validation.IntBetween(0, math.MaxUint16),
 			},
 			"port": {
 				Type:        schema.TypeInt,
@@ -237,8 +241,72 @@ func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDif
 		return nil
 	}
 
-	if domain.Reversed == false && recordType == "PTR" || domain.Reversed == true && recordType != "PTR" {
-		return fmt.Errorf("PTR records are possible only for reversed domains. Reversed domains can only have PTR records.")
+	value := d.Get("value").(string)
+	err := validateIpAddress(recordType, value)
+	if err != nil {
+		return err
+	}
+	err = validateNonIpAddress(recordType, value)
+	if err != nil {
+		return err
+	}
+	err = validateMxValue(recordType, value)
+	if err != nil {
+		return err
+	}
+
+	if (!domain.Reversed && recordType == "PTR") || (domain.Reversed && recordType != "PTR") {
+		return fmt.Errorf("PTR records are possible only for reversed domains. Reversed domains can only have PTR records")
+	}
+
+	return nil
+}
+
+func validateIpAddress(recordType string, ip string) error {
+	if recordType != "A" && recordType != "AAAA" {
+		return nil
+	}
+
+	ipAddress := net.ParseIP(ip)
+	if ipAddress == nil {
+		return fmt.Errorf("%s is not a valid ip address", ip)
+	}
+
+	if recordType == "A" && ipAddress.To4() == nil {
+		return fmt.Errorf("%s is not a valid IPv4 address", ip)
+	}
+
+	if recordType == "AAAA" && ipAddress.To4() != nil {
+		return fmt.Errorf("%s is not a valid IPv6 address", ip)
+	}
+
+	return nil
+}
+
+func validateNonIpAddress(recordType string, value string) error {
+	if recordType != "NS" && recordType != "CNAME" {
+		return nil
+	}
+
+	ip := net.ParseIP(value)
+	if ip != nil {
+		return fmt.Errorf("%s looks like an ip address, which is not allowed here", value)
+	}
+
+	return nil
+}
+
+func validateMxValue(recordType string, value string) error {
+	if recordType != "MX" {
+		return nil
+	}
+
+	m, err := regexp.Match(`^[a-z0-9]([a-z0-9\-\.]*[a-z0-9])*\.?$`, []byte(value))
+	if err != nil {
+		return err
+	}
+	if !m {
+		return fmt.Errorf("%s is not a valid value for this DNS record type %s", value, recordType)
 	}
 
 	return nil
