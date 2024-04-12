@@ -36,6 +36,17 @@ var requiredConditionKey = []string{
 	"postarg",
 	"score",
 }
+var notAllowedResponseActions = []string{
+	"block",
+	"allow",
+	"log",
+	"verify_human",
+	"del_qs_param",
+}
+var processNextForbiddenActions = []string{
+	"block",
+	"allow",
+}
 
 func resourceMyrasecWAFRule() *schema.Resource {
 	return &schema.Resource{
@@ -248,6 +259,20 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			actions := rd.Get("actions").([]interface{})
 			for _, v := range actions {
 				a := v.(map[string]interface{})
+				direction := rd.Get("direction").(string)
+				if direction == "out" {
+					for _, r := range notAllowedResponseActions {
+						if r == a["type"] {
+							return fmt.Errorf("action type `%s` is not allowed on direction `out`", a["type"])
+						}
+					}
+				} else {
+					for _, r := range processNextForbiddenActions {
+						if r == a["type"] {
+							return fmt.Errorf("action type `%s` is not allowed when process_next is true", a["type"])
+						}
+					}
+				}
 				for _, r := range requiredActionValue {
 					if r == a["type"] && a["value"] == "" {
 						return fmt.Errorf("value is required for action %s", a["type"])
