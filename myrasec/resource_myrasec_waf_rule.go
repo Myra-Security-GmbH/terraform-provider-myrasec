@@ -15,6 +15,39 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+var requiredActionValue = []string{
+	"remove_header",
+	"change_upstream",
+	"del_qs_param",
+}
+var requiredActionKeyValue = []string{
+	"modify_header",
+	"add_header",
+	"origin_rate_limit",
+	"score",
+	"uri_subst",
+	"set_http_status",
+	"remove_header_value_regex",
+}
+var requiredConditionKey = []string{
+	"custom_header",
+	"cookie",
+	"arg",
+	"postarg",
+	"score",
+}
+var notAllowedResponseActions = []string{
+	"block",
+	"allow",
+	"log",
+	"verify_human",
+	"del_qs_param",
+}
+var processNextForbiddenActions = []string{
+	"block",
+	"allow",
+}
+
 func resourceMyrasecWAFRule() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecWAFRuleCreate,
@@ -221,6 +254,48 @@ func resourceMyrasecWAFRule() *schema.Resource {
 					},
 				},
 			},
+		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			actions := rd.Get("actions").([]interface{})
+			for _, v := range actions {
+				a := v.(map[string]interface{})
+				direction := rd.Get("direction").(string)
+				if direction == "out" {
+					for _, r := range notAllowedResponseActions {
+						if r == a["type"] {
+							return fmt.Errorf("action type `%s` is not allowed on direction `out`", a["type"])
+						}
+					}
+				} else {
+					for _, r := range processNextForbiddenActions {
+						if r == a["type"] {
+							return fmt.Errorf("action type `%s` is not allowed when process_next is true", a["type"])
+						}
+					}
+				}
+				for _, r := range requiredActionValue {
+					if r == a["type"] && a["value"] == "" {
+						return fmt.Errorf("value is required for action %s", a["type"])
+					}
+				}
+				for _, r := range requiredActionKeyValue {
+					if r == a["type"] && (a["custom_key"] == "" || a["value"] == "") {
+						return fmt.Errorf("custom_key and value are required for action %s", a["type"])
+					}
+				}
+			}
+
+			conditions := rd.Get("conditions").([]interface{})
+			for _, v := range conditions {
+				c := v.(map[string]interface{})
+				for _, r := range requiredConditionKey {
+					if r == c["name"] && c["key"] == "" {
+						return fmt.Errorf("key is required for condition %s", c["name"])
+					}
+				}
+			}
+
+			return nil
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
