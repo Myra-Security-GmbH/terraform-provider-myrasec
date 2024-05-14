@@ -33,6 +33,8 @@ The following arguments are supported:
 * `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024`, `2048` or `4096`. Default `2048`.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
+* `enforce_cache_ttl` (Optional) Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.
+* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
 * `hsts` (Optional) HSTS Strict Transport Security (HSTS). Default `false`.
 * `hsts_include_subdomains` (Optional) HSTS includeSubDomains directive. Default `false`.
