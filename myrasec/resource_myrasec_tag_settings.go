@@ -190,6 +190,24 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Allow connections via IPv6 to your systems.",
 			},
+			"limit_allowed_http_method": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Not selected HTTP methods will be blocked.",
+			},
+			"limit_tls_version": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Only selected TLS versions will be used.",
+			},
 			"log_format": {
 				Type:        schema.TypeString,
 				Required:    false,
@@ -201,6 +219,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Errors per minute that must occur until a report is sent.",
+			},
+			"monitoring_contact_email": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
 			},
 			"monitoring_send_alert": {
 				Type:        schema.TypeBool,
@@ -232,6 +256,15 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				},
 				Description: "The private key for the SSL Certificate",
 			},
+			"next_upstream": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Specifies the error that mark the current upstream as \"down\".",
+			},
 			"only_https": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -244,6 +277,21 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"none", "close", "upgrade"}, false),
 				Description:  "Connection header.",
+			},
+			"proxy_cache_bypass": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
+			},
+			"proxy_cache_stale": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Determines in which cases a stale cached response can be used when an error occurs.",
 			},
 			"proxy_connect_timeout": {
 				Type:         schema.TypeInt,
@@ -278,6 +326,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "If activated, an email will be send containing blocked ip addresses that exceeded the configured request limit.",
 			},
+			"request_limit_report_email": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Email addresses, to which request limit emails should be send. Multiple addresses are separated with a space.",
+			},
 			"rewrite": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -309,12 +363,30 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enables / disables the Web Application Firewall.",
 			},
+			"waf_levels_enable": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Level of applied WAF rules.",
+			},
 			"waf_policy": {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"available_attributes": {
 				Type:     schema.TypeSet,

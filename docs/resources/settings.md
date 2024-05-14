@@ -67,7 +67,7 @@ The following arguments are supported:
 * `proxy_cache_bypass` (Optional) Name of the cookie which forces Myra to deliver the response not from cache. Default `""`.
 * `proxy_cache_stale` (Optional) Determines in which cases a stale cached response can be used when an error occurs. Valid values are `error`, `timeout`, `invalid_header`, `updating`, `http_500`, `http_502`, `http_503`, `http_504`, `http_403`, `http_404` and `off`. Default `updating`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
-* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
+* `host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `proxy_read_timeout` (Optional) Timeout for reading the upstream response. Default `600`.
 * `request_limit_block` (Optional) Show CAPTCHA after exceeding the configured request limit. Valid values are `CAPTCHA`, `HTTP429` or `no`. Default `CAPTCHA`.
 * `request_limit_level` (Optional) Sets how many requests are allowed from an IP per minute. Default `6000`.
