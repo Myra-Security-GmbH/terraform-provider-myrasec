@@ -407,6 +407,16 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Proxy host header",
+				Deprecated:  "Please use `host_header` instead",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return old == "$myra_host" && new == ""
 				},
@@ -442,6 +452,9 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 			if ok && disable.(bool) {
 				isNullValue = true
 			}
+		}
+		if name == "proxy_host_header" {
+			name = "host_header"
 		}
 		if !isNullValue {
 			availableAttributes = append(availableAttributes, name)
@@ -660,7 +673,11 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if name == "proxy_host_header" {
-			name = "host_header"
+			if _, ok := d.GetOk("host_header"); ok {
+				name = "host_header"
+			} else {
+				continue
+			}
 		}
 		if name == "forwarded_for_replacement" {
 			disable := d.Get("disable_forwarded_for")
@@ -723,8 +740,8 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	mapSettings, ok := domainSettings.(map[string]interface{})
 	if ok {
 		for k, v := range mapSettings {
-			if k == "host_header" {
-				k = "proxy_host_header"
+			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
+				k = "host_header"
 			}
 			if _, ok := resource[k]; !ok {
 				continue
