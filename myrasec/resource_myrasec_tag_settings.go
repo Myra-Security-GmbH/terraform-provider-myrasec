@@ -121,6 +121,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enable or disable origin SNI.",
 			},
+			"enforce_cache_ttl": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
+			},
 			"disable_forwarded_for": {
 				Type:        schema.TypeBool,
 				Optional:    true,
