@@ -115,8 +115,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 			},
 			"conditions": {
 				Type:     schema.TypeList,
-				Required: true,
-				MinItems: 1,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"condition_id": {
@@ -172,7 +171,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 			},
 			"actions": {
 				Type:     schema.TypeList,
-				Optional: true,
+				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"action_id": {
@@ -448,9 +447,8 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 
 	conditions, ok := d.GetOk("conditions")
 	if !ok {
-		return rule, nil
+		rule.Conditions = make([]*myrasec.WAFCondition, 0)
 	}
-
 	for _, condition := range conditions.([]interface{}) {
 		c, err := buildWAFCondition(condition)
 		if err != nil {

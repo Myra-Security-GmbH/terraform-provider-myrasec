@@ -162,7 +162,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			},
 			"conditions": {
 				Type:     schema.TypeList,
-				Required: true,
+				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"condition_id": {
@@ -521,9 +521,8 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 
 	conditions, ok := d.GetOk("conditions")
 	if !ok {
-		return rule, nil
+		rule.Conditions = make([]*myrasec.WAFCondition, 0)
 	}
-
 	for _, condition := range conditions.([]interface{}) {
 		c, err := buildWAFCondition(condition)
 		if err != nil {
