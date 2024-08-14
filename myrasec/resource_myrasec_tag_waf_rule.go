@@ -217,6 +217,18 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				},
 			},
 		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			err := validateActions(rd)
+			if err != nil {
+				return err
+			}
+
+			err = validateConditions(rd)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
