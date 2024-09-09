@@ -2,6 +2,7 @@ package myrasec
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
@@ -161,8 +162,6 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
 		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
-			var errors error
-
 			certificate := rd.Get("certificate")
 			privateKey := rd.Get("key")
 
@@ -181,35 +180,45 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				return fmt.Errorf("failed to decode PEM block for private key")
 			}
 
-			var key *rsa.PrivateKey
-			if keyBlock.Type == "RSA PRIVATE KEY" {
-				pkey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+			switch keyBlock.Type {
+			case "RSA PRIVATE KEY":
+				privateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 				if err != nil {
-					return fmt.Errorf(formatError(err))
+					return fmt.Errorf("failed to parse RSA private key: %v", err)
 				}
-				key = pkey
-			} else if keyBlock.Type == "PRIVATE KEY" {
+			case "PRIVATE KEY":
 				pkey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 				if err != nil {
-					return fmt.Errorf(formatError(err))
+					return fmt.Errorf("failed to parse PKCS8 private key: %v", err)
 				}
-
-				switch pkey := pkey.(type) {
-				case *rsa.PrivateKey:
-					key = pkey
-				default:
-					return fmt.Errorf("Unsupported private key type")
+				privateKey = pkey
+			case "EC PRIVATE KEY":
+				privateKey, err = x509.ParseECPrivateKey(keyBlock.Bytes)
+				if err != nil {
+					return fmt.Errorf("failed to parse EC private key: %v", err)
 				}
-			} else {
-				return fmt.Errorf("Unsupported private key format")
+			default:
+				return fmt.Errorf("unsupported private key format: %s", keyBlock.Type)
 			}
 
-			matches := key.N.Cmp(cert.PublicKey.(*rsa.PublicKey).N) == 0 && key.E == cert.PublicKey.(*rsa.PublicKey).E
-			if !matches {
-				return fmt.Errorf("Private key does not match to certifcate")
+			switch pub := cert.PublicKey.(type) {
+			case *rsa.PublicKey:
+				if priv, ok := privateKey.(*rsa.PrivateKey); ok {
+					if pub.N.Cmp(priv.N) == 0 && pub.E == priv.E {
+						return nil
+					}
+				}
+			case *ecdsa.PublicKey:
+				if priv, ok := privateKey.(*ecdsa.PrivateKey); ok {
+					if pub.X.Cmp(priv.X) == 0 && pub.Y.Cmp(priv.Y) == 0 && pub.Curve == priv.Curve {
+						return nil
+					}
+				}
+			default:
+				return fmt.Errorf("unsupported public key type")
 			}
 
-			return errors
+			return fmt.Errorf("private key does not match the certificate's public key")
 		},
 	}
 }
