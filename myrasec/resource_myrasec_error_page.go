@@ -171,6 +171,8 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
+	errorPage, diags = findErrorPageByErrorCode(errorPage.SubDomainName, errorPage.ErrorCode, meta, domainID)
+
 	setErrorPageData(d, errorPage, domainID)
 
 	return diags
