@@ -1,3 +1,4 @@
+version: 2
 # Visit https://goreleaser.com for documentation on how to customize this
 # behavior.
 before:
@@ -50,5 +51,9 @@ signs:
 release:
   # If you want to manually examine the release before its live, uncomment this line:
   draft: true
+  prerelease: true
+publish:
+  skip:
+    - terraform
 changelog:
   use: github
