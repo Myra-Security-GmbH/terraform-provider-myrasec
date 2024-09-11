@@ -112,7 +112,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
+				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
 			},
 			"enable_origin_sni": {
@@ -120,6 +120,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enable or disable origin SNI.",
+			},
+			"enforce_cache_ttl": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
 			},
 			"disable_forwarded_for": {
 				Type:        schema.TypeBool,
@@ -190,6 +196,24 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Allow connections via IPv6 to your systems.",
 			},
+			"limit_allowed_http_method": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Not selected HTTP methods will be blocked.",
+			},
+			"limit_tls_version": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Only selected TLS versions will be used.",
+			},
 			"log_format": {
 				Type:        schema.TypeString,
 				Required:    false,
@@ -202,6 +226,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Errors per minute that must occur until a report is sent.",
 			},
+			"monitoring_contact_email": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Email addresses, to which monitoring emails should be send. Multiple addresses are separated with a space.",
+			},
 			"monitoring_send_alert": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -213,6 +243,33 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Activates the X-Myra-SSL Header.",
+			},
+			"myra_ssl_certificate": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+			},
+			"myra_ssl_certificate_key": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "The private key for the SSL Certificate",
+			},
+			"next_upstream": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Specifies the error that mark the current upstream as \"down\".",
 			},
 			"only_https": {
 				Type:        schema.TypeBool,
@@ -227,6 +284,21 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"none", "close", "upgrade"}, false),
 				Description:  "Connection header.",
 			},
+			"proxy_cache_bypass": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Name of the cookie which forces Myra to deliver the response not from cache.",
+			},
+			"proxy_cache_stale": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Determines in which cases a stale cached response can be used when an error occurs.",
+			},
 			"proxy_connect_timeout": {
 				Type:         schema.TypeInt,
 				Required:     false,
@@ -238,7 +310,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 2400}),
+				ValidateFunc: validation.IntInSlice(proxyReadTimeoutValues),
 				Description:  "Timeout for reading the upstream response.",
 			},
 			"request_limit_block": {
@@ -259,6 +331,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "If activated, an email will be send containing blocked ip addresses that exceeded the configured request limit.",
+			},
+			"request_limit_report_email": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Email addresses, to which request limit emails should be send. Multiple addresses are separated with a space.",
 			},
 			"rewrite": {
 				Type:        schema.TypeBool,
@@ -291,12 +369,30 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enables / disables the Web Application Firewall.",
 			},
+			"waf_levels_enable": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Level of applied WAF rules.",
+			},
 			"waf_policy": {
 				Type:         schema.TypeString,
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"available_attributes": {
 				Type:     schema.TypeSet,
@@ -372,6 +468,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error updating tag settings",
+			Detail:   formatError(err),
 		})
 		return diags
 	}

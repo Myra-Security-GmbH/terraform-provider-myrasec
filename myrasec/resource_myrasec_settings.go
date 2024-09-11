@@ -19,6 +19,9 @@ const (
 	ClientMaxBodySize = 5120
 )
 
+var diffieHellmanExchangeValues = []int{1024, 2048, 4096}
+var proxyReadTimeoutValues = []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 2400, 3600, 7200}
+
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
 	return &schema.Resource{
@@ -133,7 +136,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1024, 2048}),
+				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
 			},
 			"enable_origin_sni": {
@@ -141,6 +144,12 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enable or disable origin SNI.",
+			},
+			"enforce_cache_ttl": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
 			},
 			"disable_forwarded_for": {
 				Type:        schema.TypeBool,
@@ -259,6 +268,24 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Activates the X-Myra-SSL Header.",
 			},
+			"myra_ssl_certificate": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+			},
+			"myra_ssl_certificate_key": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "The private key for the SSL Certificate",
+			},
 			"next_upstream": {
 				Type:     schema.TypeSet,
 				Required: false,
@@ -307,7 +334,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
-				ValidateFunc: validation.IntInSlice([]int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 2400}),
+				ValidateFunc: validation.IntInSlice(proxyReadTimeoutValues),
 				Description:  "Timeout for reading the upstream response.",
 			},
 			"request_limit_block": {
@@ -386,6 +413,16 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Proxy host header",
+				Deprecated:  "Please use `host_header` instead",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return old == "$myra_host" && new == ""
 				},
@@ -421,6 +458,9 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 			if ok && disable.(bool) {
 				isNullValue = true
 			}
+		}
+		if name == "proxy_host_header" {
+			name = "host_header"
 		}
 		if !isNullValue {
 			availableAttributes = append(availableAttributes, name)
@@ -530,7 +570,6 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setSettingsData(d, settings, subDomainName, domainID)
-
 	clientMaxBodySize := d.Get("client_max_body_size")
 
 	if clientMaxBodySize.(int) > ClientMaxBodySize {
@@ -640,7 +679,11 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if name == "proxy_host_header" {
-			name = "host_header"
+			if _, ok := d.GetOk("host_header"); ok {
+				name = "host_header"
+			} else {
+				continue
+			}
 		}
 		if name == "forwarded_for_replacement" {
 			disable := d.Get("disable_forwarded_for")
@@ -703,8 +746,8 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	mapSettings, ok := domainSettings.(map[string]interface{})
 	if ok {
 		for k, v := range mapSettings {
-			if k == "host_header" {
-				k = "proxy_host_header"
+			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
+				k = "host_header"
 			}
 			if _, ok := resource[k]; !ok {
 				continue

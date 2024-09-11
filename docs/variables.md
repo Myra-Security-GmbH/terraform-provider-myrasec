@@ -157,6 +157,8 @@ variable "myrasec_settings-proxy_read_timeout" {
     600  = 600
     1200 = 1200
     2400 = 2400
+    3600 = 3600
+    7200 = 7200
   }
 }
 

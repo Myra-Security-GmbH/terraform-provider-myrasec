@@ -15,6 +15,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceMyrasecSSLCertificate() *schema.Resource {
@@ -143,6 +144,15 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 							Description: "Certificate",
 						},
 					},
+				},
+			},
+			"configuration_name": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "Set specific ssl configuration for ciphers and protocols",
+				ValidateFunc: validation.StringInSlice([]string{"Myra-Global-TLS-Default", "2023-mozilla-intermediate", "2023-mozilla-modern"}, true),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return newValue == "" || strings.EqualFold(oldValue, newValue)
 				},
 			},
 		},
@@ -460,6 +470,11 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 		}
 	}
 
+	configurationName, ok := d.GetOk("configuration_name")
+	if ok {
+		cert.SslConfigurationName = configurationName.(string)
+	}
+
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
 		return nil, err
@@ -546,4 +561,5 @@ func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate,
 	d.Set("extended_validation", cert.ExtendedValidation)
 	d.Set("subdomains", cert.Subdomains)
 	d.Set("domain_id", domainID)
+	d.Set("configuration_name", cert.SslConfigurationName)
 }
