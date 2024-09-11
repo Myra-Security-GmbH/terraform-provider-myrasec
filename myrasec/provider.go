@@ -81,6 +81,7 @@ func Provider() *schema.Provider {
 			"myrasec_tag_cache_setting":    resourceMyrasecTagCacheSetting(),
 			"myrasec_tag_waf_rule":         resourceMyrasecTagWAFRule(),
 			"myrasec_tag_settings":         resourceMyrasecTagSettings(),
+			"myrasec_tag_information":      resourceMyrasecTagInformation(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

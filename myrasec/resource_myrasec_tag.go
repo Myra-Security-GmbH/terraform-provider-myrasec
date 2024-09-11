@@ -16,6 +16,76 @@ import (
 	"golang.org/x/net/context"
 )
 
+var tagAssignmentSchema = &schema.Schema{
+	Type:     schema.TypeSet,
+	Optional: true,
+	Elem: &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "ID of the tag assignment",
+			},
+			"modified": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Date of last modification.",
+			},
+			"created": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Date of creation.",
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Required: true,
+				StateFunc: func(i interface{}) string {
+					return strings.ToUpper(i.(string))
+				},
+				ValidateFunc: validation.StringInSlice([]string{"DOMAIN", "SUBDOMAIN"}, true),
+				Description:  "The Type of the tag assignment",
+			},
+			"title": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					if new != "" && old == "" {
+						return false
+					} else {
+						return true
+					}
+				},
+				Description: "The Title of the tag assignment",
+			},
+			"subdomain_name": {
+				Type:     schema.TypeString,
+				Required: true,
+				StateFunc: func(i interface{}) string {
+					return myrasec.RemoveTrailingDot(i.(string))
+				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
+				},
+				Description: "The subdomain of the tag assignment",
+			},
+		},
+	},
+	Set: func(a interface{}) int {
+		obj := a.(map[string]interface{})
+
+		assignmentType := strings.ToUpper(obj["type"].(string))
+		name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
+
+		h := sha256.New()
+		h.Write([]byte(assignmentType))
+		h.Write([]byte(name))
+
+		hash := int(binary.BigEndian.Uint64(h.Sum(nil)))
+		return hash
+	},
+}
+
 // resourceMyrasecTag
 func resourceMyrasecTag() *schema.Resource {
 	return &schema.Resource{
@@ -54,78 +124,10 @@ func resourceMyrasecTag() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
-				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF", "INFORMATION"}, false),
 				Description:  "The Type of the tag",
 			},
-			"assignments": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the tag assignment",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"type": {
-							Type:     schema.TypeString,
-							Required: true,
-							StateFunc: func(i interface{}) string {
-								return strings.ToUpper(i.(string))
-							},
-							ValidateFunc: validation.StringInSlice([]string{"DOMAIN", "SUBDOMAIN"}, true),
-							Description:  "The Type of the tag assignment",
-						},
-						"title": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
-							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								if new != "" && old == "" {
-									return false
-								} else {
-									return true
-								}
-							},
-							Description: "The Title of the tag assignment",
-						},
-						"subdomain_name": {
-							Type:     schema.TypeString,
-							Required: true,
-							StateFunc: func(i interface{}) string {
-								return myrasec.RemoveTrailingDot(i.(string))
-							},
-							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
-							},
-							Description: "The subdomain of the tag assignment",
-						},
-					},
-				},
-				Set: func(a interface{}) int {
-					obj := a.(map[string]interface{})
-
-					assignmentType := strings.ToUpper(obj["type"].(string))
-					name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
-
-					h := sha256.New()
-					h.Write([]byte(assignmentType))
-					h.Write([]byte(name))
-
-					hash := int(binary.BigEndian.Uint64(h.Sum(nil)))
-					return hash
-				},
-			},
+			"assignments": tagAssignmentSchema,
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
