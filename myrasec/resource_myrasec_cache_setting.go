@@ -132,8 +132,8 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 
 	resp, err := client.CreateCacheSetting(setting, domainID, subDomainName)
 	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
-		return resourceMyrasecCacheSettingRead(ctx, d, meta)
+		setCacheSettingData(d, resp, subDomainName, domainID)
+		return diags
 	}
 
 	setting, errImport := importExistingCacheSetting(setting, domainID, subDomainName, meta)
