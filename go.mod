@@ -3,7 +3,7 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.19
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.33.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.34.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	golang.org/x/net v0.34.0
@@ -45,7 +45,7 @@ require (
 	github.com/zclconf/go-cty v1.14.1 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/time v0.8.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
