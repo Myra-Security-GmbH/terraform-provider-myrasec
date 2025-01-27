@@ -64,6 +64,14 @@ func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags
 
 		subDomainName := name.(string)
 
+		if myrasec.IsGeneralDomainName(subDomainName) && strings.HasPrefix(subDomainName, "ALL-") {
+			var err error
+			domainID, err = myrasec.ExtractDomainIdFromGeneralDomainName(subDomainName)
+			if err == nil {
+				return domainID, diags
+			}
+		}
+
 		domain, diags := findDomainBySubdomainName(meta, subDomainName)
 		if diags.HasError() || domain == nil {
 			return 0, diags
@@ -90,6 +98,14 @@ func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (dom
 	}
 
 	subDomainName = name.(string)
+
+	if myrasec.IsGeneralDomainName(subDomainName) && strings.HasPrefix(subDomainName, "ALL-") {
+		var err error
+		domainID, err = myrasec.ExtractDomainIdFromGeneralDomainName(subDomainName)
+		if err == nil {
+			return domainID, subDomainName, diags
+		}
+	}
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
