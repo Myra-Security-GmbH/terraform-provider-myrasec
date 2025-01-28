@@ -42,9 +42,9 @@ The following arguments are supported:
 * `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
 * `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024`, `2048` or `4096`. Default `2048`.
+* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
 * `enforce_cache_ttl` (Optional) Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.
-* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
 * `host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `hsts` (Optional) HSTS Strict Transport Security (HSTS). Default `false`.

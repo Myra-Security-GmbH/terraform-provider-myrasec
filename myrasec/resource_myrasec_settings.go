@@ -228,7 +228,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
-				Description: "Prevent accidential IP address changes if activated. This setting is only available on 'domain level' (general domain settings).",
+				Description: "Prevent accidental IP address changes if activated. This setting is only available on 'domain level' (general domain settings).",
 			},
 			"ipv6_active": {
 				Type:        schema.TypeBool,
