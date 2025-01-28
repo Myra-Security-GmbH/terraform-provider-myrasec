@@ -322,16 +322,6 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 5, 10, 15, 30, 45, 60}),
 				Description:  "Timeout for establishing a connection to the upstream server.",
 			},
-			"proxy_host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				Deprecated:  "Please use `host_header` instead",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
-			},
 			"proxy_read_timeout": {
 				Type:         schema.TypeInt,
 				Required:     false,
