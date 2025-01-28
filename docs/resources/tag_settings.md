@@ -32,9 +32,9 @@ The following arguments are supported:
 * `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
 * `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024`, `2048` or `4096`. Default `2048`.
+* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
 * `enforce_cache_ttl` (Optional) Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.
-* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
 * `host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `hsts` (Optional) HSTS Strict Transport Security (HSTS). Default `false`.
@@ -45,7 +45,7 @@ The following arguments are supported:
 * `ignore_nocache` (Optional) If activated, no-cache headers (Cache-Control: [private|no-store|no-cache]) will be ignored. Default `false`.
 * `image_optimization` (Optional) Optimization of images. Default `true`.
 * `ipv6_active` (Optional) Allow connections via IPv6 to your systems. Default `true`.
-* `ip_lock` (Oprional) Prevent accidential IP address changes if activated. This setting is only available on "domain level" (general domain settings). Default `false`.
+* `ip_lock` (Oprional) Prevent accidental IP address changes if activated. This setting is only available on "domain level" (general domain settings). Default `false`.
 * `limit_allowed_http_method` (Optional) List of allowed HTTP methods. Valid values are `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `OPTIONS`, `PROPFIND`, `PROPPATCH`, `LOCK`, `UNLOCK`, and `PATCH`. Default allows all.
 * `limit_tls_version` (Optional) List of TLS versions that will be used. Valid values are `TLSv1`, `TLSv1.1`, `TLSv1.2` and `TLSv1.3`. Default uses all.
 * `log_format` (Optional) Use a different log format. Default `myra-combined-waf`.
@@ -61,7 +61,6 @@ The following arguments are supported:
 * `proxy_cache_bypass` (Optional) Name of the cookie which forces Myra to deliver the response not from cache. Default `""`.
 * `proxy_cache_stale` (Optional) Determines in which cases a stale cached response can be used when an error occurs. Valid values are `error`, `timeout`, `invalid_header`, `updating`, `http_500`, `http_502`, `http_503`, `http_504`, `http_403`, `http_404` and `off`. Default `updating`.
 * `proxy_connect_timeout` (Optional) Timeout for establishing a connection to the upstream server. Default `60`. 
-* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `proxy_read_timeout` (Optional) Timeout for reading the upstream response. Default `600`.
 * `request_limit_block` (Optional) Show CAPTCHA after exceeding the configured request limit. Valid values are `CAPTCHA`, `HTTP429` or `no`. Default `CAPTCHA`.
 * `request_limit_level` (Optional) Sets how many requests are allowed from an IP per minute. Default `6000`.
