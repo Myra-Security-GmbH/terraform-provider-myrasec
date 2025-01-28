@@ -85,11 +85,23 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"cookie_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"diffie_hellman_exchange": {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"disable_forwarded_for": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"enable_origin_sni": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"enforce_cache_ttl": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -122,6 +134,10 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Computed: true,
 						},
 						"image_optimization": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"ip_lock": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -159,10 +175,6 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"myra_ssl_header": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"myra_ssl_certificate": {
 							Type:     schema.TypeSet,
 							Computed: true,
@@ -176,6 +188,10 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
+						},
+						"myra_ssl_header": {
+							Type:     schema.TypeBool,
+							Computed: true,
 						},
 						"next_upstream": {
 							Type:     schema.TypeSet,
@@ -239,6 +255,22 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"ssl_client_verify": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_certificate": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_header_verification": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_header_fingerprint": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"ssl_origin_port": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -255,10 +287,6 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							},
 						},
 						"waf_policy": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"proxy_host_header": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -299,8 +327,11 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"cache_revalidate":                settings.CacheRevalidate,
 		"cdn":                             settings.CDN,
 		"client_max_body_size":            settings.ClientMaxBodySize,
+		"cookie_name":                     settings.CookieName,
 		"diffie_hellman_exchange":         settings.DiffieHellmanExchange,
+		"disable_forwarded_for":           settings.DisableForwardFor,
 		"enable_origin_sni":               settings.EnableOriginSNI,
+		"enforce_cache_ttl":               settings.EnforceCacheTTL,
 		"forwarded_for_replacement":       settings.ForwardedForReplacement,
 		"hsts":                            settings.HSTS,
 		"hsts_include_subdomains":         settings.HSTSIncludeSubdomains,
@@ -309,6 +340,7 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"http_origin_port":                settings.HTTPOriginPort,
 		"ignore_nocache":                  settings.IgnoreNoCache,
 		"image_optimization":              settings.ImageOptimization,
+		"ip_lock":                         settings.IPLock,
 		"ipv6_active":                     settings.IPv6Active,
 		"limit_allowed_http_method":       settings.LimitAllowedHTTPMethod,
 		"limit_tls_version":               settings.LimitTLSVersion,
@@ -333,11 +365,14 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"rewrite":                         settings.Rewrite,
 		"source_protocol":                 settings.SourceProtocol,
 		"spdy":                            settings.Spdy,
+		"ssl_client_verify":               settings.SSLClientVerify,
+		"ssl_client_certificate":          settings.SSLClientCertificate,
+		"ssl_client_header_verification":  settings.SSLClientHeaderVerification,
+		"ssl_client_header_fingerprint":   settings.SSLClientHeaderFingerprint,
 		"ssl_origin_port":                 settings.SSLOriginPort,
 		"waf_enable":                      settings.WAFEnable,
 		"waf_levels_enable":               settings.WAFLevelsEnable,
 		"waf_policy":                      settings.WAFPolicy,
-		"proxy_host_header":               settings.ProxyHostHeader,
 	})
 
 	if err := d.Set("settings", settingData); err != nil {

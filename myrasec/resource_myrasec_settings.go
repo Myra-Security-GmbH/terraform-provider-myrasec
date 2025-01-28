@@ -90,11 +90,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
 			},
-			"cookie_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specifies the cookie name when balancing_method is cookie_based",
-			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -132,12 +127,23 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
 				Description:  fmt.Sprintf("Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum %d MB.", ClientMaxBodySize),
 			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
+			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
+			},
+			"disable_forwarded_for": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Disable the forwarded for replacement.",
 			},
 			"enable_origin_sni": {
 				Type:        schema.TypeBool,
@@ -150,11 +156,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
-			},
-			"disable_forwarded_for": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Disable the forwarded for replacement.",
 			},
 			"forwarded_for_replacement": {
 				Type:     schema.TypeString,
@@ -171,6 +172,15 @@ func resourceMyrasecSettings() *schema.Resource {
 					return false
 				},
 				Description: "Set your own X-Forwarded-For header.",
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"hsts": {
 				Type:        schema.TypeBool,
@@ -213,6 +223,12 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Optimization of images.",
+			},
+			"ip_lock": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Prevent accidential IP address changes if activated. This setting is only available on 'domain level' (general domain settings).",
 			},
 			"ipv6_active": {
 				Type:        schema.TypeBool,
@@ -262,12 +278,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enables / disables the upstream error reporting.",
 			},
-			"myra_ssl_header": {
-				Type:        schema.TypeBool,
-				Required:    false,
-				Optional:    true,
-				Description: "Activates the X-Myra-SSL Header.",
-			},
 			"myra_ssl_certificate": {
 				Type:     schema.TypeSet,
 				Required: false,
@@ -285,6 +295,12 @@ func resourceMyrasecSettings() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Description: "The private key for the SSL Certificate",
+			},
+			"myra_ssl_header": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
 				Type:     schema.TypeSet,
@@ -329,6 +345,16 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 5, 10, 15, 30, 45, 60}),
 				Description:  "Timeout for establishing a connection to the upstream server.",
+			},
+			"proxy_host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				Deprecated:  "Please use `host_header` instead",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"proxy_read_timeout": {
 				Type:         schema.TypeInt,
@@ -380,6 +406,30 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Activates the SPDY protocol.",
 			},
+			"ssl_client_verify": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Enables verification of client certificates.",
+			},
+			"ssl_client_certificate": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
+			},
+			"ssl_client_header_verification": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "The name of the header, which contains the ssl verification status.",
+			},
+			"ssl_client_header_fingerprint": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Contains the fingerprint of the certificate, the client used to authenticate itself.",
+			},
 			"ssl_origin_port": {
 				Type:        schema.TypeInt,
 				Required:    false,
@@ -407,25 +457,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
-			},
-			"proxy_host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				Deprecated:  "Please use `host_header` instead",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
-			},
-			"host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
 			},
 			"available_attributes": {
 				Type:     schema.TypeSet,
