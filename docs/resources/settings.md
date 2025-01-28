@@ -55,7 +55,7 @@ The following arguments are supported:
 * `ignore_nocache` (Optional) If activated, no-cache headers (Cache-Control: [private|no-store|no-cache]) will be ignored. Default `false`.
 * `image_optimization` (Optional) Optimization of images. Default `true`.
 * `ipv6_active` (Optional) Allow connections via IPv6 to your systems. Default `true`.
-* `ip_lock` (Oprional) Prevent accidential IP address changes if activated. This setting is only available on "domain level" (general domain settings). Default `false`.
+* `ip_lock` (Oprional) Prevent accidental IP address changes if activated. This setting is only available on "domain level" (general domain settings). Default `false`.
 * `limit_allowed_http_method` (Optional) List of allowed HTTP methods. Valid values are `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `OPTIONS`, `PROPFIND`, `PROPPATCH`, `LOCK`, `UNLOCK`, and `PATCH`. Default allows all.
 * `limit_tls_version` (Optional) List of TLS versions that will be used. Valid values are `TLSv1`, `TLSv1.1`, `TLSv1.2` and `TLSv1.3`. Default uses all.
 * `log_format` (Optional) Use a different log format. Default `myra-combined-waf`.
