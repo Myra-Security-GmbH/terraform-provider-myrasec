@@ -223,10 +223,6 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"proxy_host_header": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"proxy_read_timeout": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -361,7 +357,6 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"proxy_cache_bypass":              settings.ProxyCacheBypass,
 		"proxy_cache_stale":               settings.ProxyCacheStale,
 		"proxy_connect_timeout":           settings.ProxyConnectTimeout,
-		"proxy_host_header":               settings.ProxyHostHeader,
 		"proxy_read_timeout":              settings.ProxyReadTimeout,
 		"request_limit_block":             settings.RequestLimitBlock,
 		"request_limit_level":             settings.RequestLimitLevel,
