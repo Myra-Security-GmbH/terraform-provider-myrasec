@@ -413,10 +413,13 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Enables verification of client certificates.",
 			},
 			"ssl_client_certificate": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeList,
 				Required:    false,
 				Optional:    true,
-				Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
+				Elem: &schema.Resource{
+					Type: schema.TypeString,
+					Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
+				}
 			},
 			"ssl_client_header_verification": {
 				Type:        schema.TypeString,
