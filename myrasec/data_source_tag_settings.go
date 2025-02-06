@@ -260,11 +260,11 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Computed: true,
 						},
 						"ssl_client_certificate": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							Computed: true,
-							Elem: &schema.Resource{
-								Type: schema.TypeString,
-							}
+							Elem: &schema.Schema{
+								Type:     schema.TypeString,
+							},
 						},
 						"ssl_client_header_verification": {
 							Type:     schema.TypeString,
