@@ -74,7 +74,7 @@ The following arguments are supported:
 * `rewrite` (Optional) Enable the JavaScript optimization. Default `false`.
 * `source_protocol` (Optional) Protocol to query the origin server. Valid values are `same`, `http` or `https`. Default `same`.
 * `spdy` (Optional) Activates the SPDY protocol.. Default `true`.
-* `ssl_client_verify` (Optional) Enables verification of client certificates.
+* `ssl_client_verify` (Optional) Enables verification of client certificates. Valid values are `of`, `on` or `optional`. Default `off`.
 * `ssl_client_certificate` (Optional) Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.
 * `ssl_client_header_verification` (Optional) The name of the header, which contains the ssl verification status.
 * `ssl_client_header_fingerprint` (Optional) Contains the fingerprint of the certificate, the client used to authenticate itself.
