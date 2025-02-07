@@ -264,8 +264,11 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Computed: true,
 						},
 						"ssl_client_certificate": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeSet,
 							Computed: true,
+							Elem: &schema.Schema{
+								Type:     schema.TypeString,
+							},
 						},
 						"ssl_client_header_verification": {
 							Type:     schema.TypeString,
