@@ -6,7 +6,7 @@ Provides a Myra Security tag resource.
 
 ```hcl
 # Create a new tag
-resource "myrasec_tag "tag_cache" {
+resource "myrasec_tag" "tag_cache" {
   name = "cache tag name"
   type = "CACHE"
   assignments  {
