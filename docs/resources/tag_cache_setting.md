@@ -12,6 +12,7 @@ resource "myrasec_tag_cache_setting" "index" {
     path          = "/index"
     ttl           = 2678400
     not_found_ttl = 3600
+    sort          = 1
 }
 ```
 
