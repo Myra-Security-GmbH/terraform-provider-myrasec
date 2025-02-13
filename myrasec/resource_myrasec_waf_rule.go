@@ -34,6 +34,8 @@ var requiredConditionKey = []string{
 	"cookie",
 	"arg",
 	"postarg",
+}
+var requiredConditionValue = []string{
 	"score",
 }
 var notAllowedResponseActions = []string{
@@ -314,6 +316,11 @@ func validateConditions(rd *schema.ResourceDiff) error {
 		for _, r := range requiredConditionKey {
 			if r == c["name"] && c["key"] == "" {
 				return fmt.Errorf("key is required for condition %s", c["name"])
+			}
+		}
+		for _, r := range requiredConditionValue {
+			if r == c["name"] && c["value"] == "" {
+				return fmt.Errorf("value is required for condition %s", c["name"])
 			}
 		}
 	}
