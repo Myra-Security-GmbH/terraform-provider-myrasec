@@ -522,6 +522,12 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 			rule.ID = id
 		}
 	}
+	date := d.Get("expire_date").(string)
+	expireDate, err := types.ParseDate(date)
+	if err != nil {
+		return nil, err
+	}
+	rule.ExpireDate = expireDate
 
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
@@ -700,6 +706,7 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 	d.Set("domain_id", domainID)
+	d.Set("rule_type", rule.RuleType)
 
 	conditions := []interface{}{}
 	for _, condition := range rule.Conditions {
