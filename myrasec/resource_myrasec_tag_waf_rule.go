@@ -445,6 +445,13 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 		}
 	}
 
+	date := d.Get("expire_date").(string)
+	expireDate, err := types.ParseDate(date)
+	if err != nil {
+		return nil, err
+	}
+	rule.ExpireDate = expireDate
+
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
 		return nil, err
