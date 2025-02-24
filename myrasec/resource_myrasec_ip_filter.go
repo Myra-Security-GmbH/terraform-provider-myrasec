@@ -124,26 +124,25 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	if diags.HasError() {
 		return diags
 	}
-
 	resp, err := client.CreateIPFilter(filter, domainID, subDomainName)
 	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
-		return resourceMyrasecIPFilterRead(ctx, d, meta)
+		setIPFilterData(d, resp, domainID)
+		return diags
 	}
 
 	filter, errImport := importExistingIPFilter(filter, domainID, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  "Error creating IP filter",
 			Detail:   formatError(err),
 		})
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", filter.ID))
-	return resourceMyrasecIPFilterRead(ctx, d, meta)
+	setIPFilterData(d, filter, domainID)
+	return diags
 }
 
 // resourceMyrasecIPFilterRead ...
