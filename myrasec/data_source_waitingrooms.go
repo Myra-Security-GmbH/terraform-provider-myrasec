@@ -96,7 +96,7 @@ func dataSourceMyrasecWaitingRooms() *schema.Resource {
 
 // dataSourceMyrasecWaitingRoomsRead ...
 func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	var limits []myrasec.WaitingRoom
+	var waitingRooms []myrasec.WaitingRoom
 	var diags diag.Diagnostics
 	f := prepareWaitingroomFilter(d.Get("filter"))
 	if f == nil {
@@ -106,13 +106,13 @@ func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceDa
 	params := map[string]string{}
 
 	if f.subDomainName != "" {
-		limits, diags = listWaitingRoomsForSubDomain(meta, f.subDomainName, params)
+		waitingRooms, diags = listWaitingRoomsForSubDomain(meta, f.subDomainName, params)
 		if diags.HasError() {
 			return diags
 		}
 
 	} else if f.domainId != 0 {
-		limits, diags = listWaitingRoomsForDomain(meta, f.domainId, params)
+		waitingRooms, diags = listWaitingRoomsForDomain(meta, f.domainId, params)
 		if diags.HasError() {
 			return diags
 		}
@@ -126,7 +126,7 @@ func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	waitingRoomData := make([]interface{}, 0)
-	for _, r := range limits {
+	for _, r := range waitingRooms {
 		waitingRoomData = append(waitingRoomData, map[string]interface{}{
 			"waitingroom_id":  r.ID,
 			"created":         r.Created.Format(time.RFC3339),
