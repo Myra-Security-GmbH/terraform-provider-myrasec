@@ -184,7 +184,7 @@ func parseWaitingRoomFilter(d interface{}) *waitingRoomFilter {
 // listWaitingRoomsForSubDomain ...
 func listWaitingRoomsForSubDomain(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var limits []myrasec.WaitingRoom
+	var waitingRooms []myrasec.WaitingRoom
 	pageSize := 250
 
 	client := meta.(*myrasec.API)
@@ -201,22 +201,22 @@ func listWaitingRoomsForSubDomain(meta interface{}, subDomainName string, params
 				Summary:  "Error fetching waiting rooms",
 				Detail:   formatError(err),
 			})
-			return limits, diags
+			return waitingRooms, diags
 		}
-		limits = append(limits, res...)
+		waitingRooms = append(waitingRooms, res...)
 		if len(res) < pageSize {
 			break
 		}
 		page++
 	}
 
-	return limits, diags
+	return waitingRooms, diags
 }
 
 // listWaitingRoomsForDomain ...
 func listWaitingRoomsForDomain(meta interface{}, domainId int, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var limits []myrasec.WaitingRoom
+	var waitingRooms []myrasec.WaitingRoom
 	pageSize := 250
 
 	client := meta.(*myrasec.API)
@@ -233,16 +233,16 @@ func listWaitingRoomsForDomain(meta interface{}, domainId int, params map[string
 				Summary:  "Error fetching waiting rooms",
 				Detail:   formatError(err),
 			})
-			return limits, diags
+			return waitingRooms, diags
 		}
-		limits = append(limits, res...)
+		waitingRooms = append(waitingRooms, res...)
 		if len(res) < pageSize {
 			break
 		}
 		page++
 	}
 
-	return limits, diags
+	return waitingRooms, diags
 }
 
 // waitingRoomFilter struct ...
