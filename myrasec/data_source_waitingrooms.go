@@ -50,7 +50,7 @@ func dataSourceMyrasecWaitingRooms() *schema.Resource {
 						},
 						"vhost_id": {
 							Type:     schema.TypeInt,
-							Optional: true,
+							Computed: true,
 						},
 						"modified": {
 							Type:     schema.TypeString,
