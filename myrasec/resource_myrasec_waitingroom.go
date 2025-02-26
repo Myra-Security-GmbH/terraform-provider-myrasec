@@ -52,6 +52,9 @@ func resourceMyrasecWaitingRoom() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				Description: "The Subdomain for the waiting room.",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new)
+				},
 			},
 			"name": {
 				Type:        schema.TypeString,
