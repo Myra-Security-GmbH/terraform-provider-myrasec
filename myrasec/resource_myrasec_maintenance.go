@@ -99,6 +99,15 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Required:     true,
 				Description:  "HTML content of the maintenance.",
 				ValidateFunc: validation.NoZeroValues,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
+				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"active": {
 				Type:        schema.TypeBool,
@@ -318,7 +327,8 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 	d.Set("maintenance_id", maintenance.ID)
 	d.Set("start", maintenance.Start)
 	d.Set("end", maintenance.End)
-	d.Set("content", maintenance.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(maintenance.Content))
 	d.Set("subdomain_name", maintenance.FQDN)
 
 	resourceMyrasecMaintenanceRead(ctx, d, meta)
@@ -422,7 +432,8 @@ func setMaintenanceData(d *schema.ResourceData, maintenance *myrasec.Maintenance
 	d.Set("modified", maintenance.Modified.Format(time.RFC3339))
 	d.Set("start", maintenance.Start.Format(time.RFC3339))
 	d.Set("end", maintenance.End.Format(time.RFC3339))
-	d.Set("content", maintenance.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(maintenance.Content))
 	d.Set("subdomain_name", maintenance.FQDN)
 	d.Set("active", maintenance.Active)
 	d.Set("domain_id", domainId)

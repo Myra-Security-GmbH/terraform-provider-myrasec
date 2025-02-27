@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
 	"strings"
@@ -183,4 +184,12 @@ func IntInSlice(needle int, haystack []int) bool {
 // formatError returns the error message with a timestamp appended to it
 func formatError(err error) string {
 	return fmt.Sprintf("%s: %s", time.Now().Format(time.RFC3339Nano), err.Error())
+}
+
+func createContentHash(content string) string {
+	h := sha256.New()
+	h.Write([]byte(content))
+	bs := h.Sum(nil)
+	hash := fmt.Sprintf("%x", bs)
+	return hash
 }

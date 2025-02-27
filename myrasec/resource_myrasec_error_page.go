@@ -64,8 +64,14 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Required:    true,
 				Description: "HTML content of the error page.",
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-					return strings.TrimSpace(newValue) == strings.TrimSpace(oldValue)
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
 				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"domain_id": {
 				Type:        schema.TypeInt,
@@ -254,7 +260,8 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
-	d.Set("content", errorPage.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(errorPage.Content))
 	d.Set("subdomain_name", errorPage.SubDomainName)
 	d.Set("created", errorPage.Created)
 	d.Set("modified", errorPage.Modified)
@@ -352,7 +359,8 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage, domainID int) {
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
-	d.Set("content", errorPage.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(errorPage.Content))
 	d.Set("subdomain_name", errorPage.SubDomainName)
 	d.Set("created", errorPage.Created.Format(time.RFC3339))
 	d.Set("modified", errorPage.Modified.Format(time.RFC3339))
