@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -305,6 +306,48 @@ func validateActions(rd *schema.ResourceDiff) error {
 				return fmt.Errorf("custom_key and value are required for action %s", a["type"])
 			}
 		}
+		if a["type"] == "score" {
+			keys := []string{"+", "-", "*"}
+			if !StringInSlice(a["custom_key"].(string), keys) {
+				return fmt.Errorf("score key has to one of '+', '-', '*'")
+			}
+			_, err := strconv.Atoi(a["value"].(string))
+			if err != nil {
+				return fmt.Errorf("score values has to be a number")
+			}
+		}
+		if a["type"] == "origin_rate_limit" {
+			values := []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 3600, 10800, 21600, 43200, 64800, 86400}
+			key, err := strconv.Atoi(a["custom_key"].(string))
+			if err != nil {
+				return fmt.Errorf("origin_rate_limit custom_key must be a number")
+			}
+			valid := IntInSlice(key, values)
+			if !valid {
+				return fmt.Errorf(fmt.Sprintf("origin_rate_limit customKey must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ", ")))
+			}
+			_, err = strconv.Atoi(a["value"].(string))
+			if err != nil {
+				return fmt.Errorf("origin_rate_limit value must be a number")
+			}
+		}
+		if a["type"] == "set_http_status" {
+			values := []int{301, 302, 404}
+			key, err := strconv.Atoi(a["custom_key"].(string))
+			if err != nil {
+				return fmt.Errorf("set_http_status custom_key must be a number")
+			}
+			valid := IntInSlice(key, values)
+			if !valid {
+				return fmt.Errorf(fmt.Sprintf("set_http_status customKey must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ", ")))
+			}
+		}
+		if a["type"] == "remove_header_value_regex" {
+			_, err := regexp.MatchString(a["value"].(string), "")
+			if err != nil {
+				return fmt.Errorf("remove_header_value_regex value is not a valid regular expression, %s", err.Error())
+			}
+		}
 	}
 	return nil
 }
@@ -323,6 +366,19 @@ func validateConditions(rd *schema.ResourceDiff) error {
 				return fmt.Errorf("value is required for condition %s", c["name"])
 			}
 		}
+		if c["name"] == "score" {
+			_, err := strconv.Atoi(c["value"].(string))
+			if err != nil {
+				return fmt.Errorf("score value has to be a number")
+			}
+		}
+		if StringInSlice(c["matching_type"].(string), []string{"REGEX", "IREGEX", "NOT REGEX", "NOT IREGEX"}) {
+			_, err := regexp.MatchString(c["value"].(string), "")
+			if err != nil {
+				return fmt.Errorf("%s value is not a valid regular expression, %s", c["name"], err.Error())
+			}
+		}
+
 	}
 	return nil
 }
