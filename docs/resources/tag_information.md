@@ -17,6 +17,7 @@ resource "myrasec_tag_information" "example" {
 ## Import example
 Importing an existing tag information requires the tagID and the ID of the tag information you want to import.
 ```hcl
+// terraform import myrasec_tag_information.example {TAG_ID}:{INFORMATION_ID}
 terraform import myrasec_tag_information.example 0000000:0000000
 ```
 
@@ -24,7 +25,7 @@ terraform import myrasec_tag_information.example 0000000:0000000
 
 The following arguments are supported:
 
-* `tag_id` (*Computed*) ID of the tag.
+* `tag_id` (**Required**) ID of the tag.
 * `information_id` (*Computed*) ID of the tag information.
 * `created` (*Computed*) Date of creation.
 * `modified` (*Computed*) Date of last modification.
