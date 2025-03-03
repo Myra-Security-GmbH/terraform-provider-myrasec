@@ -89,11 +89,6 @@ func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.Resource
 		params["search"] = f.key
 	}
 
-	tags, err := listTags(meta, params)
-	if err != nil {
-		return err
-	}
-
 	informationData := make([]interface{}, 0)
 	if f.tagId > 0 {
 		information, diags := createInformationData(f.tagId, meta, params)
@@ -102,6 +97,11 @@ func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.Resource
 		}
 		informationData = append(informationData, information...)
 	} else {
+		tags, err := listTags(meta, params)
+		if err != nil {
+			return err
+		}
+
 		for _, tag := range tags {
 			information, diags := createInformationData(tag.ID, meta, params)
 			if diags.HasError() {
