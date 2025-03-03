@@ -30,10 +30,6 @@ func dataSourceMyrasecTagInformation() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"value": {
-							Type:     schema.TypeString,
-							Optional: true,
-						},
 					},
 				},
 			},
@@ -175,11 +171,6 @@ func parseTagInformationFilter(d interface{}) *tagInformationFilter {
 		f.key = key.(string)
 	}
 
-	value, ok := m["value"]
-	if ok {
-		f.value = value.(string)
-	}
-
 	return f
 }
 
@@ -219,5 +210,4 @@ func listTagInformation(tagId int, meta interface{}, params map[string]string) (
 type tagInformationFilter struct {
 	tagId int
 	key   string
-	value string
 }
