@@ -8,6 +8,7 @@ import (
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -16,7 +17,7 @@ import (
 func resourceMyrasecTagInformation() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecTagInformationCreate,
-		ReadContext:   resourceMyrasecTagInformationgRead,
+		ReadContext:   resourceMyrasecTagInformationRead,
 		UpdateContext: resourceMyrasecTagInformationUpdate,
 		DeleteContext: resourceMyrasecTagInformationDelete,
 		Importer: &schema.ResourceImporter{
@@ -255,6 +256,38 @@ func resourceMyrasecTagInformationImport(ctx context.Context, d *schema.Resource
 	resourceMyrasecTagInformationRead(ctx, d, meta)
 
 	return []*schema.ResourceData{d}, nil
+}
+
+// buildTagInformation ...
+func buildTagInformation(d *schema.ResourceData, meta interface{}) (*myrasec.TagInformation, error) {
+	information := &myrasec.TagInformation{
+		Key:     d.Get("key").(string),
+		Value:   d.Get("value").(string),
+		Comment: d.Get("value").(string),
+	}
+
+	if d.Get("information_id").(int) > 0 {
+		information.ID = d.Get("information_id").(int)
+	} else {
+		id, err := strconv.Atoi(d.Id())
+		if err == nil && id > 0 {
+			information.ID = id
+		}
+	}
+
+	created, err := types.ParseDate(d.Get("created").(string))
+	if err != nil {
+		return nil, err
+	}
+	information.Created = created
+
+	modified, err := types.ParseDate(d.Get("modified").(string))
+	if err != nil {
+		return nil, err
+	}
+	information.Modified = modified
+
+	return information, nil
 }
 
 // findTagInformation
