@@ -100,7 +100,7 @@ value = "SOME VALUE"
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
-name = "content_type|set_cookie"
+name = "content_type|set_cookie|fingerprint"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
 value = "SOME VALUE"
 ```
