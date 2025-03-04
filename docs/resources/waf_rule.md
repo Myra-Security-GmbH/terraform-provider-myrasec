@@ -61,18 +61,18 @@ The following arguments are supported:
 * `conditions.created` (*Computed*) Date of creation.
 * `conditions.modified` (*Computed*) Date of last modification.
 * `conditions.name` (**Required**)
-* `conditions.matching_type` (**Required**)
+* `conditions.matching_type` (**Required**)  
     IREGEX - Pattern matching using case insensitive regex  
-    REGEX - Pattern matching using case sensitive regex
-    NOT IREGEX - Pattern not matching using case insensitive regex
-    NOT REGEX - Pattern not matching using case sensitive regex
-
+    REGEX - Pattern matching using case sensitive regex  
+    NOT IREGEX - Pattern not matching using case insensitive regex  
+    NOT REGEX - Pattern not matching using case sensitive regex  
+  
     EXACT - String matching using the whole string verbatim  
     SUFFIX - String matching at the end  
     PREFIX - String matching from the beginning  
-    NOT EXACT - String not matching using the whole string verbatim
-    NOT SUFFIX - String not matching at the end
-    NOT PREFIX - String not matching from the beginning
+    NOT EXACT - String not matching using the whole string verbatim  
+    NOT SUFFIX - String not matching at the end  
+    NOT PREFIX - String not matching from the beginning  
 * `conditions.value` (**Required**)
 * `conditions.key` (Depends on the type)
 
