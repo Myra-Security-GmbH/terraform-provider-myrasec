@@ -50,10 +50,6 @@ func dataSourceMyrasecErrorPages() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"content": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -102,7 +98,6 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 			"created":        created,
 			"modified":       modified,
 			"error_code":     ep.ErrorCode,
-			"content":        ep.Content,
 			"subdomain_name": ep.SubDomainName,
 		}
 

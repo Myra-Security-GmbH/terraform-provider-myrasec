@@ -50,7 +50,7 @@ func dataSourceMyrasecMaintenanceTemplates() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"content": {
+						"content_hash": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -93,11 +93,11 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 		}
 
 		data := map[string]interface{}{
-			"id":       mt.ID,
-			"created":  created,
-			"modified": modified,
-			"name":     mt.Name,
-			"content":  mt.Content,
+			"id":           mt.ID,
+			"created":      created,
+			"modified":     modified,
+			"name":         mt.Name,
+			"content_hash": createContentHash(mt.Content),
 		}
 		maintenanceTemplateData = append(maintenanceTemplateData, data)
 	}

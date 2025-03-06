@@ -56,7 +56,7 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 			},
 			"name": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the maintenance template.",
 			},
 			"content": {

@@ -189,7 +189,5 @@ func formatError(err error) string {
 func createContentHash(content string) string {
 	h := sha256.New()
 	h.Write([]byte(content))
-	bs := h.Sum(nil)
-	hash := fmt.Sprintf("%x", bs)
-	return hash
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

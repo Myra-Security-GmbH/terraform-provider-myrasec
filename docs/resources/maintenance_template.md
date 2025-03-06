@@ -29,3 +29,4 @@ The following arguments are supporeted:
 * `domain_name` (**Required**) The domain name for the maintenance template.
 * `name` (**Required**) The name of the maintenance template.
 * `content` (**Required**) The HTML content of the maintenance template.
+* `content_hash` (*Computed*) In the tfstate file only the hash of the content is stored.

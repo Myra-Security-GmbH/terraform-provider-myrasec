@@ -31,6 +31,6 @@ The following arguments are supported
 * `modified` Date of last modification.
 * `active` Status of the maintenance
 * `subdomain_name` The subdomain name of the maintenance
-* `content` The HTML content of the maintenance
 * `start` The start date of the maintenance
 * `end` The end date of the maintenance
+* `content_bash` To reduce the data in the tfstate file, only the sha256 hash of the content is stored
