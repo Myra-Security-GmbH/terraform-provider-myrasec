@@ -48,23 +48,23 @@ func dataSourceMyrasecMaintenances() *schema.Resource {
 						},
 						"start": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"end": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"active": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Computed: true,
 						},
-						"content": {
+						"content_hash": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 					},
 				},
@@ -111,7 +111,7 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 			"start":          mp.Start.Format(time.RFC3339),
 			"end":            mp.End.Format(time.RFC3339),
 			"active":         mp.Active,
-			"content":        mp.Content,
+			"content_hash":   createContentHash(mp.Content),
 			"subdomain_name": mp.FQDN,
 		}
 		maintenanceData = append(maintenanceData, data)

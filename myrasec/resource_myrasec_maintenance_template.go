@@ -56,13 +56,22 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 			},
 			"name": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the maintenance template.",
 			},
 			"content": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "HTML content of the maintenance template.",
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
+				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -266,7 +275,8 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 	d.Set("domain_name", domainName)
 	d.Set("maintenance_id", template.ID)
 	d.Set("name", template.Name)
-	d.Set("content", template.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(template.Content))
 
 	resourceMyrasecMaintenanceTemplateRead(ctx, d, meta)
 
@@ -356,6 +366,7 @@ func setMaintenanceTemplateData(d *schema.ResourceData, template *myrasec.Mainte
 	d.Set("created", template.Created.Format(time.RFC3339))
 	d.Set("modified", template.Modified.Format(time.RFC3339))
 	d.Set("name", template.Name)
-	d.Set("content", template.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(template.Content))
 	d.Set("domain_id", domainID)
 }

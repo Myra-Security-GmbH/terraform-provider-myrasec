@@ -47,6 +47,5 @@ The following arguments are supported:
 * `max_concurrent` The maximum number of visitors allowed on the Origin server at the same time. As soon as this value is exceeded, each additional visitor is directed to the waiting room.
 * `session_timeout` Defines the duration in seconds during which an inactive session may access the Origin server. If the same session does not access the server again during this time, access for that session will be disabled.
 * `wait_refresh` Defines the duration in seconds after which the waiting page is reloaded. If the session is not accessed again after the third reload, the session will be removed from the queue.
-* `content` The HTML content of the Waiting Room.
 
 Note: Content is not part of data source, it is only available in resource.

@@ -39,3 +39,4 @@ The following arguments are supported:
 * `wait_refresh` (**Required**) Defines the duration in seconds after which the waiting page is reloaded. If the session is not accessed again after the third reload, the session will be removed from the queue.
 * `paths` (**Required**) Defines a specific path within the apex domain or subdomain for which the waiting room is to be valid. The path needs to be defined as a regular expression. The default value in the PATH field is ".". If the default value "." is used as the path, the waiting pages and settings of all waiting rooms with a specific path of the corresponding apex domain or subdomain are overwritten.
 * `content` (**Required**) The HTML content of the Waiting Room.
+* `content_hash` (*Computed*) In the tfstate file only the hash of the content is stored.

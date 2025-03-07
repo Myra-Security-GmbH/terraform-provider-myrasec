@@ -31,3 +31,4 @@ The following arguments are supported:
 * `subdomain_name` (**Required**) The Subdomain for the error page. To point to the "General domain", you can use the `ALL-0000` (where `0000` is the ID of the domain).
 * `error_code` (**Required**) Error code of the error page. Valid codes are: `400`, `405`, `429`, `500`, `502`, `503`, `504` and `9999` for `blocked`.
 * `content` (**Required**) HTML content of the error page.
+* `content_hash` (*Computed*) In the tfstate file only the hash of the content is stored.

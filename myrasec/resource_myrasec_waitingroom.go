@@ -65,6 +65,15 @@ func resourceMyrasecWaitingRoom() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Content of the waiting room.",
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
+				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"paths": {
 				Type:        schema.TypeSet,
@@ -401,5 +410,6 @@ func setWaitingRoomData(d *schema.ResourceData, waitingRoom *myrasec.WaitingRoom
 	d.Set("session_timeout", waitingRoom.SessionTimeout)
 	d.Set("wait_refresh", waitingRoom.WaitRefresh)
 	d.Set("paths", waitingRoom.Paths)
-	d.Set("content", waitingRoom.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(waitingRoom.Content))
 }
