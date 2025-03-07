@@ -33,4 +33,4 @@ The following arguments are supported
 * `subdomain_name` The subdomain name of the maintenance
 * `start` The start date of the maintenance
 * `end` The end date of the maintenance
-* `content_bash` To reduce the data in the tfstate file, only the sha256 hash of the content is stored
+* `content_hash` To reduce the data in the tfstate file, only the sha256 hash of the content is stored
