@@ -23,7 +23,6 @@ resource "myrasec_tag_waf_rule" "tag_waf" {
       value         = "blockme"
   }
   actions {
-    name = "Block"
     type = "block"
   }
 }
@@ -59,13 +58,18 @@ The following arguments are supported:
 * `conditions.created` (*Computed*) Date of creation.
 * `conditions.modified` (*Computed*) Date of last modification.
 * `conditions.name` (**Required**)
-* `conditions.matching_type` (**Required**)
+* `conditions.matching_type` (**Required**)  
     IREGEX - Pattern matching using case insensitive regex  
-    REGEX - Pattern matching using case sensitive regex
-
+    REGEX - Pattern matching using case sensitive regex  
+    NOT IREGEX - Pattern not matching using case insensitive regex  
+    NOT REGEX - Pattern not matching using case sensitive regex  
+  
     EXACT - String matching using the whole string verbatim  
     SUFFIX - String matching at the end  
     PREFIX - String matching from the beginning  
+    NOT EXACT - String not matching using the whole string verbatim  
+    NOT SUFFIX - String not matching at the end  
+    NOT PREFIX - String not matching from the beginning  
 * `conditions.value` (**Required**)
 * `conditions.key` (Depends on the type)
 
@@ -82,7 +86,7 @@ The following arguments are supported:
 ### Valid conditions for `direction` = `in` (request)
 ```hcl
 name = "accept|accept_encoding|fingerprint|host|method|querystring|remote_addr|url|user_agent"
-matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
+matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 value = "SOME VALUE"
 ```
 ```hcl
@@ -92,14 +96,14 @@ value = "1"
 ```
 ```hcl
 name = "arg|cookie|custom_header|postarg"
-matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
+matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 key = "SOME KEY"
 value = "SOME VALUE"
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
 name = "content_type|fingerprint|remote_addr|set_cookie"
-matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
+matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 value = "SOME VALUE"
 ```
 ```hcl
@@ -109,7 +113,7 @@ value = "1"
 ```
 ```hcl
 name = "custom_header"
-matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX"
+matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 key = "SOME KEY"
 value = "SOME VALUE"
 ```

@@ -2,8 +2,6 @@
 
 Provides a Myra Security WAF rule resource.
 
--> **WAF rules are not fully supported, please use api instead**
-
 ## Example usage
 
 ```hcl
@@ -23,7 +21,6 @@ resource "myrasec_waf_rule" "waf" {
       value         = "blockme"
   }
   actions {
-    name = "Block"
     type = "block"
   }
 }
@@ -88,7 +85,7 @@ The following arguments are supported:
 ## Available WAF condtions
 ### Valid conditions for `direction` = `in` (request)
 ```hcl
-name = "accept|accept_encoding|fingerprint|host|method|querystring|remote_addr|url|user_agent"
+name = "accept|accept_encoding|fingerprint|host|method|querystring|querystring_decode|remote_addr|url|user_agent"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 value = "SOME VALUE"
 ```
@@ -102,6 +99,11 @@ name = "arg|cookie|custom_header|postarg"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 key = "SOME KEY"
 value = "SOME VALUE"
+```
+```hcl
+name = "country"
+matching_type = "EQUALS|NOT_EQUALS"
+value = "DE,CH,AT" // ISO 3166 alpha 2 country codes 
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
@@ -119,17 +121,17 @@ value = "SOME VALUE"
 ## Available WAF actions
 ### Valid actions for `direction` = `in` (request)
 ```hcl
-type = "change_upstream|remove_header"
+type = "change_upstream|remove_header|del_qs_param"
 value = "SOME VALUE"
 ```
 ```hcl
-type = "add_header|modify_header|uri_subst"
+type = "add_header|modify_header|remove_header_value_regex|uri_subst"
 custom_key = "SOME KEY"
 value = "SOME VALUE"
 ```
 ```hcl
 type = "origin_rate_limit"
-custom_key = "1|2|5|10|15|30|45|60|120|180|300|600|1200|3600"
+custom_key = "1|2|5|10|15|30|45|60|120|180|300|600|1200|3600|10800|21600|43200|64800|86400"
 value = "1"
 ```
 ```hcl

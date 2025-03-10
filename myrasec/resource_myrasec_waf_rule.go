@@ -139,18 +139,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Default:     1,
 				Description: "The order in which the rules take action.",
 			},
-			"sync": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
-			},
-			"template": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
-			},
 			"process_next": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -571,7 +559,6 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		LogIdentifier: d.Get("log_identifier").(string),
 		Direction:     d.Get("direction").(string),
 		Sort:          d.Get("sort").(int),
-		Sync:          d.Get("sync").(bool),
 		ProcessNext:   d.Get("process_next").(bool),
 		Enabled:       d.Get("enabled").(bool),
 		RuleType:      "domain",
@@ -765,7 +752,6 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("log_identifier", rule.LogIdentifier)
 	d.Set("direction", rule.Direction)
 	d.Set("sort", rule.Sort)
-	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 	d.Set("domain_id", domainID)
