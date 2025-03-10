@@ -55,8 +55,6 @@ The following arguments are supported:
 
 ### WAF rule conditions arguments
 * `conditions.condition_id` (*Computed*) ID of the WAF rule condition.
-* `conditions.created` (*Computed*) Date of creation.
-* `conditions.modified` (*Computed*) Date of last modification.
 * `conditions.name` (**Required**)
 * `conditions.matching_type` (**Required**)  
     IREGEX - Pattern matching using case insensitive regex  
@@ -72,11 +70,10 @@ The following arguments are supported:
     NOT PREFIX - String not matching from the beginning  
 * `conditions.value` (**Required**)
 * `conditions.key` (Depends on the type)
+* `conditions.alias` (*Computed*) An alias for the name of this condition
+* `conditions.category` (*Computed*) The category of this condition
 
 ### WAF rule actions arguments
-* `actions.action_id` (*Computed*) ID of the WAF rule action.
-* `actions.created` (*Computed*) Date of creation.
-* `actions.modified` (*Computed*) Date of last modification.
 * `actions.type` (**Required**)
 * `actions.value` (**Required**)
 * `actions.custom_key` (Depends on the type)
@@ -154,13 +151,13 @@ type = "change_upstream|remove_header"
 value = "SOME VALUE"
 ```
 ```hcl
-type = "add_header|modify_header|uri_subst"
+type = "add_header|modify_header|remove_header_value_regex|uri_subst"
 custom_key = "SOME KEY"
 value = "SOME VALUE"
 ```
 ```hcl
 type = "origin_rate_limit"
-custom_key = "1|2|5|10|15|30|45|60|120|180|300|600|1200|3600"
+custom_key = "1|2|5|10|15|30|45|60|120|180|300|600|1200|3600|10800|21600|43200|64800|86400"
 value = "1"
 ```
 ```hcl

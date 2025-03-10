@@ -161,16 +161,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 							Computed:    true,
 							Description: "ID of the WAF rule condition.",
 						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
 						"alias": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -203,27 +193,8 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action_id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the WAF rule.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
 						"force_custom_values": {
 							Type:     schema.TypeBool,
-							Computed: true,
-						},
-						"available_phases": {
-							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"name": {
@@ -627,18 +598,6 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 		switch key {
 		case "condition_id":
 			c.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Created = created
 		case "alias":
 			c.Alias = val.(string)
 		case "category":
@@ -662,28 +621,12 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	a := &myrasec.WAFAction{}
 	for key, val := range action.(map[string]interface{}) {
 		switch key {
-		case "action_id":
-			a.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Created = created
 		case "force_custom_values":
 			a.ForceCustomValues = val.(bool)
 		case "name":
 			a.Name = val.(string)
 		case "type":
 			a.Type = val.(string)
-		case "available_phases":
-			a.AvailablePhases = val.(int)
 		case "custom_key":
 			a.CustomKey = val.(string)
 		case "value":
@@ -769,15 +712,6 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 			"key":           condition.Key,
 			"value":         condition.Value,
 		}
-
-		if condition.Created != nil {
-			c["created"] = condition.Created.Format(time.RFC3339)
-		}
-
-		if condition.Modified != nil {
-			c["modified"] = condition.Modified.Format(time.RFC3339)
-		}
-
 		conditions = append(conditions, c)
 	}
 	d.Set("conditions", conditions)
@@ -785,21 +719,11 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	actions := []interface{}{}
 	for _, action := range rule.Actions {
 		a := map[string]interface{}{
-			"action_id":           action.ID,
-			"force_custom_values": action.ForceCustomValues,
-			"available_phases":    action.AvailablePhases,
 			"name":                action.Name,
+			"force_custom_values": action.ForceCustomValues,
 			"type":                action.Type,
 			"value":               action.Value,
 			"custom_key":          action.CustomKey,
-		}
-
-		if action.Created != nil {
-			a["created"] = action.Created.Format(time.RFC3339)
-		}
-
-		if action.Modified != nil {
-			a["modified"] = action.Modified.Format(time.RFC3339)
 		}
 		actions = append(actions, a)
 	}
