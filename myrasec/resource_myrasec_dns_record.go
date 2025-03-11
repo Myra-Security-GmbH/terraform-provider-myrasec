@@ -89,8 +89,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"record_type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA", "PTR"}, false),
-				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV, CAA and PTR.",
+				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA", "PTR", "DS"}, false),
+				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV, CAA , PTR and DS.",
 			},
 			"alternative_cname": {
 				Type:        schema.TypeString,
@@ -152,6 +152,36 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "Port for SRV records.",
+			},
+			"weight": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Weight for SRV records.",
+			},
+			"caa_tag": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Tag value for `CAA` records. Available values are `issue`, `issuewild`, `issuemail`, `issuevmc`, `iodef`, `contactemail` and `contactphone`.",
+			},
+			"caa_flags": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Flags value for `CAA` records.",
+			},
+			"encryption": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Encryption for `DS` records. Available values are `3` (DSA/SHA1), `5` (RSA/SHA1), `6` (DSA-NSEC3-SHA1), `7` (RSASHA1-NSEC3-SHA1), `8` (RSA/SHA-256), `10` (RSA/SHA-512), `12` (GOST R 35.10-2001), `13` (ECDSA-P256/SHA256), `14` (ECDSA-P384/SHA384), `15` (ED25519) and `16` (ED448).",
+			},
+			"hash_type": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Hash type for `DS` records. Available values are `1` (SHA-1), `2` (SHA-256), `3` (GOST R 34.11-94) and `4` (SHA-384).",
+			},
+			"identificationnumber": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "ID (key tag) for `DS` records.",
 			},
 			"upstream_options": {
 				Type:     schema.TypeList,
@@ -541,16 +571,22 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 // buildDNSRecord ...
 func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecord, error) {
 	record := &myrasec.DNSRecord{
-		Name:             d.Get("name").(string),
-		Value:            d.Get("value").(string),
-		RecordType:       d.Get("record_type").(string),
-		TTL:              d.Get("ttl").(int),
-		AlternativeCNAME: d.Get("alternative_cname").(string),
-		Active:           d.Get("active").(bool),
-		Enabled:          d.Get("enabled").(bool),
-		Priority:         d.Get("priority").(int),
-		Port:             d.Get("port").(int),
-		Comment:          d.Get("comment").(string),
+		Name:                 d.Get("name").(string),
+		Value:                d.Get("value").(string),
+		RecordType:           d.Get("record_type").(string),
+		TTL:                  d.Get("ttl").(int),
+		AlternativeCNAME:     d.Get("alternative_cname").(string),
+		Active:               d.Get("active").(bool),
+		Enabled:              d.Get("enabled").(bool),
+		Priority:             d.Get("priority").(int),
+		Port:                 d.Get("port").(int),
+		Comment:              d.Get("comment").(string),
+		Weight:               d.Get("weight").(int),
+		CAATag:               d.Get("caa_tag").(string),
+		CAAFlags:             d.Get("caa_flags").(int),
+		Encryption:           d.Get("encryption").(string),
+		HashType:             d.Get("hash_type").(string),
+		IdentificationNumber: d.Get("identificationnumber").(int),
 	}
 
 	if d.Get("record_id").(int) > 0 {
