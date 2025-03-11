@@ -30,3 +30,4 @@ The following arguments are supported:
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `name` The name of the WAF action.
+* `available_phases` The allowed phases where this condition can be used. `1`: Request|in, `2`: Response|out, `3`: both

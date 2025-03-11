@@ -50,7 +50,7 @@ The following arguments are supported:
 * `sort` (Optional) The order in which the rules take action. Default `1`. Sort has to be unique to the WAF rule, two rules for same ```subdomain_name``` cannot share the same `sort` value
 * `process_next` (Optional) After a rule has been applied, the rule chain will be executed as determined. Default `false`.
 * `enabled` Define wether this rule is enabled or not. (Optional) Default `true`.
-* `conditions` (**Required**) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.
+* `conditions` (Optional) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.
 * `actions` (**Required**) Refers to actions that are executed when all conditions of a rule are true. See below for argument reference.
 
 ### WAF rule conditions arguments
@@ -72,11 +72,14 @@ The following arguments are supported:
 * `conditions.key` (Depends on the type)
 * `conditions.alias` (*Computed*) An alias for the name of this condition
 * `conditions.category` (*Computed*) The category of this condition
+* `conditions.available_phases` (*Computed*) The allowed phases where this condition can be used. `1`: Request|in, `2`: Response|out, `3`: both
 
 ### WAF rule actions arguments
 * `actions.type` (**Required**)
 * `actions.value` (**Required**)
 * `actions.custom_key` (Depends on the type)
+* `actions.name` (*Computed*) The name of the action.
+* `actions.available_phases` (*Computed*) The allowed phases where this action can be used. `1`: Request|in, `2`: Response|out, `3`: both
 
 
 ## Available WAF condtions
@@ -100,11 +103,11 @@ value = "SOME VALUE"
 ```hcl
 name = "country"
 matching_type = "EQUALS|NOT_EQUALS"
-value = "DE,CH,AT" // ISO 3166 alpha 2 country codes 
+value = "DE,CH,AT" // ISO 3166 alpha 2 country codes
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
-name = "content_type|set_cookie|fingerprint"
+name = "content_type|fingerprint|remote_addr|set_cookie"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 value = "SOME VALUE"
 ```

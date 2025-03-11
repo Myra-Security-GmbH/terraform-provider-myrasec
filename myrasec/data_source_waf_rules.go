@@ -85,8 +85,8 @@ func dataSourceMyrasecWAFRules() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"template": {
-							Type:     schema.TypeBool,
+						"copiedFrom": {
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"process_next": {
@@ -217,7 +217,6 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 			"rule_type":      r.RuleType,
 			"sort":           r.Sort,
 			"sync":           r.Sync,
-			"template":       r.Template,
 		}
 
 		if r.ExpireDate != nil {

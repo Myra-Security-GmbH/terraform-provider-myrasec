@@ -193,8 +193,8 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"force_custom_values": {
-							Type:     schema.TypeBool,
+						"available_phases": {
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"name": {
@@ -621,8 +621,6 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	a := &myrasec.WAFAction{}
 	for key, val := range action.(map[string]interface{}) {
 		switch key {
-		case "force_custom_values":
-			a.ForceCustomValues = val.(bool)
 		case "name":
 			a.Name = val.(string)
 		case "type":
@@ -700,32 +698,42 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("domain_id", domainID)
 	d.Set("rule_type", rule.RuleType)
 
-	conditions := []interface{}{}
-	for _, condition := range rule.Conditions {
+	conditions := createConditions(rule.Conditions)
+	d.Set("conditions", conditions)
 
+	actions := createActions(rule.Actions)
+	d.Set("actions", actions)
+}
+
+func createConditions(ruleConditions []*myrasec.WAFCondition) []interface{} {
+	conditions := []interface{}{}
+	for _, condition := range ruleConditions {
 		c := map[string]interface{}{
-			"condition_id":  condition.ID,
-			"alias":         condition.Alias,
-			"category":      condition.Category,
-			"matching_type": condition.MatchingType,
-			"name":          condition.Name,
-			"key":           condition.Key,
-			"value":         condition.Value,
+			"condition_id":     condition.ID,
+			"alias":            condition.Alias,
+			"category":         condition.Category,
+			"matching_type":    condition.MatchingType,
+			"name":             condition.Name,
+			"key":              condition.Key,
+			"value":            condition.Value,
+			"available_phases": condition.AvailablePhases,
 		}
 		conditions = append(conditions, c)
 	}
-	d.Set("conditions", conditions)
+	return conditions
+}
 
+func createActions(ruleActions []*myrasec.WAFAction) []interface{} {
 	actions := []interface{}{}
-	for _, action := range rule.Actions {
+	for _, action := range ruleActions {
 		a := map[string]interface{}{
-			"name":                action.Name,
-			"force_custom_values": action.ForceCustomValues,
-			"type":                action.Type,
-			"value":               action.Value,
-			"custom_key":          action.CustomKey,
+			"available_phases": action.AvailablePhases,
+			"name":             action.Name,
+			"type":             action.Type,
+			"value":            action.Value,
+			"custom_key":       action.CustomKey,
 		}
 		actions = append(actions, a)
 	}
-	d.Set("actions", actions)
+	return actions
 }
