@@ -112,15 +112,15 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 							Computed: true,
 						},
 						"encryption": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"hash_type": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"identificationnumber": {
-							Type:     schema.TypeString,
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"upstream_options": {
