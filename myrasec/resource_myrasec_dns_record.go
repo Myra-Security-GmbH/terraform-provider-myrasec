@@ -712,6 +712,12 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.Set("created", record.Created.Format(time.RFC3339))
 	d.Set("modified", record.Modified.Format(time.RFC3339))
 	d.Set("comment", record.Comment)
+	d.Set("weight", record.Weight)
+	d.Set("caa_tag", record.CAATag)
+	d.Set("caa_flags", record.CAAFlags)
+	d.Set("encryption", record.Encryption)
+	d.Set("hash_type", record.HashType)
+	d.Set("identificationnumber", record.IdentificationNumber)
 	d.Set("domain_name", domainName)
 	d.Set("domain_id", domainID)
 
