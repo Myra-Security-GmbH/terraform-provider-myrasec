@@ -26,8 +26,8 @@ The following arguments are supported:
 * `conditions` A list of WAF conditions.
 
 ### conditions
-* `id` The ID of the WAF action.
+* `id` The ID of the WAF condition.
 * `created` Date of creation.
 * `modified` Date of last modification.
-* `name` The name of the WAF action.
+* `name` The name of the WAF condition.
 * `available_phases` The allowed phases where this condition can be used. `1`: Request|in, `2`: Response|out, `3`: both
