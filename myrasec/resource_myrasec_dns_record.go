@@ -169,17 +169,17 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Description: "Flags value for `CAA` records.",
 			},
 			"encryption": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "Encryption for `DS` records. Available values are `3` (DSA/SHA1), `5` (RSA/SHA1), `6` (DSA-NSEC3-SHA1), `7` (RSASHA1-NSEC3-SHA1), `8` (RSA/SHA-256), `10` (RSA/SHA-512), `12` (GOST R 35.10-2001), `13` (ECDSA-P256/SHA256), `14` (ECDSA-P384/SHA384), `15` (ED25519) and `16` (ED448).",
 			},
 			"hash_type": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "Hash type for `DS` records. Available values are `1` (SHA-1), `2` (SHA-256), `3` (GOST R 34.11-94) and `4` (SHA-384).",
 			},
 			"identificationnumber": {
-				Type:        schema.TypeString,
+				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "ID (key tag) for `DS` records.",
 			},
@@ -584,8 +584,8 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 		Weight:               d.Get("weight").(int),
 		CAATag:               d.Get("caa_tag").(string),
 		CAAFlags:             d.Get("caa_flags").(int),
-		Encryption:           d.Get("encryption").(string),
-		HashType:             d.Get("hash_type").(string),
+		Encryption:           d.Get("encryption").(int),
+		HashType:             d.Get("hash_type").(int),
 		IdentificationNumber: d.Get("identificationnumber").(int),
 	}
 
