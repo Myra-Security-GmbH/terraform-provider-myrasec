@@ -41,7 +41,7 @@ The following arguments are supported:
 * `created` (*Computed*) Date of creation.
 * `modified` (*Computed*) Date of last modification.
 * `domain_name` (**Required**) The Domain for the DNS record.
-* `record_type` (**Required**) A record type to identify the type of a record. Valid types are: `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SRV`, `CAA` and `PTR`.
+* `record_type` (**Required**) A record type to identify the type of a record. Valid types are: `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SRV`, `CAA`, `PTR` and `DS`.
 * `name` (**Required**) Subdomain name of a DNS record.
 * `value` (**Required**) Depends on the record type. Typically an IPv4/6 address or a domain entry.
 * `ttl` (**Required**) Time to live.
@@ -50,6 +50,12 @@ The following arguments are supported:
 * `enabled` (Optional) Define whether this DNS record is enabled or not. Default `true`.
 * `priority` (Optional) Priority of MX records.
 * `port` (Optional) Port for SRV records.
+* `weight` (Optional) Weight for SRV records.  
+* `caa_tag` (Optional) Tag value for CAA records. Available values are `issue`, `issuewild`, `issuemail`, `issuevmc`, `iodef`, `contactemail` and `contactphone`.  
+* `caa_flags` (Optional) Flags value for CAA records.  
+* `encryption` (Optional) Encryption for DS records. Available values are `3` (DSA/SHA1), `5` (RSA/SHA1), `6` (DSA-NSEC3-SHA1), `7` (RSASHA1-NSEC3-SHA1), `8` (RSA/SHA-256), `10` (RSA/SHA-512), `12` (GOST R 35.10-2001), `13` (ECDSA-P256/SHA256), `14` (ECDSA-P384/SHA384), `15` (ED25519) and `16` (ED448).  
+* `hash_type` (Optional) Hash type for DS records. Available values are `1` (SHA-1), `2` (SHA-256), `3` (GOST R 34.11-94) and `4` (SHA-384).  
+* `identificationnumber` (Optional) ID (key tag) for DS records.  
 * `comment` (Optional) A comment to describe this DNS record. Default `""`.
 * `upstream_options` (Optional) Loadbalancing settings.
 * `upstream_options.upstream_id` (*Computed*) ID of the upstream settings.
