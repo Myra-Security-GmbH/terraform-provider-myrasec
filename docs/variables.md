@@ -54,6 +54,7 @@ variable "myrasec_dns_record-record_type" {
     "SRV"   = "SRV"
     "CAA"   = "CAA"
     "PTR"   = "PTR"
+    "DS"    = "DS"
   }
 }
 
