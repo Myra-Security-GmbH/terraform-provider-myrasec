@@ -8,7 +8,6 @@ Provides a Myra Security waitingroom resource.
 # Create a new waitingroom
 resource "myrasec_waitingroom" "waitingroom" {
    name = "test"
-   vhost_id = 123
    subdomain_name = "www.example.com"
    max_concurrent = 100
    session_timeout = 60
