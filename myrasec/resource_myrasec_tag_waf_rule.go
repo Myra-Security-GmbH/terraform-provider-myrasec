@@ -123,20 +123,6 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 							Computed:    true,
 							Description: "ID of the WAF rule condition.",
 						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -174,25 +160,6 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action_id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the WAF rule.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Optional: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -564,53 +531,9 @@ func setTagWAFRuleData(d *schema.ResourceData, rule *myrasec.TagWAFRule) {
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 
-	conditions := []interface{}{}
-	for _, condition := range rule.Conditions {
-
-		c := map[string]interface{}{
-			"condition_id":        condition.ID,
-			"force_custom_values": condition.ForceCustomValues,
-			"available_phases":    condition.AvailablePhases,
-			"alias":               condition.Alias,
-			"category":            condition.Category,
-			"matching_type":       condition.MatchingType,
-			"name":                condition.Name,
-			"key":                 condition.Key,
-			"value":               condition.Value,
-		}
-
-		if condition.Created != nil {
-			c["created"] = condition.Created.Format(time.RFC3339)
-		}
-
-		if condition.Modified != nil {
-			c["modified"] = condition.Modified.Format(time.RFC3339)
-		}
-
-		conditions = append(conditions, c)
-	}
+	conditions := createConditions(rule.Conditions)
 	d.Set("conditions", conditions)
 
-	actions := []interface{}{}
-	for _, action := range rule.Actions {
-		a := map[string]interface{}{
-			"action_id":           action.ID,
-			"force_custom_values": action.ForceCustomValues,
-			"available_phases":    action.AvailablePhases,
-			"name":                action.Name,
-			"type":                action.Type,
-			"value":               action.Value,
-			"custom_key":          action.CustomKey,
-		}
-
-		if action.Created != nil {
-			a["created"] = action.Created.Format(time.RFC3339)
-		}
-
-		if action.Modified != nil {
-			a["modified"] = action.Modified.Format(time.RFC3339)
-		}
-		actions = append(actions, a)
-	}
+	actions := createActions(rule.Actions)
 	d.Set("actions", actions)
 }

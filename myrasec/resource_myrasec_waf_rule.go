@@ -139,18 +139,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Default:     1,
 				Description: "The order in which the rules take action.",
 			},
-			"sync": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
-			},
-			"template": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
-			},
 			"process_next": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -172,16 +160,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 							Type:        schema.TypeInt,
 							Computed:    true,
 							Description: "ID of the WAF rule condition.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
 						},
 						"alias": {
 							Type:     schema.TypeString,
@@ -215,25 +193,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action_id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the WAF rule.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -571,7 +530,6 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		LogIdentifier: d.Get("log_identifier").(string),
 		Direction:     d.Get("direction").(string),
 		Sort:          d.Get("sort").(int),
-		Sync:          d.Get("sync").(bool),
 		ProcessNext:   d.Get("process_next").(bool),
 		Enabled:       d.Get("enabled").(bool),
 		RuleType:      "domain",
@@ -640,18 +598,6 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 		switch key {
 		case "condition_id":
 			c.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Created = created
 		case "alias":
 			c.Alias = val.(string)
 		case "category":
@@ -675,28 +621,10 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 	a := &myrasec.WAFAction{}
 	for key, val := range action.(map[string]interface{}) {
 		switch key {
-		case "action_id":
-			a.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Created = created
-		case "force_custom_values":
-			a.ForceCustomValues = val.(bool)
 		case "name":
 			a.Name = val.(string)
 		case "type":
 			a.Type = val.(string)
-		case "available_phases":
-			a.AvailablePhases = val.(int)
 		case "custom_key":
 			a.CustomKey = val.(string)
 		case "value":
@@ -765,57 +693,47 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("log_identifier", rule.LogIdentifier)
 	d.Set("direction", rule.Direction)
 	d.Set("sort", rule.Sort)
-	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 	d.Set("domain_id", domainID)
 	d.Set("rule_type", rule.RuleType)
 
-	conditions := []interface{}{}
-	for _, condition := range rule.Conditions {
-
-		c := map[string]interface{}{
-			"condition_id":  condition.ID,
-			"alias":         condition.Alias,
-			"category":      condition.Category,
-			"matching_type": condition.MatchingType,
-			"name":          condition.Name,
-			"key":           condition.Key,
-			"value":         condition.Value,
-		}
-
-		if condition.Created != nil {
-			c["created"] = condition.Created.Format(time.RFC3339)
-		}
-
-		if condition.Modified != nil {
-			c["modified"] = condition.Modified.Format(time.RFC3339)
-		}
-
-		conditions = append(conditions, c)
-	}
+	conditions := createConditions(rule.Conditions)
 	d.Set("conditions", conditions)
 
+	actions := createActions(rule.Actions)
+	d.Set("actions", actions)
+}
+
+func createConditions(ruleConditions []*myrasec.WAFCondition) []interface{} {
+	conditions := []interface{}{}
+	for _, condition := range ruleConditions {
+		c := map[string]interface{}{
+			"condition_id":     condition.ID,
+			"alias":            condition.Alias,
+			"category":         condition.Category,
+			"matching_type":    condition.MatchingType,
+			"name":             condition.Name,
+			"key":              condition.Key,
+			"value":            condition.Value,
+			"available_phases": condition.AvailablePhases,
+		}
+		conditions = append(conditions, c)
+	}
+	return conditions
+}
+
+func createActions(ruleActions []*myrasec.WAFAction) []interface{} {
 	actions := []interface{}{}
-	for _, action := range rule.Actions {
+	for _, action := range ruleActions {
 		a := map[string]interface{}{
-			"action_id":           action.ID,
-			"force_custom_values": action.ForceCustomValues,
-			"available_phases":    action.AvailablePhases,
-			"name":                action.Name,
-			"type":                action.Type,
-			"value":               action.Value,
-			"custom_key":          action.CustomKey,
-		}
-
-		if action.Created != nil {
-			a["created"] = action.Created.Format(time.RFC3339)
-		}
-
-		if action.Modified != nil {
-			a["modified"] = action.Modified.Format(time.RFC3339)
+			"available_phases": action.AvailablePhases,
+			"name":             action.Name,
+			"type":             action.Type,
+			"value":            action.Value,
+			"custom_key":       action.CustomKey,
 		}
 		actions = append(actions, a)
 	}
-	d.Set("actions", actions)
+	return actions
 }

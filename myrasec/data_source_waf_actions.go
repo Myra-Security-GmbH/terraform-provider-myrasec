@@ -34,10 +34,6 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
 						"modified": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -51,14 +47,6 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 							Computed: true,
 						},
 						"type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"custom_key": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -106,15 +94,12 @@ func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData
 		}
 
 		wafActionData = append(wafActionData, map[string]interface{}{
-			"id":                  r.ID,
 			"created":             r.Created.Format(time.RFC3339),
 			"modified":            r.Modified.Format(time.RFC3339),
 			"name":                r.Name,
 			"available_phases":    r.AvailablePhases,
-			"custom_key":          r.CustomKey,
 			"force_custom_values": r.ForceCustomValues,
 			"type":                r.Type,
-			"value":               r.Value,
 		})
 	}
 
