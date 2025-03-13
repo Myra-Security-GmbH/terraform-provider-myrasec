@@ -110,7 +110,6 @@ func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", info.ID))
 	setTagInformationData(d, info, tagID.(int))
 
 	return diags
