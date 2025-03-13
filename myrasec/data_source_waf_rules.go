@@ -85,7 +85,7 @@ func dataSourceMyrasecWAFRules() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"copiedFrom": {
+						"copied_from": {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
