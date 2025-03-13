@@ -94,7 +94,7 @@ func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	resp, err := client.CreateTagInformation(information, tagID.(int))
+	_, err = client.CreateTagInformation(information, tagID.(int))
 	if err == nil {
 		setTagInformationData(d, information, tagID.(int))
 		return diags
