@@ -96,7 +96,6 @@ func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.Resource
 
 	resp, err := client.CreateTagInformation(information, tagID.(int))
 	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
 		setTagInformationData(d, information, tagID.(int))
 		return diags
 	}
@@ -344,8 +343,15 @@ func setTagInformationData(d *schema.ResourceData, information *myrasec.TagInfor
 	d.SetId(strconv.Itoa(information.ID))
 	d.Set("information_id", information.ID)
 	d.Set("tag_id", tagID)
-	d.Set("created", information.Created.Format(time.RFC3339))
-	d.Set("modified", information.Modified.Format(time.RFC3339))
+
+	if information.Created != nil {
+		d.Set("created", information.Created.Format(time.RFC3339))
+	}
+
+	if information.Modified != nil {
+		d.Set("modified", information.Modified.Format(time.RFC3339))
+	}
+
 	d.Set("key", information.Key)
 	d.Set("valye", information.Value)
 	d.Set("comment", information.Comment)
