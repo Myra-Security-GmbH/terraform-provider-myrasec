@@ -101,9 +101,9 @@ key = "SOME KEY"
 value = "SOME VALUE"
 ```
 ```hcl
-name = "country"
+name = "country|continent"
 matching_type = "EQUALS|NOT_EQUALS"
-value = "DE,CH,AT" // ISO 3166 alpha 2 country codes
+value = "DE,CH,AT" // ISO 3166 alpha 2 country codes | AF (Africa), AN (Antarctica), AS (Asia), EU (Europe), NA (North America), OC (Oceania) and SA (South America) for continents
 ```
 ### Valid conditions for `direction` = `out` (response)
 ```hcl
