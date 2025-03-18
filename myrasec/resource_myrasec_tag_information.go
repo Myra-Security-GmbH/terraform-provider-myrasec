@@ -94,10 +94,10 @@ func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
-	_, err = client.CreateTagInformation(information, tagID.(int))
+	resp, err := client.CreateTagInformation(information, tagID.(int))
 	if err == nil {
-		setTagInformationData(d, information, tagID.(int))
-		return diags
+		d.SetId(fmt.Sprintf("%d", resp.ID))
+		return resourceMyrasecTagInformationRead(ctx, d, meta)
 	}
 
 	info, errImport := importExistingTagInformation(information, tagID.(int), meta)
