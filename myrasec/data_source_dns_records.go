@@ -99,6 +99,30 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"weight": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"caa_tag": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"caa_flags": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"encryption": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"hash_type": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
+						"identificationnumber": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
 						"upstream_options": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -189,19 +213,25 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 		}
 
 		data := map[string]interface{}{
-			"id":                r.ID,
-			"created":           created,
-			"modified":          modified,
-			"name":              r.Name,
-			"record_type":       r.RecordType,
-			"value":             r.Value,
-			"ttl":               r.TTL,
-			"alternative_cname": r.AlternativeCNAME,
-			"active":            r.Active,
-			"enabled":           r.Enabled,
-			"priority":          r.Priority,
-			"port":              r.Port,
-			"comment":           r.Comment,
+			"id":                   r.ID,
+			"created":              created,
+			"modified":             modified,
+			"name":                 r.Name,
+			"record_type":          r.RecordType,
+			"value":                r.Value,
+			"ttl":                  r.TTL,
+			"alternative_cname":    r.AlternativeCNAME,
+			"active":               r.Active,
+			"enabled":              r.Enabled,
+			"priority":             r.Priority,
+			"port":                 r.Port,
+			"comment":              r.Comment,
+			"weight":               r.Weight,
+			"caa_tag":              r.CAATag,
+			"caa_flags":            r.CAAFlags,
+			"encryption":           r.Encryption,
+			"hash_type":            r.HashType,
+			"identificationnumber": r.IdentificationNumber,
 		}
 
 		if r.UpstreamOptions != nil && r.UpstreamOptions.ID != 0 {
