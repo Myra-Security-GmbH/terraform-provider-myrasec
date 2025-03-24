@@ -118,6 +118,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
+				Deprecated:  "This setting has no effect anymore.",
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
@@ -413,11 +414,11 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Enables verification of client certificates.",
 			},
 			"ssl_client_certificate": {
-				Type:        schema.TypeSet,
-				Required:    false,
-				Optional:    true,
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
 				Elem: &schema.Schema{
-					Type:     schema.TypeString,
+					Type: schema.TypeString,
 				},
 				Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
 			},
