@@ -28,7 +28,7 @@ The following arguments are supported:
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
-* `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`.
+* `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`. **Deprecated.**
 * `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
 * `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
 * `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024`, `2048` or `4096`. Default `2048`.
