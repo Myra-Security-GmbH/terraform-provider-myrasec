@@ -264,7 +264,7 @@ func buildTagInformation(d *schema.ResourceData, meta interface{}) (*myrasec.Tag
 	information := &myrasec.TagInformation{
 		Key:     d.Get("key").(string),
 		Value:   d.Get("value").(string),
-		Comment: d.Get("value").(string),
+		Comment: d.Get("comment").(string),
 	}
 
 	if d.Get("information_id").(int) > 0 {
