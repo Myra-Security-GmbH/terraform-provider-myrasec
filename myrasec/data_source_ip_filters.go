@@ -146,7 +146,7 @@ func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
 	return parseIPFilterFilter(d)
 }
 
-// parseRateLimitFilter converts the filter data to a rateLimitFilter struct
+// parseIPFilterFilter converts the filter data to a ipFilterFilter struct
 func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 	cfg := d.([]interface{})
 	f := &ipFilterFilter{}

@@ -198,7 +198,6 @@ variable "myrasec_tag-type" {
   default = {
     "CACHE"      = "CACHE"
     "CONFIG"     = "CONFIG"
-    "RATE_LIMIT" = "RATE_LIMIT"
     "WAF"        = "WAF"
   }
 }
@@ -325,18 +324,6 @@ variable "myrasec_ip_ranges-type" {
   default = {
     "ipv4" = "ipv4"
     "ipv6" = "ipv6"
-  }
-}
-
-variable "myrasec_ratelimit-value" {
-  default = {
-    "very_low"  = 4000
-    "low"       = 2000
-    "normal"    = 1000
-    "high"      = 500
-    "very_high" = 100
-    "extreme"   = 60
-    "disabled"  = 0
   }
 }
 ```
