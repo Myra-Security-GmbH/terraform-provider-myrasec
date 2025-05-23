@@ -12,6 +12,7 @@ resource "myrasec_cache_setting" "index" {
     path           = "/index"
     ttl            = 2678400
     not_found_ttl  = 3600
+    comment        = "Cache setting for /index"
 }
 ```
 
@@ -36,3 +37,4 @@ The following arguments are supported:
 * `sort` (Optional) The order in which the cache rules take action as long as the cache sorting is activated. Default `0`.
 * `enabled` (Optional) Define wether this cache setting is enabled or not. Default `true`.
 * `enforce` (Optional) Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin. Default `false`.
+* `comment` A comment to describe this cache setting.
