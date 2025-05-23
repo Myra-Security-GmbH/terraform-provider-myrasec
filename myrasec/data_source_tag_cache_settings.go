@@ -82,6 +82,10 @@ func dataSourceMyrasecTagCacheSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"comment": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -157,6 +161,7 @@ func createSettingsData(tagId int, meta interface{}, params map[string]string) (
 			"sort":          r.Sort,
 			"enabled":       r.Enabled,
 			"enforce":       r.Enforce,
+			"comment":       r.Comment,
 		})
 	}
 

@@ -96,6 +96,12 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				Default:     false,
 				Description: "Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin.",
 			},
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "A comment to describe this cache setting.",
+			},
 			"domain_id": {
 				Type:        schema.TypeInt,
 				Computed:    true,
@@ -317,6 +323,7 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 		Sort:        d.Get("sort").(int),
 		Enabled:     d.Get("enabled").(bool),
 		Enforce:     d.Get("enforce").(bool),
+		Comment:     d.Get("comment").(string),
 	}
 
 	if d.Get("setting_id").(int) > 0 {
@@ -401,6 +408,7 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 	d.Set("sort", setting.Sort)
 	d.Set("enabled", setting.Enabled)
 	d.Set("enforce", setting.Enforce)
+	d.Set("comment", setting.Comment)
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 }
