@@ -13,7 +13,7 @@ resource "myrasec_tag_cache_setting" "index" {
     ttl           = 2678400
     not_found_ttl = 3600
     sort          = 1
-    comment        = "Cache setting for /index"
+    comment       = "Cache setting for /index"
 }
 ```
 
