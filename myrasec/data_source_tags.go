@@ -54,6 +54,10 @@ func dataSourceMyrasecTags() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"sort": {
+							Type:     schema.TypeInt,
+							Computed: true,
+						},
 						"assignments": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -127,6 +131,7 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 			"modified": res.Modified.Format(time.RFC3339),
 			"name":     res.Name,
 			"type":     res.Type,
+			"sort":     res.Sort,
 		}
 
 		assignments := make([]interface{}, 0)

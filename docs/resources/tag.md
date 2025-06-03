@@ -31,6 +31,7 @@ The following arguments are supported:
 * `created` (*Computed*) Date of creation.
 * `modified` (*Computed*) Date of last modification.
 * `type` (**Required**) Type of the tag. Valid types are: `CACHE`, `CONFIG`, `WAF` and `INFORMATION`.
+* `sort` order in which WAF tags are processed
 * `assignments` (**Required**) The domain/subDomain the tag is assigned to.
 * `assignments.type` (**Required**) the type of the assignment. Valid types are: `domain`, `subdomain`.
 * `assignments.title` (*Computed*) The domain name or subdomain name depending on the type.

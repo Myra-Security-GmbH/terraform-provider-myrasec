@@ -31,6 +31,7 @@ The following argument is supported
 * `name` the name of the tag.
 * `type` the type of the tag [CACHE|CONFIG|RATE_LIMIT|WAF|INFORMATION]
 * `assignments` list of the domain/subdomain assignments
+* `sort` order in which `WAF` tags are processed
 
 ### tagAssignments
 * `id` The ID of the assignment
