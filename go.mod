@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.38.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.41.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	golang.org/x/net v0.35.0
