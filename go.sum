@@ -1,7 +1,7 @@
-github.com/Myra-Security-GmbH/myrasec-go/v2 v2.37.0 h1:yYCH9ixzFQKW6YQIHxyAwdr/wZbqTgkvzEGPxxTrSVs=
-github.com/Myra-Security-GmbH/myrasec-go/v2 v2.37.0/go.mod h1:HSziMfT8Q7hehmoBE0sqhGB7UmVunUAdDdK9QYQlFI0=
 github.com/Myra-Security-GmbH/myrasec-go/v2 v2.38.0 h1:vMFUdmLCZw4GNOlI+BsUlZgsmN8dTW+ACn0rJkmfars=
 github.com/Myra-Security-GmbH/myrasec-go/v2 v2.38.0/go.mod h1:HSziMfT8Q7hehmoBE0sqhGB7UmVunUAdDdK9QYQlFI0=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.41.0 h1:cW8fY+dAUSibFE9UpewKMObMnB9E3Cy1HjRmiDsqQec=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.41.0/go.mod h1:wlzlsUZt27+L8mbka1UiBZeoGR0x4Lu8WnxczwWkfO0=
 github.com/Myra-Security-GmbH/signature v1.1.0 h1:/Tv8SilN0P8k5fKArvQHkf9iJWU5H34TSvgEyyZ32f4=
 github.com/Myra-Security-GmbH/signature v1.1.0/go.mod h1:kyX4FQ2XWvJQnvxkWmcyUIqG0jAzGL22fQMf2RTvoj0=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
