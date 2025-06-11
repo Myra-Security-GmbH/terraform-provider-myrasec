@@ -54,7 +54,7 @@ func resourceMyrasecTag() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					return strings.ToUpper(i.(string))
 				},
-				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "RATE_LIMIT", "WAF", "INFORMATION"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "WAF", "INFORMATION"}, false),
 				Description:  "The Type of the tag",
 			},
 			"assignments": {
