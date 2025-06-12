@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -301,12 +300,6 @@ func validateActions(rd *schema.ResourceDiff) error {
 				return fmt.Errorf(fmt.Sprintf("set_http_status customKey must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ", ")))
 			}
 		}
-		if a["type"] == "remove_header_value_regex" {
-			_, err := regexp.MatchString(a["value"].(string), "")
-			if err != nil {
-				return fmt.Errorf("remove_header_value_regex value is not a valid regular expression, %s", err.Error())
-			}
-		}
 	}
 	return nil
 }
@@ -331,13 +324,6 @@ func validateConditions(rd *schema.ResourceDiff) error {
 				return fmt.Errorf("score value has to be a number")
 			}
 		}
-		if StringInSlice(c["matching_type"].(string), []string{"REGEX", "IREGEX", "NOT REGEX", "NOT IREGEX"}) {
-			_, err := regexp.MatchString(c["value"].(string), "")
-			if err != nil {
-				return fmt.Errorf("%s value is not a valid regular expression, %s", c["name"], err.Error())
-			}
-		}
-
 	}
 	return nil
 }
