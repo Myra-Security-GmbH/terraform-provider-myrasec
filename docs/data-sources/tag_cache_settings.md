@@ -39,3 +39,4 @@ The following arguments are supported:
 * `sort` The order in which the cache rules take action as long as the cache sorting is activated.
 * `enabled` Define wether this cache setting is enabled or not.
 * `enforce` Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin.
+* `comment` A comment to describe this cache setting.

@@ -78,6 +78,10 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"comment": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -119,6 +123,7 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 			"sort":          r.Sort,
 			"enabled":       r.Enabled,
 			"enforce":       r.Enforce,
+			"comment":       r.Comment,
 		})
 	}
 

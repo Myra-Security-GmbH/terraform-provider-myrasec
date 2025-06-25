@@ -29,7 +29,7 @@ The following argument is supported
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `name` the name of the tag.
-* `type` the type of the tag [CACHE|CONFIG|RATE_LIMIT|WAF|INFORMATION]
+* `type` the type of the tag [CACHE|CONFIG|WAF|INFORMATION]
 * `assignments` list of the domain/subdomain assignments
 * `sort` order in which `WAF` tags are processed
 

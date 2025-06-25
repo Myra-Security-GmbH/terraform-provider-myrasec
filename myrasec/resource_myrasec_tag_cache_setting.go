@@ -83,6 +83,12 @@ func resourceMyrasecTagCacheSetting() *schema.Resource {
 				Default:     false,
 				Description: "Enforce cache TTL allows you to set the cache TTL (Cache Control: max-age) in the backend regardless of the response sent from your Origin.",
 			},
+			"comment": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: "A comment to describe this cache setting.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
@@ -335,6 +341,7 @@ func setTagCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSettin
 	d.Set("modified", setting.Modified.Format(time.RFC3339))
 	d.Set("enabled", setting.Enabled)
 	d.Set("enforce", setting.Enforce)
+	d.Set("comment", setting.Comment)
 	d.Set("not_found_ttl", setting.NotFoundTTL)
 	d.Set("path", setting.Path)
 	d.Set("sort", setting.Sort)
