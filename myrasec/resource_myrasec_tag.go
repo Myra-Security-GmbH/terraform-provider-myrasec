@@ -57,6 +57,11 @@ func resourceMyrasecTag() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "WAF", "INFORMATION"}, false),
 				Description:  "The Type of the tag",
 			},
+			"sort": {
+				Type:        schema.TypeInt,
+				Description: "Order in which `WAF` tags are processed",
+				Optional:    true,
+			},
 			"assignments": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -300,6 +305,7 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 	tag := &myrasec.Tag{
 		Name: d.Get("name").(string),
 		Type: d.Get("type").(string),
+		Sort: d.Get("sort").(int),
 	}
 
 	if d.Get("tag_id").(int) > 0 {
@@ -370,6 +376,7 @@ func setTagData(d *schema.ResourceData, tag *myrasec.Tag) {
 	d.Set("tag_id", tag.ID)
 	d.Set("name", tag.Name)
 	d.Set("type", tag.Type)
+	d.Set("sort", tag.Sort)
 	d.Set("created", tag.Created.Format(time.RFC3339))
 	d.Set("modified", tag.Modified.Format(time.RFC3339))
 
