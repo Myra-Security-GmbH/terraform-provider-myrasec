@@ -182,16 +182,14 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 
 			switch keyBlock.Type {
 			case "RSA PRIVATE KEY":
+			case "PRIVATE KEY":
 				privateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 				if err != nil {
-					return fmt.Errorf("failed to parse RSA private key: %v", err)
+					privateKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+					if err != nil {
+						return fmt.Errorf("failed to parse PKCS8 private key: %v", err)
+					}
 				}
-			case "PRIVATE KEY":
-				pkey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
-				if err != nil {
-					return fmt.Errorf("failed to parse PKCS8 private key: %v", err)
-				}
-				privateKey = pkey
 			case "EC PRIVATE KEY":
 				privateKey, err = x509.ParseECPrivateKey(keyBlock.Bytes)
 				if err != nil {
