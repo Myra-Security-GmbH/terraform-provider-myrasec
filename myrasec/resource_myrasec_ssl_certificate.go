@@ -182,6 +182,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 
 			switch keyBlock.Type {
 			case "RSA PRIVATE KEY":
+				fallthrough
 			case "PRIVATE KEY":
 				privateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 				if err != nil {
