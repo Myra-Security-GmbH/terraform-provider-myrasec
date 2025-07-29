@@ -63,7 +63,7 @@ func resourceMyrasecApiKey() *schema.Resource {
 }
 
 // resourceMyrasecApiKeyCreate ...
-func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -78,17 +78,10 @@ func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, me
 		return diags
 	}
 
-	resp, err := client.CreateApiKey(key)
-	if err == nil {
-		setApiKeyData(d, resp)
-		return diags
-	}
-
-	key, errImport := importExistingApiKey(key, meta)
-	if errImport != nil {
-		log.Printf("[DEBUG] auto-import failed: %s", errImport)
+	key, err = client.CreateApiKey(key)
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  "Error creating API key",
 			Detail:   formatError(err),
 		})
@@ -96,11 +89,12 @@ func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	d.SetId(fmt.Sprintf("%d", key.ID))
-	return resourceMyrasecApiKeyRead(ctx, d, meta)
+	setApiKeyData(d, key)
+	return diags
 }
 
 // resourceMyrasecApiKeyRead ...
-func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	var key *myrasec.APIKey
 
@@ -131,7 +125,7 @@ func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 // resourceMyrasecApiKeyUpdate ...
-func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	keyID, err := strconv.Atoi(d.Id())
@@ -162,7 +156,7 @@ func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecApiKeyDelete ...
-func resourceMyrasecApiKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecApiKeyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -202,7 +196,7 @@ func resourceMyrasecApiKeyDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecApiKeyImport ...
-func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	name, keyID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing API key ID: [%s]", err.Error())
@@ -222,7 +216,7 @@ func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, me
 }
 
 // buildApiKey ...
-func buildApiKey(d *schema.ResourceData, meta interface{}) (*myrasec.APIKey, error) {
+func buildApiKey(d *schema.ResourceData, meta any) (*myrasec.APIKey, error) {
 	key := &myrasec.APIKey{
 		Name:   d.Get("name").(string),
 		Key:    d.Get("key").(string),
@@ -254,7 +248,7 @@ func buildApiKey(d *schema.ResourceData, meta interface{}) (*myrasec.APIKey, err
 }
 
 // findApiKey ...
-func findApiKey(keyID int, meta interface{}) (*myrasec.APIKey, diag.Diagnostics) {
+func findApiKey(keyID int, meta any) (*myrasec.APIKey, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -306,33 +300,5 @@ func setApiKeyData(d *schema.ResourceData, key *myrasec.APIKey) {
 	d.Set("modified", key.Modified.Format(time.RFC3339))
 	d.Set("name", key.Name)
 	d.Set("key", key.Key)
-	d.Set("secrey", key.Secret)
-}
-
-// importExistingApiKey ...
-func importExistingApiKey(key *myrasec.APIKey, meta interface{}) (*myrasec.APIKey, error) {
-	client := meta.(*myrasec.API)
-
-	params := map[string]string{
-		"search": key.Name,
-	}
-
-	keys, err := client.ListApiKeys(params)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(keys) <= 0 {
-		return nil, fmt.Errorf("unable to find existing API key for automatic import")
-	}
-
-	for _, k := range keys {
-		if k.Name != key.Name ||
-			k.Key != key.Key {
-			continue
-		}
-
-		return &k, nil
-	}
-	return nil, fmt.Errorf("unable to find existing API key for automatic import")
+	d.Set("secret", key.Secret)
 }

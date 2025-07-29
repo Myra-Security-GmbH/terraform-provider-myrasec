@@ -65,7 +65,7 @@ func dataSourceMyrasecApiKeys() *schema.Resource {
 }
 
 // dataSourceMyrasecApiKeysRead ...
-func dataSourceMyrasecApiKeysRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecApiKeysRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareApiKeyFilter(d.Get("filter"))
 	if f == nil {
 		f = &apiKeyFilter{}
@@ -81,9 +81,9 @@ func dataSourceMyrasecApiKeysRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	keysData := make([]interface{}, 0)
+	keysData := make([]any, 0)
 	for _, r := range keys {
-		keysData = append(keysData, map[string]interface{}{
+		keysData = append(keysData, map[string]any{
 			"id":       r.ID,
 			"created":  r.Created.Format(time.RFC3339),
 			"modified": r.Modified.Format(time.RFC3339),
@@ -103,7 +103,7 @@ func dataSourceMyrasecApiKeysRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 // prepareApiKeyFilter fetches the panic that can happen in parseApiKeyFilter
-func prepareApiKeyFilter(d interface{}) *apiKeyFilter {
+func prepareApiKeyFilter(d any) *apiKeyFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareApiKeyFilter", r)
@@ -114,11 +114,11 @@ func prepareApiKeyFilter(d interface{}) *apiKeyFilter {
 }
 
 // parseApiKeyFilter converts the filter data to a apiKeyFilter struct
-func parseApiKeyFilter(d interface{}) *apiKeyFilter {
-	cfg := d.([]interface{})
+func parseApiKeyFilter(d any) *apiKeyFilter {
+	cfg := d.([]any)
 	f := &apiKeyFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	name, ok := m["name"]
 	if ok {
@@ -129,7 +129,7 @@ func parseApiKeyFilter(d interface{}) *apiKeyFilter {
 }
 
 // listApiKeys ...
-func listApiKeys(meta interface{}, params map[string]string) ([]myrasec.APIKey, diag.Diagnostics) {
+func listApiKeys(meta any, params map[string]string) ([]myrasec.APIKey, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var keys []myrasec.APIKey
 	pageSize := 250
