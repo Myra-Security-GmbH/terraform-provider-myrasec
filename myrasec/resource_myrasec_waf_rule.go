@@ -364,7 +364,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecWAFRuleRead ...
-func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	ruleID, err := strconv.Atoi(d.Id())
@@ -393,7 +393,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 // resourceMyrasecWAFRuleUpdate ...
-func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -441,7 +441,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecWAFRuleDelete ...
-func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
