@@ -102,7 +102,7 @@ func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, me
 // resourceMyrasecApiKeyRead ...
 func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-	var key *myrasec.ApiKey
+	var key *myrasec.APIKey
 
 	keyID, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -132,8 +132,6 @@ func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta
 
 // resourceMyrasecApiKeyUpdate ...
 func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*myrasec.API)
-
 	var diags diag.Diagnostics
 
 	keyID, err := strconv.Atoi(d.Id())
@@ -224,8 +222,8 @@ func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, me
 }
 
 // buildApiKey ...
-func buildApiKey(d *schema.ResourceData, meta interface{}) (*myrasec.ApiKey, error) {
-	key := &myrasec.ApiKey{
+func buildApiKey(d *schema.ResourceData, meta interface{}) (*myrasec.APIKey, error) {
+	key := &myrasec.APIKey{
 		Name:   d.Get("name").(string),
 		Key:    d.Get("key").(string),
 		Secret: d.Get("secret").(string),
@@ -256,7 +254,7 @@ func buildApiKey(d *schema.ResourceData, meta interface{}) (*myrasec.ApiKey, err
 }
 
 // findApiKey ...
-func findApiKey(keyID int, meta interface{}) (*myrasec.ApiKey, diag.Diagnostics) {
+func findApiKey(keyID int, meta interface{}) (*myrasec.APIKey, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -301,7 +299,7 @@ func findApiKey(keyID int, meta interface{}) (*myrasec.ApiKey, diag.Diagnostics)
 }
 
 // setApiKeyData ...
-func setApiKeyData(d *schema.ResourceData, key *myrasec.ApiKey) {
+func setApiKeyData(d *schema.ResourceData, key *myrasec.APIKey) {
 	d.SetId(strconv.Itoa(key.ID))
 	d.Set("key_id", key.ID)
 	d.Set("created", key.Created.Format(time.RFC3339))
@@ -312,7 +310,7 @@ func setApiKeyData(d *schema.ResourceData, key *myrasec.ApiKey) {
 }
 
 // importExistingApiKey ...
-func importExistingApiKey(key *myrasec.ApiKey, meta interface{}) (*myrasec.ApiKey, error) {
+func importExistingApiKey(key *myrasec.APIKey, meta interface{}) (*myrasec.APIKey, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{

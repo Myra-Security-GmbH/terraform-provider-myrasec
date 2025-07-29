@@ -129,9 +129,9 @@ func parseApiKeyFilter(d interface{}) *apiKeyFilter {
 }
 
 // listApiKeys ...
-func listApiKeys(meta interface{}, params map[string]string) ([]myrasec.ApiKey, diag.Diagnostics) {
+func listApiKeys(meta interface{}, params map[string]string) ([]myrasec.APIKey, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var keys []myrasec.ApiKey
+	var keys []myrasec.APIKey
 	pageSize := 250
 
 	client := meta.(*myrasec.API)
