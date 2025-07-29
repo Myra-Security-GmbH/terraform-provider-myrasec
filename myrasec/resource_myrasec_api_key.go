@@ -18,6 +18,7 @@ func resourceMyrasecApiKey() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecApiKeyCreate,
 		ReadContext:   resourceMyrasecApiKeyRead,
+		UpdateContext: resourceMyrasecApiKeyUpdate,
 		DeleteContext: resourceMyrasecApiKeyDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceMyrasecApiKeyImport,
@@ -45,12 +46,12 @@ func resourceMyrasecApiKey() *schema.Resource {
 			},
 			"key": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 				Description: "The API key.",
 			},
 			"secret": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Computed:    true,
 				Description: "The secret part of the API key.",
 			},
 		},
@@ -125,6 +126,39 @@ func resourceMyrasecApiKeyRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	setApiKeyData(d, key)
+
+	return diags
+}
+
+// resourceMyrasecApiKeyUpdate ...
+func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*myrasec.API)
+
+	var diags diag.Diagnostics
+
+	keyID, err := strconv.Atoi(d.Id())
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error parsing API key ID",
+			Detail:   formatError(err),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating API key: %v", keyID)
+
+	_, err = buildApiKey(d, meta)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error building API key",
+			Detail:   formatError(err),
+		})
+		return diags
+	}
+
+	log.Printf("[INFO] Updating API key is not supported. Won't change anything...")
 
 	return diags
 }
