@@ -27,3 +27,5 @@ The following arguments are supported:
 * `name` (**Required**) Name of the API key.
 * `key` The API key.
 * `secret` The secret part of the API key.
+
+**Note:** The `secret` is only sent once, when creating a new API key. After this, the `secret` won't be communicated again.

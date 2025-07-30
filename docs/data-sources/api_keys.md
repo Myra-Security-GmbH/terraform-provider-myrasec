@@ -31,3 +31,5 @@ The following arguments are supported:
 * `modified` Date of last modification.
 * `name` Name of the API key.
 * `key` The key.
+
+**Note:** The `secret` won't be part of this datasource. The `secret` is visible only right after creating a new API key and won't be communicated again.
