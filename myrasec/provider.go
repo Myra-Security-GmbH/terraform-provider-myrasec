@@ -64,6 +64,7 @@ func Provider() *schema.Provider {
 			"myrasec_tag_settings":          dataSourceMyrasecTagSettings(),
 			"myrasec_tag_waf_rules":         dataSourceMyrasecTagWAFRules(),
 			"myrasec_waitingrooms":          dataSourceMyrasecWaitingRooms(),
+			"myrasec_api_keys":              dataSourceMyrasecApiKeys(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":               resourceMyrasecDomain(),
@@ -83,6 +84,7 @@ func Provider() *schema.Provider {
 			"myrasec_tag_waf_rule":         resourceMyrasecTagWAFRule(),
 			"myrasec_tag_settings":         resourceMyrasecTagSettings(),
 			"myrasec_waitingroom":          resourceMyrasecWaitingRoom(),
+			"myrasec_api_key":              resourceMyrasecApiKey(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
