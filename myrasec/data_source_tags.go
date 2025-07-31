@@ -58,6 +58,10 @@ func dataSourceMyrasecTags() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"global": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"assignments": {
 							Type:     schema.TypeList,
 							Computed: true,
@@ -132,6 +136,7 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 			"name":     res.Name,
 			"type":     res.Type,
 			"sort":     res.Sort,
+			"global":   res.Global,
 		}
 
 		assignments := make([]interface{}, 0)
