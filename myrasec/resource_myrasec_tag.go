@@ -138,9 +138,9 @@ func resourceMyrasecTag() *schema.Resource {
 		},
 		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
 			tagType := rd.Get("type").(string)
-			sort := rd.Get("sort").(string)
+			sort := rd.Get("sort").(int)
 
-			if strings.ToUpper(tagType) == "WAF" && sort == "" {
+			if tagType == "WAF" && sort == 0 {
 				return fmt.Errorf("a sort value is mandatory for WAF tags")
 			}
 
