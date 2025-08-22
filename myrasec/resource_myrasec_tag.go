@@ -136,6 +136,16 @@ func resourceMyrasecTag() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+			tagType := rd.Get("type").(string)
+			sort := rd.Get("sort").(string)
+
+			if strings.ToUpper(tagType) == "WAF" && sort == "" {
+				return fmt.Errorf("a sort value is mandatory for WAF tags")
+			}
+
+			return nil
+		},
 	}
 }
 
