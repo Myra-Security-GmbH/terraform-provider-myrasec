@@ -62,13 +62,6 @@ func resourceMyrasecTag() *schema.Resource {
 				Description: "Order in which `WAF` tags are processed",
 				Optional:    true,
 				Computed:    true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					if v, ok := d.GetRawConfig().AsValueMap()["sort"]; !ok || v.IsNull() {
-						// sort is not set - suppress
-						return true
-					}
-					return false
-				},
 			},
 			"assignments": {
 				Type:     schema.TypeSet,
