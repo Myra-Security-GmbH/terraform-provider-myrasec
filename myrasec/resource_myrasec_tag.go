@@ -61,6 +61,7 @@ func resourceMyrasecTag() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "Order in which `WAF` tags are processed",
 				Optional:    true,
+				Computed:    true,
 			},
 			"assignments": {
 				Type:     schema.TypeSet,
