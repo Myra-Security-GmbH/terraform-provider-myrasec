@@ -61,6 +61,14 @@ func resourceMyrasecTag() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "Order in which `WAF` tags are processed",
 				Optional:    true,
+				Computed:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					if v, ok := d.GetRawConfig().AsValueMap()["sort"]; !ok || v.IsNull() {
+						// sort is not set - suppress
+						return true
+					}
+					return false
+				},
 			},
 			"assignments": {
 				Type:     schema.TypeSet,
@@ -135,16 +143,6 @@ func resourceMyrasecTag() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
-		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
-			tagType := rd.Get("type").(string)
-			sort := rd.Get("sort").(int)
-
-			if tagType == "WAF" && sort == 0 {
-				return fmt.Errorf("a sort value is mandatory for WAF tags")
-			}
-
-			return nil
 		},
 	}
 }
