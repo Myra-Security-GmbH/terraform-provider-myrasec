@@ -63,6 +63,11 @@ func resourceMyrasecTag() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"global": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Identifies global tags",
+			},
 			"assignments": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -304,9 +309,10 @@ func findTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
 // buildTag ...
 func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 	tag := &myrasec.Tag{
-		Name: d.Get("name").(string),
-		Type: d.Get("type").(string),
-		Sort: d.Get("sort").(int),
+		Name:   d.Get("name").(string),
+		Type:   d.Get("type").(string),
+		Sort:   d.Get("sort").(int),
+		Global: d.Get("global").(bool),
 	}
 
 	if d.Get("tag_id").(int) > 0 {
@@ -378,6 +384,7 @@ func setTagData(d *schema.ResourceData, tag *myrasec.Tag) {
 	d.Set("name", tag.Name)
 	d.Set("type", tag.Type)
 	d.Set("sort", tag.Sort)
+	d.Set("global", tag.Global)
 	d.Set("created", tag.Created.Format(time.RFC3339))
 	d.Set("modified", tag.Modified.Format(time.RFC3339))
 
