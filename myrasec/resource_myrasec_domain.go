@@ -43,7 +43,7 @@ func resourceMyrasecDomain() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				Description: "Domain name.",
@@ -68,7 +68,7 @@ func resourceMyrasecDomain() *schema.Resource {
 				Deprecated:  "Attribute `paused_until` is deprecated and has no effect anymore",
 			},
 		},
-		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, i any) error {
 			currentDomainName, newDomainName := d.GetChange("name")
 			if currentDomainName != "" && currentDomainName != newDomainName {
 				return fmt.Errorf("it's not allowed to change domain name")
@@ -84,12 +84,12 @@ func resourceMyrasecDomain() *schema.Resource {
 }
 
 // resourceMyrasecDomainCreate ...
-func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	domain, err := buildDomain(d, meta)
+	domain, err := buildDomain(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -127,7 +127,7 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecDomainRead ...
-func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	domainID, err := strconv.Atoi(d.Id())
@@ -153,12 +153,12 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 // resourceMyrasecDomainUpdate ...
-func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	domain, err := buildDomain(d, meta)
+	domain, err := buildDomain(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -188,7 +188,7 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecDomainDelete ...
-func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -205,7 +205,7 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("[INFO] Deleting Domain: %v", domainID)
 
-	domain, err := buildDomain(d, meta)
+	domain, err := buildDomain(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -228,7 +228,7 @@ func resourceMyrasecDomainDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecDomainImport ...
-func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	var domain *myrasec.Domain
 	var diags diag.Diagnostics
@@ -257,7 +257,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 }
 
 // buildDomain ...
-func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, error) {
+func buildDomain(d *schema.ResourceData) (*myrasec.Domain, error) {
 	domain := &myrasec.Domain{
 		Name:       d.Get("name").(string),
 		AutoUpdate: d.Get("auto_update").(bool),
@@ -289,7 +289,7 @@ func buildDomain(d *schema.ResourceData, meta interface{}) (*myrasec.Domain, err
 }
 
 // findDomain ...
-func findDomain(domainID int, meta interface{}) (*myrasec.Domain, diag.Diagnostics) {
+func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -326,7 +326,7 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 }
 
 // importExistingDomain ...
-func importExistingDomain(domain *myrasec.Domain, meta interface{}) (*myrasec.Domain, error) {
+func importExistingDomain(domain *myrasec.Domain, meta any) (*myrasec.Domain, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{

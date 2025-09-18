@@ -90,7 +90,7 @@ func dataSourceMyrasecWAFConditions() *schema.Resource {
 }
 
 // dataSourceMyrasecWAFConditionsRead ...
-func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -107,13 +107,13 @@ func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceD
 		return diags
 	}
 
-	wafConditionData := make([]interface{}, 0)
+	wafConditionData := make([]any, 0)
 	for _, r := range conditions {
 		if f != nil && r.Name != f.name {
 			continue
 		}
 
-		wafConditionData = append(wafConditionData, map[string]interface{}{
+		wafConditionData = append(wafConditionData, map[string]any{
 			"id":                  r.ID,
 			"created":             r.Created.Format(time.RFC3339),
 			"modified":            r.Modified.Format(time.RFC3339),
@@ -138,7 +138,7 @@ func dataSourceMyrasecWAFConditionsRead(ctx context.Context, d *schema.ResourceD
 }
 
 // prepareRedirectFilter fetches the panic that can happen in parseWAFConditionFilter
-func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
+func prepareWAFConditionFilter(d any) *wafConditionFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareWAFConditionFilter", r)
@@ -149,11 +149,11 @@ func prepareWAFConditionFilter(d interface{}) *wafConditionFilter {
 }
 
 // parseWAFConditionFilter ...
-func parseWAFConditionFilter(d interface{}) *wafConditionFilter {
-	cfg := d.([]interface{})
+func parseWAFConditionFilter(d any) *wafConditionFilter {
+	cfg := d.([]any)
 	f := &wafConditionFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	name, ok := m["name"]
 	if ok {

@@ -42,15 +42,15 @@ func dataSourceMyrasecSSLConfigurations() *schema.Resource {
 	}
 }
 
-func dataSourceMyrasecSSLConfigurationsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecSSLConfigurationsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	configurations, diags := listSslConfigurations(meta)
 	if diags.HasError() {
 		return diags
 	}
 
-	configurationsData := make([]interface{}, 0)
+	configurationsData := make([]any, 0)
 	for _, c := range configurations {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"name":      c.Name,
 			"ciphers":   c.Ciphers,
 			"protocols": c.Protocols,
@@ -67,7 +67,7 @@ func dataSourceMyrasecSSLConfigurationsRead(ctx context.Context, d *schema.Resou
 	return diags
 }
 
-func listSslConfigurations(meta interface{}) ([]myrasec.SslConfiguration, diag.Diagnostics) {
+func listSslConfigurations(meta any) ([]myrasec.SslConfiguration, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

@@ -445,7 +445,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 }
 
 // resourceCustomizeDiffTagSettings
-func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	availableAttributes := []string{}
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
@@ -471,7 +471,7 @@ func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDif
 }
 
 // resourceMyrasecTagSettingsCreate
-func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -513,7 +513,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecTagSettingsRead ...
-func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -545,7 +545,7 @@ func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecTagSettingsUpdate
-func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -587,7 +587,7 @@ func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecTagSettingsDelete
-func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -637,8 +637,8 @@ func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 // buildTagSettings ...
-func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, error) {
-	tagSettingsMap := make(map[string]interface{})
+func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
+	tagSettingsMap := make(map[string]any)
 
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
@@ -669,7 +669,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 				}
 			case schema.TypeList:
 				settingsList := []string{}
-				for _, item := range value.([]interface{}) {
+				for _, item := range value.([]any) {
 					settingsList = append(settingsList, item.(string))
 				}
 				tagSettingsMap[name] = settingsList
@@ -690,15 +690,15 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 }
 
 // setTagSettingsData ...
-func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId int) {
+func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
 	d.Set("tag_id", tagId)
 
-	settings, _ := settingsData.(*map[string]interface{})
+	settings, _ := settingsData.(*map[string]any)
 	log.Println(settings)
 
 	resource := resourceMyrasecSettings().Schema
 	availableAttributes := []string{}
-	for k, v := range (*settings)["settings"].(map[string]interface{}) {
+	for k, v := range (*settings)["settings"].(map[string]any) {
 		d.Set(k, v)
 		doAppend := appendAvailableAttributes(v, k, resource)
 		if doAppend {

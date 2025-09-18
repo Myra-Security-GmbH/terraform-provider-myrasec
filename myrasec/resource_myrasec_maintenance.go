@@ -30,7 +30,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -73,7 +73,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "End Date for the maintenance.",
-				ValidateFunc: func(i interface{}, s string) (warn []string, errors []error) {
+				ValidateFunc: func(i any, s string) (warn []string, errors []error) {
 					warn, errors = validation.IsRFC3339Time(i, s)
 					if errors != nil {
 						return nil, errors
@@ -124,7 +124,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			startString := rd.Get("start")
 			endStringOld, endStringNew := rd.GetChange("end")
 
@@ -145,12 +145,12 @@ func resourceMyrasecMaintenance() *schema.Resource {
 }
 
 // resourceMyrasecMaintenanceCreate
-func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	maintenance, err := buildMaintenance(d, meta)
+	maintenance, err := buildMaintenance(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -180,7 +180,7 @@ func resourceMyrasecMaintenanceCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecMaintenanceRead
-func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	maintenanceID, err := strconv.Atoi(d.Id())
@@ -214,7 +214,7 @@ func resourceMyrasecMaintenanceRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecMaintenanceUpdate ...
-func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -231,7 +231,7 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("[INFO] Updating maintenance: %v", maintenanceID)
 
-	maintenance, err := buildMaintenance(d, meta)
+	maintenance, err := buildMaintenance(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -262,7 +262,7 @@ func resourceMyrasecMaintenanceUpdate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecMaintenanceDelete
-func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -279,7 +279,7 @@ func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("[INFO] Deleting maintenance: %v", maintenanceID)
 
-	maintenance, err := buildMaintenance(d, meta)
+	maintenance, err := buildMaintenance(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -307,7 +307,7 @@ func resourceMyrasecMaintenanceDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecMaintenanceImport
-func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	subDomainName, maintenanceID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing maintenance ID: [%s]", err.Error())
@@ -337,7 +337,7 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 }
 
 // buildMaintenance
-func buildMaintenance(d *schema.ResourceData, meta interface{}) (*myrasec.Maintenance, error) {
+func buildMaintenance(d *schema.ResourceData) (*myrasec.Maintenance, error) {
 	maintenance := &myrasec.Maintenance{
 		Content: d.Get("content").(string),
 		FQDN:    d.Get("subdomain_name").(string),
@@ -380,7 +380,7 @@ func buildMaintenance(d *schema.ResourceData, meta interface{}) (*myrasec.Mainte
 }
 
 // findMaintenance
-func findMaintenance(maintenanceID int, meta interface{}, subDomainName string, domainID int) (*myrasec.Maintenance, diag.Diagnostics) {
+func findMaintenance(maintenanceID int, meta any, subDomainName string, domainID int) (*myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -117,7 +118,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					StateFunc: func(i interface{}) string {
+					StateFunc: func(i any) string {
 						return strings.ToLower(myrasec.RemoveTrailingDot(i.(string)))
 					},
 				},
@@ -161,7 +162,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			certificate := rd.Get("certificate")
 			privateKey := rd.Get("key")
 
@@ -172,7 +173,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 
 			cert, err := x509.ParseCertificate(certBlock.Bytes)
 			if err != nil {
-				return fmt.Errorf(formatError(err))
+				return errors.New(formatError(err))
 			}
 
 			keyBlock, _ := pem.Decode([]byte(privateKey.(string)))
@@ -223,12 +224,12 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 }
 
 // resourceMyrasecSSLCertificateCreate ...
-func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -260,7 +261,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateRead ...
-func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, ok := d.GetOk("domain_name")
@@ -289,7 +290,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		return domainDiag
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
+	cert, diags := findSSLCertificate(certID, meta, domainID)
 	if diags.HasError() || cert == nil {
 		return diags
 	}
@@ -300,7 +301,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecSSLCertificateUpdate ...
-func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -317,7 +318,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 
 	log.Printf("[INFO] Updating SSL certificate: %v", certID)
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -366,7 +367,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateDelete ...
-func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -383,7 +384,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 
 	log.Printf("[INFO] Deleting SSL certificate: %v", certID)
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -413,7 +414,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateImport ...
-func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	domainName, certID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing SSL certificate ID: [%s]", err.Error())
@@ -424,7 +425,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
+	cert, diags := findSSLCertificate(certID, meta, domainID)
 	if diags.HasError() || cert == nil {
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
 	}
@@ -438,7 +439,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 }
 
 // buildSSLCertificate ...
-func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSLCertificate, error) {
+func buildSSLCertificate(d *schema.ResourceData) (*myrasec.SSLCertificate, error) {
 
 	cert := &myrasec.SSLCertificate{
 		Certificate: &myrasec.Certificate{},
@@ -513,10 +514,10 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 }
 
 // buildSSLIntermediate ...
-func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, error) {
+func buildSSLIntermediate(intermediate any) (*myrasec.SSLIntermediate, error) {
 	cert := &myrasec.SSLIntermediate{
 		Certificate: &myrasec.Certificate{
-			Cert: intermediate.(map[string]interface{})["certificate"].(string),
+			Cert: intermediate.(map[string]any)["certificate"].(string),
 		},
 	}
 
@@ -524,7 +525,7 @@ func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, e
 }
 
 // findSSLCertificate ...
-func findSSLCertificate(certID int, meta interface{}, domainName string, domainID int) (*myrasec.SSLCertificate, diag.Diagnostics) {
+func findSSLCertificate(certID int, meta any, domainID int) (*myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

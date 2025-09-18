@@ -77,7 +77,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 			"direction": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"in", "out"}, false),
@@ -184,7 +184,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				},
 			},
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			err := validateActions(rd)
 			if err != nil {
 				return err
@@ -204,12 +204,12 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 }
 
 // resourceMyrasecTagWAFRuleCreate ...
-func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -249,7 +249,7 @@ func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleRead ...
-func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	tagID, ok := d.GetOk("tag_id")
@@ -283,7 +283,7 @@ func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecTagWAFRuleUpdate ...
-func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -300,7 +300,7 @@ func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("[INFO] Updating WAF rule: %v", ruleID)
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -330,7 +330,7 @@ func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleDelete ...
-func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -347,7 +347,7 @@ func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("[INFO] Deleting WAF rule: %v", ruleID)
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -370,7 +370,7 @@ func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleImport ...
-func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	tag, ruleID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -390,7 +390,7 @@ func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData
 }
 
 // buildTagWAFRule ...
-func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFRule, error) {
+func buildTagWAFRule(d *schema.ResourceData) (*myrasec.TagWAFRule, error) {
 	rule := &myrasec.TagWAFRule{
 		TagId:         d.Get("tag_id").(int),
 		Name:          d.Get("name").(string),
@@ -435,7 +435,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 	if !ok {
 		rule.Conditions = make([]*myrasec.WAFCondition, 0)
 	}
-	for _, condition := range conditions.([]interface{}) {
+	for _, condition := range conditions.([]any) {
 		c, err := buildWAFCondition(condition)
 		if err != nil {
 			return nil, err
@@ -448,7 +448,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 		return rule, nil
 	}
 
-	for _, action := range actions.([]interface{}) {
+	for _, action := range actions.([]any) {
 		a, err := buildWAFAction(action)
 		if err != nil {
 			return nil, err
@@ -461,7 +461,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 }
 
 // findTagWAFRule ...
-func findTagWAFRule(wafRuleID int, tagID int, meta interface{}) (*myrasec.TagWAFRule, diag.Diagnostics) {
+func findTagWAFRule(wafRuleID int, tagID int, meta any) (*myrasec.TagWAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

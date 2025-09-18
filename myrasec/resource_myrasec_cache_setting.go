@@ -30,7 +30,7 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -116,12 +116,12 @@ func resourceMyrasecCacheSetting() *schema.Resource {
 }
 
 // resourceMyrasecCacheSettingCreate ...
-func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -158,7 +158,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecCacheSettingRead ...
-func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	var setting *myrasec.CacheSetting
 
@@ -194,7 +194,7 @@ func resourceMyrasecCacheSettingRead(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecCacheSettingUpdate ...
-func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -211,7 +211,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 
 	log.Printf("[INFO] Updating cache setting: %v", settingID)
 
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -242,7 +242,7 @@ func resourceMyrasecCacheSettingUpdate(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecCacheSettingDelete ...
-func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -259,7 +259,7 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 
 	log.Printf("[INFO] Deleting cache setting: %v", settingID)
 
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -287,7 +287,7 @@ func resourceMyrasecCacheSettingDelete(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecCacheSettingImport ...
-func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	subDomainName, settingID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -314,7 +314,7 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 }
 
 // buildCacheSetting ...
-func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.CacheSetting, error) {
+func buildCacheSetting(d *schema.ResourceData) (*myrasec.CacheSetting, error) {
 	setting := &myrasec.CacheSetting{
 		Type:        d.Get("type").(string),
 		Path:        d.Get("path").(string),
@@ -351,7 +351,7 @@ func buildCacheSetting(d *schema.ResourceData, meta interface{}) (*myrasec.Cache
 }
 
 // findCacheSetting ...
-func findCacheSetting(settingID int, meta interface{}, subDomainName string, domainID int) (*myrasec.CacheSetting, diag.Diagnostics) {
+func findCacheSetting(settingID int, meta any, subDomainName string, domainID int) (*myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -414,7 +414,7 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 }
 
 // importExistingCacheSetting ...
-func importExistingCacheSetting(setting *myrasec.CacheSetting, domainId int, subDomainName string, meta interface{}) (*myrasec.CacheSetting, error) {
+func importExistingCacheSetting(setting *myrasec.CacheSetting, domainId int, subDomainName string, meta any) (*myrasec.CacheSetting, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{

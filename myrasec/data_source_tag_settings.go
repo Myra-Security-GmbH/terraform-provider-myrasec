@@ -263,7 +263,7 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeSet,
 							Computed: true,
 							Elem: &schema.Schema{
-								Type:     schema.TypeString,
+								Type: schema.TypeString,
 							},
 						},
 						"ssl_client_header_verification": {
@@ -304,7 +304,7 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 	}
 }
 
-func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagSettingsFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagSettingsFilter{}
@@ -315,8 +315,8 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	settingData := make([]interface{}, 0)
-	settingData = append(settingData, map[string]interface{}{
+	settingData := make([]any, 0)
+	settingData = append(settingData, map[string]any{
 		"tag_id":                          f.tagID,
 		"access_log":                      settings.AccessLog,
 		"antibot_post_flood":              settings.AntibotPostFlood,
@@ -387,7 +387,7 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func listTagSettings(meta interface{}, tagID int) (*myrasec.Settings, diag.Diagnostics) {
+func listTagSettings(meta any, tagID int) (*myrasec.Settings, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -404,7 +404,7 @@ func listTagSettings(meta interface{}, tagID int) (*myrasec.Settings, diag.Diagn
 	return settings, diags
 }
 
-func prepareTagSettingsFilter(d interface{}) *tagSettingsFilter {
+func prepareTagSettingsFilter(d any) *tagSettingsFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagSettingsFilter", r)
@@ -414,11 +414,11 @@ func prepareTagSettingsFilter(d interface{}) *tagSettingsFilter {
 	return parseTagSettingsFilter(d)
 }
 
-func parseTagSettingsFilter(d interface{}) *tagSettingsFilter {
-	cfg := d.([]interface{})
+func parseTagSettingsFilter(d any) *tagSettingsFilter {
+	cfg := d.([]any)
 	f := &tagSettingsFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	tagID, ok := m["tag_id"]
 	if ok {

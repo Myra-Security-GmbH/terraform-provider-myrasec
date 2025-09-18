@@ -267,7 +267,7 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeSet,
 							Computed: true,
 							Elem: &schema.Schema{
-								Type:     schema.TypeString,
+								Type: schema.TypeString,
 							},
 						},
 						"ssl_client_header_verification": {
@@ -308,7 +308,7 @@ func dataSourceMyrasecSettings() *schema.Resource {
 	}
 }
 
-func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareSettingsFilter(d.Get("filter"))
 	if f == nil {
 		f = &settingsFilter{}
@@ -319,8 +319,8 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	settingData := make([]interface{}, 0)
-	settingData = append(settingData, map[string]interface{}{
+	settingData := make([]any, 0)
+	settingData = append(settingData, map[string]any{
 		"subdomain_name":                  f.subDomainName,
 		"access_log":                      settings.AccessLog,
 		"antibot_post_flood":              settings.AntibotPostFlood,
@@ -392,7 +392,7 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-func listSettings(meta interface{}, subDomainName string) (*myrasec.Settings, diag.Diagnostics) {
+func listSettings(meta any, subDomainName string) (*myrasec.Settings, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -418,7 +418,7 @@ func listSettings(meta interface{}, subDomainName string) (*myrasec.Settings, di
 	return settings, diags
 }
 
-func prepareSettingsFilter(d interface{}) *settingsFilter {
+func prepareSettingsFilter(d any) *settingsFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareSettingsFilter", r)
@@ -428,11 +428,11 @@ func prepareSettingsFilter(d interface{}) *settingsFilter {
 	return parseSettingsFilter(d)
 }
 
-func parseSettingsFilter(d interface{}) *settingsFilter {
-	cfg := d.([]interface{})
+func parseSettingsFilter(d any) *settingsFilter {
+	cfg := d.([]any)
 	f := &settingsFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {

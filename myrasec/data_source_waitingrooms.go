@@ -95,7 +95,7 @@ func dataSourceMyrasecWaitingRooms() *schema.Resource {
 }
 
 // dataSourceMyrasecWaitingRoomsRead ...
-func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var waitingRooms []myrasec.WaitingRoom
 	var diags diag.Diagnostics
 	f := prepareWaitingroomFilter(d.Get("filter"))
@@ -125,9 +125,9 @@ func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	waitingRoomData := make([]interface{}, 0)
+	waitingRoomData := make([]any, 0)
 	for _, r := range waitingRooms {
-		waitingRoomData = append(waitingRoomData, map[string]interface{}{
+		waitingRoomData = append(waitingRoomData, map[string]any{
 			"waitingroom_id":  r.ID,
 			"created":         r.Created.Format(time.RFC3339),
 			"modified":        r.Modified.Format(time.RFC3339),
@@ -151,7 +151,7 @@ func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceDa
 }
 
 // prepareWaitingroomFilter fetches the panic that can happen in parseWaitingroomFilter
-func prepareWaitingroomFilter(d interface{}) *waitingRoomFilter {
+func prepareWaitingroomFilter(d any) *waitingRoomFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareWaitingroomFilter", r)
@@ -162,11 +162,11 @@ func prepareWaitingroomFilter(d interface{}) *waitingRoomFilter {
 }
 
 // parseWaitingRoomFilter converts the filter data to a waitingroomFilter struct
-func parseWaitingRoomFilter(d interface{}) *waitingRoomFilter {
-	cfg := d.([]interface{})
+func parseWaitingRoomFilter(d any) *waitingRoomFilter {
+	cfg := d.([]any)
 	f := &waitingRoomFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {
@@ -182,7 +182,7 @@ func parseWaitingRoomFilter(d interface{}) *waitingRoomFilter {
 }
 
 // listWaitingRoomsForSubDomain ...
-func listWaitingRoomsForSubDomain(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
+func listWaitingRoomsForSubDomain(meta any, subDomainName string, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var waitingRooms []myrasec.WaitingRoom
 	pageSize := 250
@@ -214,7 +214,7 @@ func listWaitingRoomsForSubDomain(meta interface{}, subDomainName string, params
 }
 
 // listWaitingRoomsForDomain ...
-func listWaitingRoomsForDomain(meta interface{}, domainId int, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
+func listWaitingRoomsForDomain(meta any, domainId int, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var waitingRooms []myrasec.WaitingRoom
 	pageSize := 250

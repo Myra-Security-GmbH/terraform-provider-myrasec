@@ -106,7 +106,7 @@ func dataSourceMyrasecTags() *schema.Resource {
 }
 
 // dataSourceMyrasecTagsRead
-func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagFilter{}
@@ -122,14 +122,14 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	tagData := make([]interface{}, 0)
+	tagData := make([]any, 0)
 	for _, t := range tags {
 		res, err := getTag(t.ID, meta)
 		if err != nil {
 			return diags
 		}
 
-		tag := map[string]interface{}{
+		tag := map[string]any{
 			"id":       res.ID,
 			"created":  res.Created.Format(time.RFC3339),
 			"modified": res.Modified.Format(time.RFC3339),
@@ -139,9 +139,9 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 			"global":   res.Global,
 		}
 
-		assignments := make([]interface{}, 0)
+		assignments := make([]any, 0)
 		for _, a := range res.Assignments {
-			assignment := map[string]interface{}{
+			assignment := map[string]any{
 				"id":             a.ID,
 				"created":        a.Created.Format(time.RFC3339),
 				"modified":       a.Modified.Format(time.RFC3339),
@@ -166,7 +166,7 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 // prepareTagFilter fetches the panic that can happen in parseTagFilter
-func prepareTagFilter(d interface{}) *tagFilter {
+func prepareTagFilter(d any) *tagFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagFilter", r)
@@ -175,11 +175,11 @@ func prepareTagFilter(d interface{}) *tagFilter {
 	return parseTagFilter(d)
 }
 
-func parseTagFilter(d interface{}) *tagFilter {
-	cfg := d.([]interface{})
+func parseTagFilter(d any) *tagFilter {
+	cfg := d.([]any)
 	f := &tagFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	name, ok := m["name"]
 	if ok {
@@ -190,7 +190,7 @@ func parseTagFilter(d interface{}) *tagFilter {
 }
 
 // listTags
-func listTags(meta interface{}, params map[string]string) ([]myrasec.Tag, diag.Diagnostics) {
+func listTags(meta any, params map[string]string) ([]myrasec.Tag, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var tags []myrasec.Tag
 	pageSize := 250
@@ -221,7 +221,7 @@ func listTags(meta interface{}, params map[string]string) ([]myrasec.Tag, diag.D
 }
 
 // getTag
-func getTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
+func getTag(tagId int, meta any) (*myrasec.Tag, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

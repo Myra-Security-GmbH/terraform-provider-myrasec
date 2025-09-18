@@ -174,7 +174,7 @@ func dataSourceMyrasecTagWAFRules() *schema.Resource {
 }
 
 // dataSourceMyrasecTagWAFRulesRead ...
-func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagWAFRuleFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagWafRuleFilter{}
@@ -190,9 +190,9 @@ func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	ruleData := make([]interface{}, 0)
+	ruleData := make([]any, 0)
 	for _, r := range rules {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":             r.ID,
 			"created":        r.Created.Format(time.RFC3339),
 			"modified":       r.Modified.Format(time.RFC3339),
@@ -213,10 +213,10 @@ func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceDat
 			data["expire_date"] = r.ExpireDate.Format(time.RFC3339)
 		}
 
-		if r.Conditions != nil && len(r.Conditions) > 0 {
-			conditions := make([]map[string]interface{}, 0)
+		if len(r.Conditions) > 0 {
+			conditions := make([]map[string]any, 0)
 			for _, c := range r.Conditions {
-				conditions = append(conditions, map[string]interface{}{
+				conditions = append(conditions, map[string]any{
 					"force_custom_values": c.ForceCustomValues,
 					"available_phases":    c.AvailablePhases,
 					"alias":               c.Alias,
@@ -230,10 +230,10 @@ func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceDat
 			data["conditions"] = conditions
 		}
 
-		if r.Actions != nil && len(r.Actions) > 0 {
-			actions := make([]map[string]interface{}, 0)
+		if len(r.Actions) > 0 {
+			actions := make([]map[string]any, 0)
 			for _, a := range r.Actions {
-				actions = append(actions, map[string]interface{}{
+				actions = append(actions, map[string]any{
 					"force_custom_values": a.ForceCustomValues,
 					"available_phases":    a.AvailablePhases,
 					"name":                a.Name,
@@ -258,7 +258,7 @@ func dataSourceMyrasecTagWAFRulesRead(ctx context.Context, d *schema.ResourceDat
 }
 
 // listTagWAFRules ..
-func listTagWAFRules(meta interface{}, tagID int, params map[string]string) ([]myrasec.TagWAFRule, diag.Diagnostics) {
+func listTagWAFRules(meta any, tagID int, params map[string]string) ([]myrasec.TagWAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var rules []myrasec.TagWAFRule
 	pageSize := 250
@@ -302,7 +302,7 @@ func listTagWAFRules(meta interface{}, tagID int, params map[string]string) ([]m
 }
 
 // prepareTagWAFRuleFilter ...
-func prepareTagWAFRuleFilter(d interface{}) *tagWafRuleFilter {
+func prepareTagWAFRuleFilter(d any) *tagWafRuleFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagWAFRuleFilter", r)
@@ -313,11 +313,11 @@ func prepareTagWAFRuleFilter(d interface{}) *tagWafRuleFilter {
 }
 
 // parseTagWAFRuleFilter ...
-func parseTagWAFRuleFilter(d interface{}) *tagWafRuleFilter {
-	cfg := d.([]interface{})
+func parseTagWAFRuleFilter(d any) *tagWafRuleFilter {
+	cfg := d.([]any)
 	f := &tagWafRuleFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	tagID, ok := m["tag_id"]
 	if ok {

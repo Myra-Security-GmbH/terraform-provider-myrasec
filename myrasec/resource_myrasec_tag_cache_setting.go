@@ -98,11 +98,11 @@ func resourceMyrasecTagCacheSetting() *schema.Resource {
 }
 
 // resourceMyrasecTagCacheSettingCreate ...
-func resourceMyrasecTagCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagCacheSettingCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 	var diags diag.Diagnostics
 
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -143,7 +143,7 @@ func resourceMyrasecTagCacheSettingCreate(ctx context.Context, d *schema.Resourc
 }
 
 // resourceMyrasecTagCacheSettingRead ...
-func resourceMyrasecTagCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagCacheSettingRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	tagID, ok := d.GetOk("tag_id")
@@ -177,7 +177,7 @@ func resourceMyrasecTagCacheSettingRead(ctx context.Context, d *schema.ResourceD
 }
 
 // resourceMyrasecTagCacheSettingUpdate ...
-func resourceMyrasecTagCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagCacheSettingUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -193,7 +193,7 @@ func resourceMyrasecTagCacheSettingUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	log.Printf("[INFO] Updating tag cache setting: %v", settingID)
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -228,11 +228,11 @@ func resourceMyrasecTagCacheSettingUpdate(ctx context.Context, d *schema.Resourc
 }
 
 // resourceMyrasecTagCacheSettingDelete ...
-func resourceMyrasecTagCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagCacheSettingDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 	var diags diag.Diagnostics
 
-	setting, err := buildCacheSetting(d, meta)
+	setting, err := buildCacheSetting(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -266,7 +266,7 @@ func resourceMyrasecTagCacheSettingDelete(ctx context.Context, d *schema.Resourc
 }
 
 // resourceMyrasecTagCacheSettingImport ...
-func resourceMyrasecTagCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecTagCacheSettingImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	tag, settingID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tag cache setting ID: [%s]", err.Error())
@@ -287,7 +287,7 @@ func resourceMyrasecTagCacheSettingImport(ctx context.Context, d *schema.Resourc
 }
 
 // findTagCacheSetting
-func findTagCacheSetting(settingID int, tagID int, meta interface{}) (*myrasec.CacheSetting, diag.Diagnostics) {
+func findTagCacheSetting(settingID int, tagID int, meta any) (*myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -350,7 +350,7 @@ func setTagCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSettin
 }
 
 // importExistingTagCacheSetting
-func importExistingTagCacheSetting(setting *myrasec.CacheSetting, tagID int, meta interface{}) (*myrasec.CacheSetting, error) {
+func importExistingTagCacheSetting(setting *myrasec.CacheSetting, tagID int, meta any) (*myrasec.CacheSetting, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{
