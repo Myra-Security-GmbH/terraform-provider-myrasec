@@ -78,7 +78,7 @@ func dataSourceMyrasecTagInformation() *schema.Resource {
 }
 
 // dataSourceMyrasecTagInformationRead ...
-func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagInformationFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagInformationFilter{}
@@ -89,7 +89,7 @@ func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.Resource
 		params["search"] = f.key
 	}
 
-	informationData := make([]interface{}, 0)
+	informationData := make([]any, 0)
 	if f.tagId > 0 {
 		information, diags := createInformationData(f.tagId, meta, params)
 		if diags.HasError() {
@@ -121,15 +121,15 @@ func dataSourceMyrasecTagInformationRead(ctx context.Context, d *schema.Resource
 }
 
 // createInformationData
-func createInformationData(tagId int, meta interface{}, params map[string]string) ([]interface{}, diag.Diagnostics) {
+func createInformationData(tagId int, meta any, params map[string]string) ([]any, diag.Diagnostics) {
 	information, diags := listTagInformation(tagId, meta, params)
-	informationData := make([]interface{}, 0)
+	informationData := make([]any, 0)
 	if diags.HasError() {
 		return informationData, diags
 	}
 
 	for _, i := range information {
-		informationData = append(informationData, map[string]interface{}{
+		informationData = append(informationData, map[string]any{
 			"id":       i.ID,
 			"created":  i.Created.Format(time.RFC3339),
 			"modified": i.Modified.Format(time.RFC3339),
@@ -144,7 +144,7 @@ func createInformationData(tagId int, meta interface{}, params map[string]string
 }
 
 // prepareTagInformationFilter fetches the panic that can happen in parseTagInformationFilter
-func prepareTagInformationFilter(d interface{}) *tagInformationFilter {
+func prepareTagInformationFilter(d any) *tagInformationFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagInformationFilter", r)
@@ -155,11 +155,11 @@ func prepareTagInformationFilter(d interface{}) *tagInformationFilter {
 }
 
 // parseTagInformationFilter converts the filter data to a tagInformationFilter struct
-func parseTagInformationFilter(d interface{}) *tagInformationFilter {
-	cfg := d.([]interface{})
+func parseTagInformationFilter(d any) *tagInformationFilter {
+	cfg := d.([]any)
 	f := &tagInformationFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	tagId, ok := m["tag_id"]
 	if ok {
@@ -175,7 +175,7 @@ func parseTagInformationFilter(d interface{}) *tagInformationFilter {
 }
 
 // listTagInformation ...
-func listTagInformation(tagId int, meta interface{}, params map[string]string) ([]myrasec.TagInformation, diag.Diagnostics) {
+func listTagInformation(tagId int, meta any, params map[string]string) ([]myrasec.TagInformation, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var information []myrasec.TagInformation
 	pageSize := 250

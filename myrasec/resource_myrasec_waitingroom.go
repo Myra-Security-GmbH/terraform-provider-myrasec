@@ -114,7 +114,7 @@ func resourceMyrasecWaitingRoom() *schema.Resource {
 var creationLock sync.Mutex
 
 // resourceMyrasecWaitingRoomCreate ...
-func resourceMyrasecWaitingRoomCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWaitingRoomCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -149,7 +149,7 @@ func resourceMyrasecWaitingRoomCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecWaitingRoomRead ...
-func resourceMyrasecWaitingRoomRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWaitingRoomRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -180,7 +180,7 @@ func resourceMyrasecWaitingRoomRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecWaitingRoomUpdate ...
-func resourceMyrasecWaitingRoomUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWaitingRoomUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -228,7 +228,7 @@ func resourceMyrasecWaitingRoomUpdate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecWaitingRoomDelete ...
-func resourceMyrasecWaitingRoomDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWaitingRoomDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -268,7 +268,7 @@ func resourceMyrasecWaitingRoomDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecWaitingRoomImport ...
-func resourceMyrasecWaitingRoomImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecWaitingRoomImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	subDomainName, waitingRoomID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -290,7 +290,7 @@ func resourceMyrasecWaitingRoomImport(ctx context.Context, d *schema.ResourceDat
 }
 
 // buildWaitingRoom ...
-func buildWaitingRoom(d *schema.ResourceData, meta interface{}) (*myrasec.WaitingRoom, error) {
+func buildWaitingRoom(d *schema.ResourceData, meta any) (*myrasec.WaitingRoom, error) {
 
 	waitingroom := &myrasec.WaitingRoom{
 		Name:           d.Get("name").(string),
@@ -352,7 +352,7 @@ func buildWaitingRoom(d *schema.ResourceData, meta interface{}) (*myrasec.Waitin
 }
 
 // findWaitingRoomForSubDomain ...
-func findWaitingRoomForSubDomain(waitingRoomID int, meta interface{}, subDomainName string) (*myrasec.WaitingRoom, diag.Diagnostics) {
+func findWaitingRoomForSubDomain(waitingRoomID int, meta any, subDomainName string) (*myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

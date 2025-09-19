@@ -91,7 +91,7 @@ func Provider() *schema.Provider {
 }
 
 // providerConfigure ...
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	config := Config{
 		APIKey:        d.Get("api_key").(string),
 		Secret:        d.Get("secret").(string),

@@ -51,7 +51,7 @@ func resourceMyrasecTag() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToUpper(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"CACHE", "CONFIG", "WAF", "INFORMATION"}, false),
@@ -91,7 +91,7 @@ func resourceMyrasecTag() *schema.Resource {
 						"type": {
 							Type:     schema.TypeString,
 							Required: true,
-							StateFunc: func(i interface{}) string {
+							StateFunc: func(i any) string {
 								return strings.ToUpper(i.(string))
 							},
 							ValidateFunc: validation.StringInSlice([]string{"DOMAIN", "SUBDOMAIN"}, true),
@@ -113,7 +113,7 @@ func resourceMyrasecTag() *schema.Resource {
 						"subdomain_name": {
 							Type:     schema.TypeString,
 							Required: true,
-							StateFunc: func(i interface{}) string {
+							StateFunc: func(i any) string {
 								return myrasec.RemoveTrailingDot(i.(string))
 							},
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -123,8 +123,8 @@ func resourceMyrasecTag() *schema.Resource {
 						},
 					},
 				},
-				Set: func(a interface{}) int {
-					obj := a.(map[string]interface{})
+				Set: func(a any) int {
+					obj := a.(map[string]any)
 
 					assignmentType := strings.ToUpper(obj["type"].(string))
 					name := myrasec.RemoveTrailingDot(obj["subdomain_name"].(string))
@@ -146,12 +146,12 @@ func resourceMyrasecTag() *schema.Resource {
 }
 
 // resourceMyrasecTagCreate ...
-func resourceMyrasecTagCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	tag, err := buildTag(d, meta)
+	tag, err := buildTag(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -176,7 +176,7 @@ func resourceMyrasecTagCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 // resourceMyrasecTagRead
-func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	tagId, err := strconv.Atoi(d.Id())
@@ -201,12 +201,12 @@ func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 // resourceMyrasecTagUpdate ...
-func resourceMyrasecTagUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	tag, err := buildTag(d, meta)
+	tag, err := buildTag(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -232,12 +232,12 @@ func resourceMyrasecTagUpdate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 // resourceMyrasecTagDelete ...
-func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	tag, err := buildTag(d, meta)
+	tag, err := buildTag(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -261,7 +261,7 @@ func resourceMyrasecTagDelete(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 // resourceMyrasecTagImport
-func resourceMyrasecTagImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecTagImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	_, tagID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tag id with id: [%s]", err.Error())
@@ -279,7 +279,7 @@ func resourceMyrasecTagImport(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 // findTag
-func findTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
+func findTag(tagId int, meta any) (*myrasec.Tag, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -307,7 +307,7 @@ func findTag(tagId int, meta interface{}) (*myrasec.Tag, diag.Diagnostics) {
 }
 
 // buildTag ...
-func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
+func buildTag(d *schema.ResourceData) (*myrasec.Tag, error) {
 	tag := &myrasec.Tag{
 		Name:   d.Get("name").(string),
 		Type:   d.Get("type").(string),
@@ -350,23 +350,23 @@ func buildTag(d *schema.ResourceData, meta interface{}) (*myrasec.Tag, error) {
 }
 
 // buildTagAssignment
-func buildTagAssignments(assignment interface{}) (*myrasec.TagAssignment, error) {
+func buildTagAssignments(assignment any) (*myrasec.TagAssignment, error) {
 	tagAssignment := &myrasec.TagAssignment{
-		Type:          assignment.(map[string]interface{})["type"].(string),
-		SubDomainName: assignment.(map[string]interface{})["subdomain_name"].(string),
+		Type:          assignment.(map[string]any)["type"].(string),
+		SubDomainName: assignment.(map[string]any)["subdomain_name"].(string),
 	}
 
-	if assignment.(map[string]interface{})["id"].(int) > 0 {
-		tagAssignment.ID = assignment.(map[string]interface{})["id"].(int)
+	if assignment.(map[string]any)["id"].(int) > 0 {
+		tagAssignment.ID = assignment.(map[string]any)["id"].(int)
 	}
 
-	created, err := types.ParseDate(assignment.(map[string]interface{})["created"].(string))
+	created, err := types.ParseDate(assignment.(map[string]any)["created"].(string))
 	if err != nil {
 		return nil, err
 	}
 	tagAssignment.Created = created
 
-	modified, err := types.ParseDate(assignment.(map[string]interface{})["modified"].(string))
+	modified, err := types.ParseDate(assignment.(map[string]any)["modified"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -388,12 +388,12 @@ func setTagData(d *schema.ResourceData, tag *myrasec.Tag) {
 	d.Set("created", tag.Created.Format(time.RFC3339))
 	d.Set("modified", tag.Modified.Format(time.RFC3339))
 
-	assignments := make([]interface{}, 0)
+	assignments := make([]any, 0)
 	for _, a := range tag.Assignments {
 		if a.SubDomainName == "" {
 			a.SubDomainName = a.Title
 		}
-		assignment := map[string]interface{}{
+		assignment := map[string]any{
 			"id":             a.ID,
 			"created":        a.Created.Format(time.RFC3339),
 			"modified":       a.Modified.Format(time.RFC3339),

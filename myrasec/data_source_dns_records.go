@@ -175,7 +175,7 @@ func dataSourceMyrasecDNSRecords() *schema.Resource {
 }
 
 // dataSourceMyrasecDNSRecordsRead ...
-func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareDNSRecordFilter(d.Get("filter"))
 	if f == nil {
 		f = &recordFilter{}
@@ -194,7 +194,7 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	recordData := make([]interface{}, 0)
+	recordData := make([]any, 0)
 
 	for _, r := range records {
 
@@ -212,7 +212,7 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 			modified = r.Modified.Format(time.RFC3339)
 		}
 
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":                   r.ID,
 			"created":              created,
 			"modified":             modified,
@@ -246,7 +246,7 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 				upstreamModified = r.UpstreamOptions.Modified.Format(time.RFC3339)
 			}
 
-			data["upstream_options"] = []map[string]interface{}{
+			data["upstream_options"] = []map[string]any{
 				{
 					"upstream_id":  r.UpstreamOptions.ID,
 					"created":      upstreamCreated,
@@ -273,7 +273,7 @@ func dataSourceMyrasecDNSRecordsRead(ctx context.Context, d *schema.ResourceData
 }
 
 // prepareDNSRecordFilter fetches the panic that can happen in parseDNSRecordFilter
-func prepareDNSRecordFilter(d interface{}) *recordFilter {
+func prepareDNSRecordFilter(d any) *recordFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareDNSRecordFilter", r)
@@ -284,11 +284,11 @@ func prepareDNSRecordFilter(d interface{}) *recordFilter {
 }
 
 // parseDNSRecordFilter converts the filter data to a recordFilter struct
-func parseDNSRecordFilter(d interface{}) *recordFilter {
-	cfg := d.([]interface{})
+func parseDNSRecordFilter(d any) *recordFilter {
+	cfg := d.([]any)
 	f := &recordFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	domainName, ok := m["domain_name"]
 	if ok {
@@ -318,7 +318,7 @@ func parseDNSRecordFilter(d interface{}) *recordFilter {
 }
 
 // listDnsRecords ...
-func listDnsRecords(meta interface{}, domainName string, params map[string]string) ([]myrasec.DNSRecord, diag.Diagnostics) {
+func listDnsRecords(meta any, domainName string, params map[string]string) ([]myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var records []myrasec.DNSRecord
 	pageSize := 250

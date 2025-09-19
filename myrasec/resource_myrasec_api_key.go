@@ -68,7 +68,7 @@ func resourceMyrasecApiKeyCreate(ctx context.Context, d *schema.ResourceData, me
 
 	var diags diag.Diagnostics
 
-	key, err := buildApiKey(d, meta)
+	key, err := buildApiKey(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -140,7 +140,7 @@ func resourceMyrasecApiKeyUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("[INFO] Updating API key: %v", keyID)
 
-	_, err = buildApiKey(d, meta)
+	_, err = buildApiKey(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -173,7 +173,7 @@ func resourceMyrasecApiKeyDelete(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("[INFO] Deleting API key: %v", keyID)
 
-	key, err := buildApiKey(d, meta)
+	key, err := buildApiKey(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -216,7 +216,7 @@ func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, me
 }
 
 // buildApiKey ...
-func buildApiKey(d *schema.ResourceData, meta any) (*myrasec.APIKey, error) {
+func buildApiKey(d *schema.ResourceData) (*myrasec.APIKey, error) {
 	key := &myrasec.APIKey{
 		Name:   d.Get("name").(string),
 		Key:    d.Get("key").(string),

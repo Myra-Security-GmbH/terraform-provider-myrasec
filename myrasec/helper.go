@@ -13,7 +13,7 @@ import (
 )
 
 // findDomainByDomainName ...
-func findDomainByDomainName(meta interface{}, domainName string) (domain *myrasec.Domain, diags diag.Diagnostics) {
+func findDomainByDomainName(meta any, domainName string) (domain *myrasec.Domain, diags diag.Diagnostics) {
 
 	client := meta.(*myrasec.API)
 	domain, err := client.FetchDomain(domainName)
@@ -30,7 +30,7 @@ func findDomainByDomainName(meta interface{}, domainName string) (domain *myrase
 }
 
 // findDomainIDByDomainName ...
-func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainName string) (domainID int, diags diag.Diagnostics) {
+func findDomainIDByDomainName(d *schema.ResourceData, meta any, domainName string) (domainID int, diags diag.Diagnostics) {
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
@@ -48,7 +48,7 @@ func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainNa
 }
 
 // findDomainID ...
-func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags diag.Diagnostics) {
+func findDomainID(d *schema.ResourceData, meta any) (domainID int, diags diag.Diagnostics) {
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
@@ -86,7 +86,7 @@ func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags
 }
 
 // findSubdomainNameAndDomainID ...
-func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (domainID int, subDomainName string, diags diag.Diagnostics) {
+func findSubdomainNameAndDomainID(d *schema.ResourceData, meta any) (domainID int, subDomainName string, diags diag.Diagnostics) {
 
 	name, ok := d.GetOk("subdomain_name")
 	if !ok {
@@ -124,7 +124,7 @@ func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (dom
 }
 
 // findDomainBySubdomainName ...
-func findDomainBySubdomainName(meta interface{}, subDomainName string) (*myrasec.Domain, diag.Diagnostics) {
+func findDomainBySubdomainName(meta any, subDomainName string) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

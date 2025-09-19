@@ -36,7 +36,7 @@ func resourceMyrasecSettings() *schema.Resource {
 			"subdomain_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -479,7 +479,7 @@ func resourceMyrasecSettings() *schema.Resource {
 }
 
 // resourceCustomizeDiffSettings
-func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	availableAttributes := []string{}
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
@@ -520,7 +520,7 @@ func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
 		size := len(d.Get(name).(*schema.Set).List())
 		isNullValue = size == 0
 	case schema.TypeList:
-		size := len(d.Get(name).([]interface{}))
+		size := len(d.Get(name).([]any))
 		isNullValue = size == 0
 	case schema.TypeString:
 		value := d.Get(name)
@@ -530,7 +530,7 @@ func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
 }
 
 // resourceMyrasecSettingsCreate ...
-func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -566,7 +566,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecSettingsRead ...
-func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -619,7 +619,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecSettingsUpdate ...
-func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -656,7 +656,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecSettingsDelete restores the default setting values
-func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -701,8 +701,8 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // buildSettings ...
-func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, error) {
-	settingsMap := make(map[string]interface{})
+func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
+	settingsMap := make(map[string]any)
 
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
@@ -740,7 +740,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 				}
 			case schema.TypeList:
 				settingsList := []string{}
-				for _, item := range value.([]interface{}) {
+				for _, item := range value.([]any) {
 					settingsList = append(settingsList, item.(string))
 				}
 				settingsMap[name] = settingsList
@@ -760,7 +760,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 }
 
 // setSettingsData ...
-func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomainName string, domainID int) {
+func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName string, domainID int) {
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
@@ -774,11 +774,11 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 		d.Set(name, nil)
 	}
 
-	allSettings, _ := settingsData.(*map[string]interface{})
+	allSettings, _ := settingsData.(*map[string]any)
 	domainSettings := (*allSettings)["domain"]
 
 	availableAttributes := []string{}
-	mapSettings, ok := domainSettings.(map[string]interface{})
+	mapSettings, ok := domainSettings.(map[string]any)
 	if ok {
 		for k, v := range mapSettings {
 			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
@@ -802,7 +802,7 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	}
 }
 
-func appendAvailableAttributes(v interface{}, k string, resource map[string]*schema.Schema) bool {
+func appendAvailableAttributes(v any, k string, resource map[string]*schema.Schema) bool {
 	append := false
 
 	if _, ok := resource[k]; !ok {
@@ -825,7 +825,7 @@ func appendAvailableAttributes(v interface{}, k string, resource map[string]*sch
 	if _, ok := v.(string); ok && v != "" {
 		append = true
 	}
-	if _, ok := v.([]interface{}); ok {
+	if _, ok := v.([]any); ok {
 		append = true
 	}
 

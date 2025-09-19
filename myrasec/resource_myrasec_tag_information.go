@@ -70,11 +70,11 @@ func resourceMyrasecTagInformation() *schema.Resource {
 }
 
 // resourceMyrasecTagInformationCreate ...
-func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 	var diags diag.Diagnostics
 
-	information, err := buildTagInformation(d, meta)
+	information, err := buildTagInformation(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -116,7 +116,7 @@ func resourceMyrasecTagInformationCreate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecTagInformationRead ...
-func resourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	tagID, ok := d.GetOk("tag_id")
@@ -150,7 +150,7 @@ func resourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecTagInformationUpdate ...
-func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -166,7 +166,7 @@ func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	log.Printf("[INFO] Updating tag information: %v", informationID)
-	information, err := buildTagInformation(d, meta)
+	information, err := buildTagInformation(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -201,11 +201,11 @@ func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecTagInformationDelete ...
-func resourceMyrasecTagInformationDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagInformationDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 	var diags diag.Diagnostics
 
-	information, err := buildTagInformation(d, meta)
+	information, err := buildTagInformation(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -239,7 +239,7 @@ func resourceMyrasecTagInformationDelete(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecTagInformationImport ...
-func resourceMyrasecTagInformationImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecTagInformationImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	tag, informationID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tag information ID: [%s]", err.Error())
@@ -260,7 +260,7 @@ func resourceMyrasecTagInformationImport(ctx context.Context, d *schema.Resource
 }
 
 // buildTagInformation ...
-func buildTagInformation(d *schema.ResourceData, meta interface{}) (*myrasec.TagInformation, error) {
+func buildTagInformation(d *schema.ResourceData) (*myrasec.TagInformation, error) {
 	information := &myrasec.TagInformation{
 		Key:     d.Get("key").(string),
 		Value:   d.Get("value").(string),
@@ -292,7 +292,7 @@ func buildTagInformation(d *schema.ResourceData, meta interface{}) (*myrasec.Tag
 }
 
 // findTagInformation
-func findTagInformation(informationID int, tagID int, meta interface{}) (*myrasec.TagInformation, diag.Diagnostics) {
+func findTagInformation(informationID int, tagID int, meta any) (*myrasec.TagInformation, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -357,7 +357,7 @@ func setTagInformationData(d *schema.ResourceData, information *myrasec.TagInfor
 }
 
 // importExistingTagInformation
-func importExistingTagInformation(info *myrasec.TagInformation, tagID int, meta interface{}) (*myrasec.TagInformation, error) {
+func importExistingTagInformation(info *myrasec.TagInformation, tagID int, meta any) (*myrasec.TagInformation, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{

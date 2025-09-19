@@ -33,7 +33,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				Description: "The Domain for the DNS record.",
@@ -61,7 +61,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -73,7 +73,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"ttl": {
 				Type:     schema.TypeInt,
 				Required: true,
-				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
+				ValidateFunc: func(i any, s string) (warnings []string, errors []error) {
 
 					values := []int{300, 600, 900, 1800, 3600, 7200, 18000, 43200, 86400}
 
@@ -190,8 +190,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					oldUpstream, newUpstream := d.GetChange("upstream_options.0")
 
-					uoOld, _ := oldUpstream.(map[string]interface{})
-					uoNew, _ := newUpstream.(map[string]interface{})
+					uoOld, _ := oldUpstream.(map[string]any)
+					uoNew, _ := newUpstream.(map[string]any)
 
 					maxFailsOld, maxFailsOk := uoOld["max_fails"].(int)
 					weighOld, weightOk := uoOld["weight"].(int)
@@ -261,7 +261,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 	}
 }
 
-func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta any) error {
 
 	domainName := d.Get("domain_name").(string)
 	recordType := d.Get("record_type").(string)
@@ -343,12 +343,12 @@ func validateMxValue(recordType string, value string) error {
 }
 
 // resourceMyrasecDNSRecordCreate ...
-func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -380,7 +380,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordRead ...
-func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, ok := d.GetOk("domain_name")
@@ -425,7 +425,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecDNSRecordUpdate ...
-func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -442,7 +442,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[INFO] Updating DNS record: %v", recordID)
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -485,7 +485,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordDelete ...
-func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -502,7 +502,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[INFO] Deleting DNS record: %v", recordID)
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -542,7 +542,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordImport ...
-func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	domainName, recordID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -569,7 +569,7 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 }
 
 // buildDNSRecord ...
-func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecord, error) {
+func buildDNSRecord(d *schema.ResourceData) (*myrasec.DNSRecord, error) {
 	record := &myrasec.DNSRecord{
 		Name:                 d.Get("name").(string),
 		Value:                d.Get("value").(string),
@@ -615,7 +615,7 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 		return record, nil
 	}
 
-	for _, upstream := range options.([]interface{}) {
+	for _, upstream := range options.([]any) {
 		opts, err := buildUpstreamOptions(upstream)
 		if err != nil {
 			return nil, err
@@ -628,10 +628,10 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 }
 
 // buildUpstreamOptions ...
-func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error) {
+func buildUpstreamOptions(upstream any) (*myrasec.UpstreamOptions, error) {
 	options := &myrasec.UpstreamOptions{}
 
-	for key, val := range upstream.(map[string]interface{}) {
+	for key, val := range upstream.(map[string]any) {
 		switch key {
 		case "upstream_id":
 			options.ID = val.(int)
@@ -664,7 +664,7 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 }
 
 // findDNSRecord ...
-func findDNSRecord(recordID int, meta interface{}, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
+func findDNSRecord(recordID int, meta any, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -722,7 +722,7 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.Set("domain_id", domainID)
 
 	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
-		d.Set("upstream_options", []map[string]interface{}{
+		d.Set("upstream_options", []map[string]any{
 			{
 				"upstream_id":  record.UpstreamOptions.ID,
 				"created":      record.UpstreamOptions.Created.Format(time.RFC3339),

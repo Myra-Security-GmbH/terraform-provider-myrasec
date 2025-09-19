@@ -86,7 +86,7 @@ func dataSourceMyrasecIPFilters() *schema.Resource {
 }
 
 // dataSourceMyrasecIPFiltersRead ...
-func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareIPFilterFilter(d.Get("filter"))
 	if f == nil {
 		f = &ipFilterFilter{}
@@ -106,9 +106,9 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	ipFilterData := make([]interface{}, 0)
+	ipFilterData := make([]any, 0)
 	for _, r := range filters {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":       r.ID,
 			"created":  r.Created.Format(time.RFC3339),
 			"modified": r.Modified.Format(time.RFC3339),
@@ -136,7 +136,7 @@ func dataSourceMyrasecIPFiltersRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // prepareIPFilterFilter fetches the panic that can happen in parseIPFilterFilter
-func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
+func prepareIPFilterFilter(d any) *ipFilterFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareIPFilterFilter", r)
@@ -147,11 +147,11 @@ func prepareIPFilterFilter(d interface{}) *ipFilterFilter {
 }
 
 // parseIPFilterFilter converts the filter data to a ipFilterFilter struct
-func parseIPFilterFilter(d interface{}) *ipFilterFilter {
-	cfg := d.([]interface{})
+func parseIPFilterFilter(d any) *ipFilterFilter {
+	cfg := d.([]any)
 	f := &ipFilterFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {
@@ -172,7 +172,7 @@ func parseIPFilterFilter(d interface{}) *ipFilterFilter {
 }
 
 // listIPFilters ...
-func listIPFilters(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
+func listIPFilters(meta any, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var filters []myrasec.IPFilter
 	pageSize := 250
