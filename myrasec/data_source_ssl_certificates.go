@@ -50,6 +50,10 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"configuration_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"subject": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -175,6 +179,7 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 			"id":                   c.Certificate.ID,
 			"created":              created,
 			"modified":             modified,
+			"configuration_name":   c.SslConfigurationName,
 			"subject":              c.Certificate.Subject,
 			"algorithm":            c.Certificate.Algorithm,
 			"valid_from":           c.Certificate.ValidFrom.Format(time.RFC3339),

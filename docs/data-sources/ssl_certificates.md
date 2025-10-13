@@ -29,6 +29,7 @@ The following arguments are supported:
 * `id` The ID of the SSL certificate.
 * `created` Date of creation.
 * `modified` Date of last modification.
+* `configuration_name` Specific ssl configuration for ciphers and protocols.
 * `domain_name` The domain for the SSL certificate.
 * `subject` Subject of the certificate.
 * `algorithm` Signature algorithm of the certificate.
