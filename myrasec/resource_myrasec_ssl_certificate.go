@@ -441,7 +441,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
 	}
 	if cert.Managed {
-		return nil, fmt.Errorf("this certificate is managed by myra")
+		return nil, fmt.Errorf("This certificate is managed by Myra")
 	}
 
 	d.SetId(strconv.Itoa(certID))
