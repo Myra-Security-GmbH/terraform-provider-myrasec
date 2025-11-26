@@ -94,7 +94,7 @@ func dataSourceMyrasecRedirects() *schema.Resource {
 }
 
 // dataSourceMyrasecRedirectsRead ...
-func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareRedirectFilter(d.Get("filter"))
 	if f == nil {
 		f = &redirectFilter{}
@@ -110,9 +110,9 @@ func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	redirectData := make([]interface{}, 0)
+	redirectData := make([]any, 0)
 	for _, r := range redirects {
-		redirectData = append(redirectData, map[string]interface{}{
+		redirectData = append(redirectData, map[string]any{
 			"id":             r.ID,
 			"created":        r.Created.Format(time.RFC3339),
 			"modified":       r.Modified.Format(time.RFC3339),
@@ -137,7 +137,7 @@ func dataSourceMyrasecRedirectsRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // prepareRedirectFilter fetches the panic that can happen in parseRedirectFilter
-func prepareRedirectFilter(d interface{}) *redirectFilter {
+func prepareRedirectFilter(d any) *redirectFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareRedirectFilter", r)
@@ -148,11 +148,11 @@ func prepareRedirectFilter(d interface{}) *redirectFilter {
 }
 
 // parseRedirectFilter converts the filter data to a redirectFilter struct
-func parseRedirectFilter(d interface{}) *redirectFilter {
-	cfg := d.([]interface{})
+func parseRedirectFilter(d any) *redirectFilter {
+	cfg := d.([]any)
 	f := &redirectFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {
@@ -168,7 +168,7 @@ func parseRedirectFilter(d interface{}) *redirectFilter {
 }
 
 // listRedirects ...
-func listRedirects(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
+func listRedirects(meta any, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var redirects []myrasec.Redirect
 	pageSize := 250

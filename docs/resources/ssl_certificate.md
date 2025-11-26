@@ -2,6 +2,8 @@
 
 Provides a Myra Security SSL certificate resource.
 
+**Myra managed certificates can not be handled with this resource type**
+
 ## Example usage
 
 ```hcl
@@ -69,6 +71,7 @@ The following arguments are supported:
 * `certificate_id` (*Computed*) ID of the SSL certificate.
 * `created` (*Computed*) Date of creation.
 * `modified` (*Computed*) Date of last modification.
+* `configuration_name` (Optional) Specific ssl configuration for ciphers and protocols.
 * `domain_name` (**Required**) The domain for the SSL certificate.
 * `subject` (*Computed*) Subject of the certificate.
 * `algorithm` (*Computed*) Signature algorithm of the certificate.

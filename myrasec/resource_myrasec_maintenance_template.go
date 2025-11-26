@@ -29,7 +29,7 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				Description: "The Domain for the maintenance template.",
@@ -56,13 +56,22 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 			},
 			"name": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the maintenance template.",
 			},
 			"content": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "HTML content of the maintenance template.",
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
+				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -73,12 +82,12 @@ func resourceMyrasecMaintenanceTemplate() *schema.Resource {
 }
 
 // resourceMyrasecMaintenanceTemplateCreate ...
-func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	template, err := buildMaintenanceTemplate(d, meta)
+	template, err := buildMaintenanceTemplate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -110,7 +119,7 @@ func resourceMyrasecMaintenanceTemplateCreate(ctx context.Context, d *schema.Res
 }
 
 // resourceMyrasecMaintenanceTemplateRead ...
-func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, ok := d.GetOk("domain_name")
@@ -138,7 +147,7 @@ func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.Resou
 		return domainDiag
 	}
 
-	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName, domainID)
+	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainID)
 	if diags.HasError() || template == nil {
 		return diags
 	}
@@ -149,7 +158,7 @@ func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.Resou
 }
 
 // resourceMyrasecMaintenanceTemplateUpdate ...
-func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -166,7 +175,7 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 
 	log.Printf("[INFO] Updating maintenance template: %v", maintenanceTemplateID)
 
-	template, err := buildMaintenanceTemplate(d, meta)
+	template, err := buildMaintenanceTemplate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -199,7 +208,7 @@ func resourceMyrasecMaintenanceTemplateUpdate(ctx context.Context, d *schema.Res
 }
 
 // resourceMyrasecMaintenanceTemplateDelete ...
-func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -216,7 +225,7 @@ func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.Res
 
 	log.Printf("[INFO] Deleting maintenance template: %v", maintenanceTemplateID)
 
-	template, err := buildMaintenanceTemplate(d, meta)
+	template, err := buildMaintenanceTemplate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -246,7 +255,7 @@ func resourceMyrasecMaintenanceTemplateDelete(ctx context.Context, d *schema.Res
 }
 
 // resourceMyrasecMaintenanceTemplateImport ...
-func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	domainName, maintenanceTemplateID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing maintenance template ID: [%s]", err.Error())
@@ -257,7 +266,7 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 		return nil, fmt.Errorf("unable to find domainID for domainName [%s]", domainName)
 	}
 
-	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainName, domainID)
+	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainID)
 	if diags.HasError() || template == nil {
 		return nil, fmt.Errorf("unable to find maintenance template for domain [%s] with ID = [%d]", domainName, maintenanceTemplateID)
 	}
@@ -266,7 +275,8 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 	d.Set("domain_name", domainName)
 	d.Set("maintenance_id", template.ID)
 	d.Set("name", template.Name)
-	d.Set("content", template.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(template.Content))
 
 	resourceMyrasecMaintenanceTemplateRead(ctx, d, meta)
 
@@ -274,7 +284,7 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 }
 
 // buildMaintenanceTemplate ...
-func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrasec.MaintenanceTemplate, error) {
+func buildMaintenanceTemplate(d *schema.ResourceData) (*myrasec.MaintenanceTemplate, error) {
 	template := &myrasec.MaintenanceTemplate{
 		Content: d.Get("content").(string),
 		Name:    d.Get("name").(string),
@@ -305,7 +315,7 @@ func buildMaintenanceTemplate(d *schema.ResourceData, meta interface{}) (*myrase
 }
 
 // findMaintenanceTemplate ...
-func findMaintenanceTemplate(maintenanceTemplateID int, meta interface{}, domainName string, domainID int) (*myrasec.MaintenanceTemplate, diag.Diagnostics) {
+func findMaintenanceTemplate(maintenanceTemplateID int, meta any, domainID int) (*myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -356,6 +366,7 @@ func setMaintenanceTemplateData(d *schema.ResourceData, template *myrasec.Mainte
 	d.Set("created", template.Created.Format(time.RFC3339))
 	d.Set("modified", template.Modified.Format(time.RFC3339))
 	d.Set("name", template.Name)
-	d.Set("content", template.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(template.Content))
 	d.Set("domain_id", domainID)
 }

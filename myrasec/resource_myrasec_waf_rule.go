@@ -34,6 +34,8 @@ var requiredConditionKey = []string{
 	"cookie",
 	"arg",
 	"postarg",
+}
+var requiredConditionValue = []string{
 	"score",
 }
 var notAllowedResponseActions = []string{
@@ -62,7 +64,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -124,7 +126,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			"direction": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"in", "out"}, false),
@@ -135,18 +137,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Optional:    true,
 				Default:     1,
 				Description: "The order in which the rules take action.",
-			},
-			"sync": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
-			},
-			"template": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "",
 			},
 			"process_next": {
 				Type:        schema.TypeBool,
@@ -169,16 +159,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 							Type:        schema.TypeInt,
 							Computed:    true,
 							Description: "ID of the WAF rule condition.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
 						},
 						"alias": {
 							Type:     schema.TypeString,
@@ -212,25 +192,6 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action_id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the WAF rule.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -255,7 +216,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				},
 			},
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			err := validateActions(rd)
 			if err != nil {
 				return err
@@ -275,9 +236,9 @@ func resourceMyrasecWAFRule() *schema.Resource {
 }
 
 func validateActions(rd *schema.ResourceDiff) error {
-	actions := rd.Get("actions").([]interface{})
+	actions := rd.Get("actions").([]any)
 	for _, v := range actions {
-		a := v.(map[string]interface{})
+		a := v.(map[string]any)
 		direction := rd.Get("direction").(string)
 		if direction == "out" {
 			for _, r := range notAllowedResponseActions {
@@ -303,17 +264,64 @@ func validateActions(rd *schema.ResourceDiff) error {
 				return fmt.Errorf("custom_key and value are required for action %s", a["type"])
 			}
 		}
+		if a["type"] == "score" {
+			keys := []string{"+", "-", "*"}
+			if !StringInSlice(a["custom_key"].(string), keys) {
+				return fmt.Errorf("score key has to one of '+', '-', '*'")
+			}
+			_, err := strconv.Atoi(a["value"].(string))
+			if err != nil {
+				return fmt.Errorf("score values has to be a number")
+			}
+		}
+		if a["type"] == "origin_rate_limit" {
+			values := []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 600, 1200, 3600, 10800, 21600, 43200, 64800, 86400}
+			key, err := strconv.Atoi(a["custom_key"].(string))
+			if err != nil {
+				return fmt.Errorf("origin_rate_limit custom_key must be a number")
+			}
+			valid := IntInSlice(key, values)
+			if !valid {
+				return fmt.Errorf("origin_rate_limit customKey must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ", "))
+			}
+			_, err = strconv.Atoi(a["value"].(string))
+			if err != nil {
+				return fmt.Errorf("origin_rate_limit value must be a number")
+			}
+		}
+		if a["type"] == "set_http_status" {
+			values := []int{301, 302, 404}
+			key, err := strconv.Atoi(a["custom_key"].(string))
+			if err != nil {
+				return fmt.Errorf("set_http_status custom_key must be a number")
+			}
+			valid := IntInSlice(key, values)
+			if !valid {
+				return fmt.Errorf("set_http_status customKey must be one of %s", strings.Join(strings.Fields(fmt.Sprint(values)), ", "))
+			}
+		}
 	}
 	return nil
 }
 
 func validateConditions(rd *schema.ResourceDiff) error {
-	conditions := rd.Get("conditions").([]interface{})
+	conditions := rd.Get("conditions").([]any)
 	for _, v := range conditions {
-		c := v.(map[string]interface{})
+		c := v.(map[string]any)
 		for _, r := range requiredConditionKey {
 			if r == c["name"] && c["key"] == "" {
 				return fmt.Errorf("key is required for condition %s", c["name"])
+			}
+		}
+		for _, r := range requiredConditionValue {
+			if r == c["name"] && c["value"] == "" {
+				return fmt.Errorf("value is required for condition %s", c["name"])
+			}
+		}
+		if c["name"] == "score" {
+			_, err := strconv.Atoi(c["value"].(string))
+			if err != nil {
+				return fmt.Errorf("score value has to be a number")
 			}
 		}
 	}
@@ -321,12 +329,12 @@ func validateConditions(rd *schema.ResourceDiff) error {
 }
 
 // resourceMyrasecWAFRuleCreate ...
-func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	rule, err := buildWAFRule(d, meta)
+	rule, err := buildWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -356,7 +364,7 @@ func resourceMyrasecWAFRuleCreate(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecWAFRuleRead ...
-func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	ruleID, err := strconv.Atoi(d.Id())
@@ -385,7 +393,7 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 // resourceMyrasecWAFRuleUpdate ...
-func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -402,7 +410,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[INFO] Updating WAF rule: %v", ruleID)
 
-	rule, err := buildWAFRule(d, meta)
+	rule, err := buildWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -433,7 +441,7 @@ func resourceMyrasecWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecWAFRuleDelete ...
-func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -450,7 +458,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[INFO] Deleting WAF rule: %v", ruleID)
 
-	rule, err := buildWAFRule(d, meta)
+	rule, err := buildWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -473,7 +481,7 @@ func resourceMyrasecWAFRuleDelete(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecWAFRuleImport ...
-func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	subDomainName, ruleID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -500,7 +508,7 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 }
 
 // buildWAFRule ...
-func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, error) {
+func buildWAFRule(d *schema.ResourceData) (*myrasec.WAFRule, error) {
 	rule := &myrasec.WAFRule{
 		SubDomainName: d.Get("subdomain_name").(string),
 		Name:          d.Get("name").(string),
@@ -508,7 +516,6 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		LogIdentifier: d.Get("log_identifier").(string),
 		Direction:     d.Get("direction").(string),
 		Sort:          d.Get("sort").(int),
-		Sync:          d.Get("sync").(bool),
 		ProcessNext:   d.Get("process_next").(bool),
 		Enabled:       d.Get("enabled").(bool),
 		RuleType:      "domain",
@@ -522,6 +529,12 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 			rule.ID = id
 		}
 	}
+	date := d.Get("expire_date").(string)
+	expireDate, err := types.ParseDate(date)
+	if err != nil {
+		return nil, err
+	}
+	rule.ExpireDate = expireDate
 
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
@@ -539,7 +552,7 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 	if !ok {
 		rule.Conditions = make([]*myrasec.WAFCondition, 0)
 	}
-	for _, condition := range conditions.([]interface{}) {
+	for _, condition := range conditions.([]any) {
 		c, err := buildWAFCondition(condition)
 		if err != nil {
 			return nil, err
@@ -552,7 +565,7 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 		return rule, nil
 	}
 
-	for _, action := range actions.([]interface{}) {
+	for _, action := range actions.([]any) {
 		a, err := buildWAFAction(action)
 		if err != nil {
 			return nil, err
@@ -565,24 +578,12 @@ func buildWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.WAFRule, e
 }
 
 // buildWAFCondition ...
-func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
+func buildWAFCondition(condition any) (*myrasec.WAFCondition, error) {
 	c := &myrasec.WAFCondition{}
-	for key, val := range condition.(map[string]interface{}) {
+	for key, val := range condition.(map[string]any) {
 		switch key {
 		case "condition_id":
 			c.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			c.Created = created
 		case "alias":
 			c.Alias = val.(string)
 		case "category":
@@ -602,32 +603,14 @@ func buildWAFCondition(condition interface{}) (*myrasec.WAFCondition, error) {
 }
 
 // buildWAFAction ...
-func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
+func buildWAFAction(action any) (*myrasec.WAFAction, error) {
 	a := &myrasec.WAFAction{}
-	for key, val := range action.(map[string]interface{}) {
+	for key, val := range action.(map[string]any) {
 		switch key {
-		case "action_id":
-			a.ID = val.(int)
-		case "modified":
-			modified, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Modified = modified
-		case "created":
-			created, err := types.ParseDate(val.(string))
-			if err != nil {
-				return nil, err
-			}
-			a.Created = created
-		case "force_custom_values":
-			a.ForceCustomValues = val.(bool)
 		case "name":
 			a.Name = val.(string)
 		case "type":
 			a.Type = val.(string)
-		case "available_phases":
-			a.AvailablePhases = val.(int)
 		case "custom_key":
 			a.CustomKey = val.(string)
 		case "value":
@@ -639,7 +622,7 @@ func buildWAFAction(action interface{}) (*myrasec.WAFAction, error) {
 }
 
 // findWAFRule ...
-func findWAFRule(wafRuleID int, meta interface{}, subDomainName string, domainID int) (*myrasec.WAFRule, diag.Diagnostics) {
+func findWAFRule(wafRuleID int, meta any, subDomainName string, domainID int) (*myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -696,56 +679,47 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("log_identifier", rule.LogIdentifier)
 	d.Set("direction", rule.Direction)
 	d.Set("sort", rule.Sort)
-	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 	d.Set("domain_id", domainID)
+	d.Set("rule_type", rule.RuleType)
 
-	conditions := []interface{}{}
-	for _, condition := range rule.Conditions {
-
-		c := map[string]interface{}{
-			"condition_id":  condition.ID,
-			"alias":         condition.Alias,
-			"category":      condition.Category,
-			"matching_type": condition.MatchingType,
-			"name":          condition.Name,
-			"key":           condition.Key,
-			"value":         condition.Value,
-		}
-
-		if condition.Created != nil {
-			c["created"] = condition.Created.Format(time.RFC3339)
-		}
-
-		if condition.Modified != nil {
-			c["modified"] = condition.Modified.Format(time.RFC3339)
-		}
-
-		conditions = append(conditions, c)
-	}
+	conditions := createConditions(rule.Conditions)
 	d.Set("conditions", conditions)
 
-	actions := []interface{}{}
-	for _, action := range rule.Actions {
-		a := map[string]interface{}{
-			"action_id":           action.ID,
-			"force_custom_values": action.ForceCustomValues,
-			"available_phases":    action.AvailablePhases,
-			"name":                action.Name,
-			"type":                action.Type,
-			"value":               action.Value,
-			"custom_key":          action.CustomKey,
-		}
+	actions := createActions(rule.Actions)
+	d.Set("actions", actions)
+}
 
-		if action.Created != nil {
-			a["created"] = action.Created.Format(time.RFC3339)
+func createConditions(ruleConditions []*myrasec.WAFCondition) []any {
+	conditions := []any{}
+	for _, condition := range ruleConditions {
+		c := map[string]any{
+			"condition_id":     condition.ID,
+			"alias":            condition.Alias,
+			"category":         condition.Category,
+			"matching_type":    condition.MatchingType,
+			"name":             condition.Name,
+			"key":              condition.Key,
+			"value":            condition.Value,
+			"available_phases": condition.AvailablePhases,
 		}
+		conditions = append(conditions, c)
+	}
+	return conditions
+}
 
-		if action.Modified != nil {
-			a["modified"] = action.Modified.Format(time.RFC3339)
+func createActions(ruleActions []*myrasec.WAFAction) []any {
+	actions := []any{}
+	for _, action := range ruleActions {
+		a := map[string]any{
+			"available_phases": action.AvailablePhases,
+			"name":             action.Name,
+			"type":             action.Type,
+			"value":            action.Value,
+			"custom_key":       action.CustomKey,
 		}
 		actions = append(actions, a)
 	}
-	d.Set("actions", actions)
+	return actions
 }

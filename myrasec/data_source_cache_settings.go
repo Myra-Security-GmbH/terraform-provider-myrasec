@@ -78,6 +78,10 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"comment": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -90,7 +94,7 @@ func dataSourceMyrasecCacheSettings() *schema.Resource {
 }
 
 // dataSourceMyrasecCacheSettingsRead ...
-func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareCacheSettingFilter(d.Get("filter"))
 	if f == nil {
 		f = &cacheSettingFilter{}
@@ -106,9 +110,9 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 		return diags
 	}
 
-	settingData := make([]interface{}, 0)
+	settingData := make([]any, 0)
 	for _, r := range settings {
-		settingData = append(settingData, map[string]interface{}{
+		settingData = append(settingData, map[string]any{
 			"id":            r.ID,
 			"created":       r.Created.Format(time.RFC3339),
 			"modified":      r.Modified.Format(time.RFC3339),
@@ -119,6 +123,7 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 			"sort":          r.Sort,
 			"enabled":       r.Enabled,
 			"enforce":       r.Enforce,
+			"comment":       r.Comment,
 		})
 	}
 
@@ -133,7 +138,7 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 }
 
 // prepareCacheSettingFilter fetches the panic that can happen in parseCacheSettingFilter
-func prepareCacheSettingFilter(d interface{}) *cacheSettingFilter {
+func prepareCacheSettingFilter(d any) *cacheSettingFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareCacheSettingFilter", r)
@@ -144,11 +149,11 @@ func prepareCacheSettingFilter(d interface{}) *cacheSettingFilter {
 }
 
 // parseCacheSettingFilter converts the filter data to a cacheSettingFilter struct
-func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
-	cfg := d.([]interface{})
+func parseCacheSettingFilter(d any) *cacheSettingFilter {
+	cfg := d.([]any)
 	f := &cacheSettingFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {
@@ -164,7 +169,7 @@ func parseCacheSettingFilter(d interface{}) *cacheSettingFilter {
 }
 
 // listCacheSettings ...
-func listCacheSettings(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
+func listCacheSettings(meta any, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var settings []myrasec.CacheSetting
 	pageSize := 250

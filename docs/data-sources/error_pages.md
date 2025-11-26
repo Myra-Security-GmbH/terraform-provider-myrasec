@@ -31,4 +31,5 @@ The following arguments are supported:
 * `modified` Date of last modification.
 * `subdomain_name` The Subdomain for the error page.
 * `error_code` Error code of the error page.
-* `content` HTML content of the error page.
+
+Note: Content is not part of data source, it is only available in resource.

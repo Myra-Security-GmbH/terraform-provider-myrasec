@@ -50,7 +50,7 @@ func dataSourceMyrasecMaintenanceTemplates() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"content": {
+						"content_hash": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -66,7 +66,7 @@ func dataSourceMyrasecMaintenanceTemplates() *schema.Resource {
 }
 
 // dataSourceMyrasecMaintenanceTemplatesRead ...
-func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareMaintenanceTemplateFilter(d.Get("filter"))
 
 	if f == nil {
@@ -79,7 +79,7 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 		return diags
 	}
 
-	maintenanceTemplateData := make([]interface{}, 0)
+	maintenanceTemplateData := make([]any, 0)
 
 	for _, mt := range templates {
 		var created string
@@ -92,12 +92,12 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 			modified = mt.Modified.Format(time.RFC3339)
 		}
 
-		data := map[string]interface{}{
-			"id":       mt.ID,
-			"created":  created,
-			"modified": modified,
-			"name":     mt.Name,
-			"content":  mt.Content,
+		data := map[string]any{
+			"id":           mt.ID,
+			"created":      created,
+			"modified":     modified,
+			"name":         mt.Name,
+			"content_hash": createContentHash(mt.Content),
 		}
 		maintenanceTemplateData = append(maintenanceTemplateData, data)
 	}
@@ -112,7 +112,7 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 }
 
 // listMaintenanceTemplates ...
-func listMaintenanceTemplates(meta interface{}, domainName string, params map[string]string) ([]myrasec.MaintenanceTemplate, diag.Diagnostics) {
+func listMaintenanceTemplates(meta any, domainName string, params map[string]string) ([]myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var templates []myrasec.MaintenanceTemplate
 	pageSize := 100
@@ -153,7 +153,7 @@ func listMaintenanceTemplates(meta interface{}, domainName string, params map[st
 }
 
 // prepareMaintenanceTemplateFilter ...
-func prepareMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter {
+func prepareMaintenanceTemplateFilter(d any) *maintenanceTemplateFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareMaintenanceTemplateFilter", r)
@@ -164,11 +164,11 @@ func prepareMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter 
 }
 
 // parseMaintenanceTemplateFilter ...
-func parseMaintenanceTemplateFilter(d interface{}) *maintenanceTemplateFilter {
-	cfg := d.([]interface{})
+func parseMaintenanceTemplateFilter(d any) *maintenanceTemplateFilter {
+	cfg := d.([]any)
 	f := &maintenanceTemplateFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	domainName, ok := m["domain_name"]
 	if ok {

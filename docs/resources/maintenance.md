@@ -31,4 +31,5 @@ The following arguments are supporeted:
 * `start` (**Required**) The scheduled start date for the maintenance.
 * `end` (**Required**) The planned end date for the maintenance.
 * `content` (**Required**) The HTML content of the maintenance.
+* `content_hash` (*Computed*) In the tfstate file only the hash of the content is stored.
 * `active` (*Computed*) Status if the maintenance page is active or not.

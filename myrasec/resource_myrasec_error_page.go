@@ -30,7 +30,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -64,8 +64,14 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Required:    true,
 				Description: "HTML content of the error page.",
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-					return strings.TrimSpace(newValue) == strings.TrimSpace(oldValue)
+					oldHash := d.Get("content_hash")
+					newHash := createContentHash(newValue)
+					return oldHash == newHash
 				},
+			},
+			"content_hash": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"domain_id": {
 				Type:        schema.TypeInt,
@@ -81,12 +87,12 @@ func resourceMyrasecErrorPage() *schema.Resource {
 }
 
 // resourceMyrasecErrorPageCreate ...
-func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	errorPage, err := buildErrorPage(d, meta)
+	errorPage, err := buildErrorPage(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -116,7 +122,7 @@ func resourceMyrasecErrorPageCreate(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecErrorPageRead ...
-func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	errorCode := d.Get("error_code").(int)
@@ -141,12 +147,12 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecErrorPageUpdate ...
-func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	errorPage, err := buildErrorPage(d, meta)
+	errorPage, err := buildErrorPage(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -171,13 +177,15 @@ func resourceMyrasecErrorPageUpdate(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
+	errorPage, diags = findErrorPageByErrorCode(errorPage.SubDomainName, errorPage.ErrorCode, meta, domainID)
+
 	setErrorPageData(d, errorPage, domainID)
 
 	return diags
 }
 
 // resourceMyrasecErrorPageDelete ...
-func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -194,7 +202,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[INFO] Deleting error page: %v", pageId)
 
-	errorPage, err := buildErrorPage(d, meta)
+	errorPage, err := buildErrorPage(d)
 	errorPage.ID = pageId
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -227,7 +235,7 @@ func resourceMyrasecErrorPageDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecErrorPageImport ...
-func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	subDomainName, id, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing ID or error code: [%s]", err.Error())
@@ -252,7 +260,8 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
-	d.Set("content", errorPage.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(errorPage.Content))
 	d.Set("subdomain_name", errorPage.SubDomainName)
 	d.Set("created", errorPage.Created)
 	d.Set("modified", errorPage.Modified)
@@ -263,7 +272,7 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 }
 
 // buildErrorPage ...
-func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPage, error) {
+func buildErrorPage(d *schema.ResourceData) (*myrasec.ErrorPage, error) {
 
 	errorPage := &myrasec.ErrorPage{
 		Content:       d.Get("content").(string),
@@ -287,17 +296,17 @@ func buildErrorPage(d *schema.ResourceData, meta interface{}) (*myrasec.ErrorPag
 }
 
 // findErrorPageByErrorCode ...
-func findErrorPageByErrorCode(subDomainName string, code int, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
+func findErrorPageByErrorCode(subDomainName string, code int, meta any, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
 	return findErrorPage(subDomainName, code, true, meta, domainID)
 }
 
 // findErrorPageByID ...
-func findErrorPageByID(subDomainName string, id int, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
+func findErrorPageByID(subDomainName string, id int, meta any, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
 	return findErrorPage(subDomainName, id, false, meta, domainID)
 }
 
 // findErrorPage ...
-func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
+func findErrorPage(subDomainName string, id int, idIsCode bool, meta any, domainID int) (*myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -350,7 +359,8 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta interface{}
 func setErrorPageData(d *schema.ResourceData, errorPage *myrasec.ErrorPage, domainID int) {
 	d.SetId(strconv.Itoa(errorPage.ID))
 	d.Set("error_code", errorPage.ErrorCode)
-	d.Set("content", errorPage.Content)
+	d.Set("content", "")
+	d.Set("content_hash", createContentHash(errorPage.Content))
 	d.Set("subdomain_name", errorPage.SubDomainName)
 	d.Set("created", errorPage.Created.Format(time.RFC3339))
 	d.Set("modified", errorPage.Modified.Format(time.RFC3339))

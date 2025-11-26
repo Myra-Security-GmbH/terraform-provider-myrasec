@@ -48,23 +48,23 @@ func dataSourceMyrasecMaintenances() *schema.Resource {
 						},
 						"start": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"end": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"active": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Computed: true,
 						},
-						"content": {
+						"content_hash": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
-							Required: true,
+							Computed: true,
 						},
 					},
 				},
@@ -78,7 +78,7 @@ func dataSourceMyrasecMaintenances() *schema.Resource {
 }
 
 // dataSourceMyrasecMaintenancesRead
-func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareMaintenanceFilter(d.Get("filter"))
 
 	if f == nil {
@@ -91,7 +91,7 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 		return diags
 	}
 
-	maintenanceData := make([]interface{}, 0)
+	maintenanceData := make([]any, 0)
 
 	for _, mp := range maintenances {
 		var created string
@@ -104,14 +104,14 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 			modified = mp.Modified.Format(time.RFC3339)
 		}
 
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":             mp.ID,
 			"created":        created,
 			"modified":       modified,
 			"start":          mp.Start.Format(time.RFC3339),
 			"end":            mp.End.Format(time.RFC3339),
 			"active":         mp.Active,
-			"content":        mp.Content,
+			"content_hash":   createContentHash(mp.Content),
 			"subdomain_name": mp.FQDN,
 		}
 		maintenanceData = append(maintenanceData, data)
@@ -127,7 +127,7 @@ func dataSourceMyrasecMaintenancesRead(ctx context.Context, d *schema.ResourceDa
 }
 
 // prepareMaintenanceFilter
-func prepareMaintenanceFilter(d interface{}) *maintenanceFilter {
+func prepareMaintenanceFilter(d any) *maintenanceFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareMaintenanceFilter", r)
@@ -138,11 +138,11 @@ func prepareMaintenanceFilter(d interface{}) *maintenanceFilter {
 }
 
 // parseMaintenanceFilter
-func parseMaintenanceFilter(d interface{}) *maintenanceFilter {
-	cfg := d.([]interface{})
+func parseMaintenanceFilter(d any) *maintenanceFilter {
+	cfg := d.([]any)
 	f := &maintenanceFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {
@@ -153,7 +153,7 @@ func parseMaintenanceFilter(d interface{}) *maintenanceFilter {
 }
 
 // listMaintenances ...
-func listMaintenances(meta interface{}, subdomainName string, params map[string]string) ([]myrasec.Maintenance, diag.Diagnostics) {
+func listMaintenances(meta any, subdomainName string, params map[string]string) ([]myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var maintenances []myrasec.Maintenance
 	pageSize := 100

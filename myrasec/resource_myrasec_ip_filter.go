@@ -30,7 +30,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -60,7 +60,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"type": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToUpper(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"BLACKLIST", "WHITELIST", "WHITELIST_REQUEST_LIMITER"}, false),
@@ -69,7 +69,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"value": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				Description: "The IP you want to whitelist or blacklist. By using CIDR notation on IPv4 IPs, you are able to define whole subnets.",
@@ -105,12 +105,12 @@ func resourceMyrasecIPFilter() *schema.Resource {
 }
 
 // resourceMyrasecIPFilterCreate ...
-func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	filter, err := buildIPFilter(d, meta)
+	filter, err := buildIPFilter(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -124,30 +124,29 @@ func resourceMyrasecIPFilterCreate(ctx context.Context, d *schema.ResourceData, 
 	if diags.HasError() {
 		return diags
 	}
-
 	resp, err := client.CreateIPFilter(filter, domainID, subDomainName)
 	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
-		return resourceMyrasecIPFilterRead(ctx, d, meta)
+		setIPFilterData(d, resp, domainID)
+		return diags
 	}
 
 	filter, errImport := importExistingIPFilter(filter, domainID, meta)
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  "Error creating IP filter",
 			Detail:   formatError(err),
 		})
 		return diags
 	}
 
-	d.SetId(fmt.Sprintf("%d", filter.ID))
-	return resourceMyrasecIPFilterRead(ctx, d, meta)
+	setIPFilterData(d, filter, domainID)
+	return diags
 }
 
 // resourceMyrasecIPFilterRead ...
-func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	filterID, err := strconv.Atoi(d.Id())
@@ -177,7 +176,7 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecIPFilterUpdate ...
-func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -194,7 +193,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[INFO] Updating IP filter: %v", filterID)
 
-	filter, err := buildIPFilter(d, meta)
+	filter, err := buildIPFilter(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -225,7 +224,7 @@ func resourceMyrasecIPFilterUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecIPFilterDelete ...
-func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -242,7 +241,7 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[INFO] Deleting IP filter: %v", filterID)
 
-	filter, err := buildIPFilter(d, meta)
+	filter, err := buildIPFilter(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -270,7 +269,7 @@ func resourceMyrasecIPFilterDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecIPFilterImport ...
-func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	subDomainName, filterID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -297,7 +296,7 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 }
 
 // buildIPFilter ...
-func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter, error) {
+func buildIPFilter(d *schema.ResourceData) (*myrasec.IPFilter, error) {
 	filter := &myrasec.IPFilter{
 		Type:    d.Get("type").(string),
 		Value:   d.Get("value").(string),
@@ -336,7 +335,7 @@ func buildIPFilter(d *schema.ResourceData, meta interface{}) (*myrasec.IPFilter,
 }
 
 // findIPFilter ...
-func findIPFilter(filterID int, meta interface{}, subDomainName string, domainId int) (*myrasec.IPFilter, diag.Diagnostics) {
+func findIPFilter(filterID int, meta any, subDomainName string, domainId int) (*myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -382,7 +381,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, domainId 
 }
 
 // importExistingIPFilter ...
-func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, meta interface{}) (*myrasec.IPFilter, error) {
+func importExistingIPFilter(filter *myrasec.IPFilter, domainId int, meta any) (*myrasec.IPFilter, error) {
 	client := meta.(*myrasec.API)
 
 	s := strings.Split(filter.Value, "/")

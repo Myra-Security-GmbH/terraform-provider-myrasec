@@ -41,6 +41,12 @@ The following arguments are supported:
 * `enabled` Define wether this DNS record is enabled or not.
 * `priority` Priority of MX records.
 * `port` Port for SRV records.
+* `weight` Weight for SRV records.  
+* `caa_tag` Tag value for CAA records.  
+* `caa_flags` Flags value for CAA records.  
+* `encryption` Encryption for DS records.  
+* `hash_type` Hash type for DS records.  
+* `identificationnumber` ID (key tag) for DS records.  
 * `comment` A comment to describe this DNS record.
 * `upstream_options` Loadbalancing settings.
 * `upstream_options.upstream_id` ID of the upstream settings.

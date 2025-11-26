@@ -2,9 +2,11 @@ package myrasec
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -17,6 +19,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+func validateNotBlank(val any, key string) (ws []string, errors []error) {
+	if s, ok := val.(string); ok {
+		if strings.TrimSpace(s) == "" {
+			errors = append(errors, fmt.Errorf("%s must not be empty or whitespace", key))
+		}
+	}
+	return
+}
 
 func resourceMyrasecSSLCertificate() *schema.Resource {
 	return &schema.Resource{
@@ -53,15 +64,17 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"certificate": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Certificate",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Certificate",
+				ValidateFunc: validateNotBlank,
 			},
 			"key": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Sensitive:   true,
-				Description: "Unencrypted private key",
+				Type:         schema.TypeString,
+				Required:     true,
+				Sensitive:    true,
+				Description:  "Unencrypted private key",
+				ValidateFunc: validateNotBlank,
 			},
 			"subject": {
 				Type:        schema.TypeString,
@@ -116,7 +129,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
-					StateFunc: func(i interface{}) string {
+					StateFunc: func(i any) string {
 						return strings.ToLower(myrasec.RemoveTrailingDot(i.(string)))
 					},
 				},
@@ -160,20 +173,18 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
-			var errors error
-
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			certificate := rd.Get("certificate")
 			privateKey := rd.Get("key")
 
 			certBlock, _ := pem.Decode([]byte(certificate.(string)))
 			if certBlock == nil {
-				log.Fatal("Failed to decode PEM block for certificate")
+				return errors.New("Failed to decode PEM block for certificate")
 			}
 
 			cert, err := x509.ParseCertificate(certBlock.Bytes)
 			if err != nil {
-				return fmt.Errorf(formatError(err))
+				return errors.New(formatError(err))
 			}
 
 			keyBlock, _ := pem.Decode([]byte(privateKey.(string)))
@@ -181,46 +192,55 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				return fmt.Errorf("failed to decode PEM block for private key")
 			}
 
-			var key *rsa.PrivateKey
-			if keyBlock.Type == "RSA PRIVATE KEY" {
-				pkey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+			switch keyBlock.Type {
+			case "RSA PRIVATE KEY":
+				fallthrough
+			case "PRIVATE KEY":
+				privateKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 				if err != nil {
-					return fmt.Errorf(formatError(err))
+					privateKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+					if err != nil {
+						return fmt.Errorf("failed to parse PKCS8 private key: %v", err)
+					}
 				}
-				key = pkey
-			} else if keyBlock.Type == "PRIVATE KEY" {
-				pkey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+			case "EC PRIVATE KEY":
+				privateKey, err = x509.ParseECPrivateKey(keyBlock.Bytes)
 				if err != nil {
-					return fmt.Errorf(formatError(err))
+					return fmt.Errorf("failed to parse EC private key: %v", err)
 				}
-
-				switch pkey := pkey.(type) {
-				case *rsa.PrivateKey:
-					key = pkey
-				default:
-					return fmt.Errorf("Unsupported private key type")
-				}
-			} else {
-				return fmt.Errorf("Unsupported private key format")
+			default:
+				return fmt.Errorf("unsupported private key format: %s", keyBlock.Type)
 			}
 
-			matches := key.N.Cmp(cert.PublicKey.(*rsa.PublicKey).N) == 0 && key.E == cert.PublicKey.(*rsa.PublicKey).E
-			if !matches {
-				return fmt.Errorf("Private key does not match to certifcate")
+			switch pub := cert.PublicKey.(type) {
+			case *rsa.PublicKey:
+				if priv, ok := privateKey.(*rsa.PrivateKey); ok {
+					if pub.N.Cmp(priv.N) == 0 && pub.E == priv.E {
+						return nil
+					}
+				}
+			case *ecdsa.PublicKey:
+				if priv, ok := privateKey.(*ecdsa.PrivateKey); ok {
+					if pub.X.Cmp(priv.X) == 0 && pub.Y.Cmp(priv.Y) == 0 && pub.Curve == priv.Curve {
+						return nil
+					}
+				}
+			default:
+				return fmt.Errorf("unsupported public key type")
 			}
 
-			return errors
+			return fmt.Errorf("private key does not match the certificate's public key")
 		},
 	}
 }
 
 // resourceMyrasecSSLCertificateCreate ...
-func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -252,7 +272,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateRead ...
-func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, ok := d.GetOk("domain_name")
@@ -281,7 +301,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 		return domainDiag
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
+	cert, diags := findSSLCertificate(certID, meta, domainID)
 	if diags.HasError() || cert == nil {
 		return diags
 	}
@@ -292,7 +312,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 }
 
 // resourceMyrasecSSLCertificateUpdate ...
-func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -309,7 +329,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 
 	log.Printf("[INFO] Updating SSL certificate: %v", certID)
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -358,7 +378,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateDelete ...
-func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -375,7 +395,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 
 	log.Printf("[INFO] Deleting SSL certificate: %v", certID)
 
-	cert, err := buildSSLCertificate(d, meta)
+	cert, err := buildSSLCertificate(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -405,7 +425,7 @@ func resourceMyrasecSSLCertificateDelete(ctx context.Context, d *schema.Resource
 }
 
 // resourceMyrasecSSLCertificateImport ...
-func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	domainName, certID, err := parseResourceServiceID(d.Id())
 	if err != nil {
 		return nil, fmt.Errorf("error parsing SSL certificate ID: [%s]", err.Error())
@@ -416,9 +436,12 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
 	}
 
-	cert, diags := findSSLCertificate(certID, meta, domainName, domainID)
+	cert, diags := findSSLCertificate(certID, meta, domainID)
 	if diags.HasError() || cert == nil {
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
+	}
+	if cert.Managed {
+		return nil, fmt.Errorf("This certificate is managed by Myra")
 	}
 
 	d.SetId(strconv.Itoa(certID))
@@ -430,7 +453,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 }
 
 // buildSSLCertificate ...
-func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSLCertificate, error) {
+func buildSSLCertificate(d *schema.ResourceData) (*myrasec.SSLCertificate, error) {
 
 	cert := &myrasec.SSLCertificate{
 		Certificate: &myrasec.Certificate{},
@@ -505,10 +528,10 @@ func buildSSLCertificate(d *schema.ResourceData, meta interface{}) (*myrasec.SSL
 }
 
 // buildSSLIntermediate ...
-func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, error) {
+func buildSSLIntermediate(intermediate any) (*myrasec.SSLIntermediate, error) {
 	cert := &myrasec.SSLIntermediate{
 		Certificate: &myrasec.Certificate{
-			Cert: intermediate.(map[string]interface{})["certificate"].(string),
+			Cert: intermediate.(map[string]any)["certificate"].(string),
 		},
 	}
 
@@ -516,7 +539,7 @@ func buildSSLIntermediate(intermediate interface{}) (*myrasec.SSLIntermediate, e
 }
 
 // findSSLCertificate ...
-func findSSLCertificate(certID int, meta interface{}, domainName string, domainID int) (*myrasec.SSLCertificate, diag.Diagnostics) {
+func findSSLCertificate(certID int, meta any, domainID int) (*myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)

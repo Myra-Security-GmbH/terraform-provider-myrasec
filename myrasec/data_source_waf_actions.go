@@ -34,10 +34,6 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
 						"modified": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -51,14 +47,6 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 							Computed: true,
 						},
 						"type": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"custom_key": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
-						"value": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -82,7 +70,7 @@ func dataSourceMyrasecWAFActions() *schema.Resource {
 }
 
 // dataSourceMyrasecWAFActionsRead ...
-func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -99,22 +87,19 @@ func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData
 		return diags
 	}
 
-	wafActionData := make([]interface{}, 0)
+	wafActionData := make([]any, 0)
 	for _, r := range actions {
 		if f != nil && r.Type != f.actionType {
 			continue
 		}
 
-		wafActionData = append(wafActionData, map[string]interface{}{
-			"id":                  r.ID,
+		wafActionData = append(wafActionData, map[string]any{
 			"created":             r.Created.Format(time.RFC3339),
 			"modified":            r.Modified.Format(time.RFC3339),
 			"name":                r.Name,
 			"available_phases":    r.AvailablePhases,
-			"custom_key":          r.CustomKey,
 			"force_custom_values": r.ForceCustomValues,
 			"type":                r.Type,
-			"value":               r.Value,
 		})
 	}
 
@@ -128,7 +113,7 @@ func dataSourceMyrasecWAFActionsRead(ctx context.Context, d *schema.ResourceData
 }
 
 // prepareWAFActionFilter fetches the panic that can happen in parseWAFActionFilter
-func prepareWAFActionFilter(d interface{}) *wafActionFilter {
+func prepareWAFActionFilter(d any) *wafActionFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareWAFActionFilter", r)
@@ -139,11 +124,11 @@ func prepareWAFActionFilter(d interface{}) *wafActionFilter {
 }
 
 // parseWAFActionFilter ...
-func parseWAFActionFilter(d interface{}) *wafActionFilter {
-	cfg := d.([]interface{})
+func parseWAFActionFilter(d any) *wafActionFilter {
+	cfg := d.([]any)
 	f := &wafActionFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	actionType, ok := m["type"]
 	if ok {

@@ -28,14 +28,16 @@ The following argument is supported
 * `id` The ID of the tag.
 * `created` Date of creation.
 * `modified` Date of last modification.
-* `name` the name of the tag.
-* `type` the type of the tag [CACHE|SETTINGS|WAF]
-* `assignments` list of the domain/subdomain assignments
+* `name` The name of the tag.
+* `type` The type of the tag [CACHE|CONFIG|WAF|INFORMATION]
+* `assignments` List of the domain/subdomain assignments
+* `sort` Order in which `WAF` tags are processed
+* `global` Identifies global tags.
 
 ### tagAssignments
 * `id` The ID of the assignment
 * `created` Date of creation.
 * `modified` Date of last modification.
-* `type` type of the assignment (domain|subdomain)
-* `title` name of the domain
-* `subdomain_name` name of the subdomain
+* `type` Type of the assignment (domain|subdomain)
+* `title` Name of the domain
+* `subdomain_name` Name of the subdomain

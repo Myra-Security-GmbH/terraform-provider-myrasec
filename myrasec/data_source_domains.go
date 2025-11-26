@@ -83,7 +83,7 @@ func dataSourceMyrasecDomains() *schema.Resource {
 }
 
 // dataSourceMyrasecDomainsRead ...
-func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareDomainFilter(d.Get("filter"))
 	if f == nil {
 		f = &domainFilter{}
@@ -100,7 +100,7 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 		return diags
 	}
 
-	domainData := make([]interface{}, 0)
+	domainData := make([]any, 0)
 	for _, r := range domains {
 
 		if f.regex != nil && !f.regex.MatchString(r.Name) {
@@ -121,7 +121,7 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 			modified = r.Modified.Format(time.RFC3339)
 		}
 
-		domainData = append(domainData, map[string]interface{}{
+		domainData = append(domainData, map[string]any{
 			"id":           r.ID,
 			"created":      created,
 			"modified":     modified,
@@ -142,7 +142,7 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 // prepareDomainFilter fetches the panic that can happen in parseDomainFilter
-func prepareDomainFilter(d interface{}) *domainFilter {
+func prepareDomainFilter(d any) *domainFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareDomainFilter", r)
@@ -153,12 +153,12 @@ func prepareDomainFilter(d interface{}) *domainFilter {
 }
 
 // parseDomainFilter converts the filter data to a domainFilter struct
-func parseDomainFilter(d interface{}) *domainFilter {
+func parseDomainFilter(d any) *domainFilter {
 
-	cfg := d.([]interface{})
+	cfg := d.([]any)
 	f := &domainFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	id, ok := m["id"]
 	if ok {
@@ -188,7 +188,7 @@ func parseDomainFilter(d interface{}) *domainFilter {
 }
 
 // listDomains ...
-func listDomains(meta interface{}, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
+func listDomains(meta any, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var domains []myrasec.Domain
 	pageSize := 250

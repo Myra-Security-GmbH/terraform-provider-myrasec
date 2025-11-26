@@ -66,11 +66,6 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
 			},
-			"cookie_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specifies the cookie name when balancing_method is cookie_based",
-			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -99,6 +94,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
+				Deprecated:  "This setting has no effect anymore.",
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
@@ -108,12 +104,23 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
 				Description:  fmt.Sprintf("Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum %d MB.", ClientMaxBodySize),
 			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
+			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
+			},
+			"disable_forwarded_for": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Disable the forwarded for replacement.",
 			},
 			"enable_origin_sni": {
 				Type:        schema.TypeBool,
@@ -126,11 +133,6 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
-			},
-			"disable_forwarded_for": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Disable the forwarded for replacement.",
 			},
 			"forwarded_for_replacement": {
 				Type:     schema.TypeString,
@@ -147,6 +149,15 @@ func resourceMyrasecTagSettings() *schema.Resource {
 					return false
 				},
 				Description: "Set your own X-Forwarded-For header.",
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"hsts": {
 				Type:        schema.TypeBool,
@@ -189,6 +200,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Optimization of images.",
+			},
+			"ip_lock": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Prevent accidental IP address changes if activated. This setting is only available on 'domain level' (general domain settings).",
 			},
 			"ipv6_active": {
 				Type:        schema.TypeBool,
@@ -238,12 +255,6 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enables / disables the upstream error reporting.",
 			},
-			"myra_ssl_header": {
-				Type:        schema.TypeBool,
-				Required:    false,
-				Optional:    true,
-				Description: "Activates the X-Myra-SSL Header.",
-			},
 			"myra_ssl_certificate": {
 				Type:     schema.TypeSet,
 				Required: false,
@@ -261,6 +272,12 @@ func resourceMyrasecTagSettings() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Description: "The private key for the SSL Certificate",
+			},
+			"myra_ssl_header": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
 				Type:     schema.TypeSet,
@@ -353,9 +370,35 @@ func resourceMyrasecTagSettings() *schema.Resource {
 			},
 			"spdy": {
 				Type:        schema.TypeBool,
-				Required:    false,
 				Optional:    true,
 				Description: "Activates the SPDY protocol.",
+			},
+			"ssl_client_verify": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Enables verification of client certificates.",
+			},
+			"ssl_client_certificate": {
+				Type:        schema.TypeSet,
+				Required:    false,
+				Optional:    true,
+				Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"ssl_client_header_verification": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "The name of the header, which contains the ssl verification status.",
+			},
+			"ssl_client_header_fingerprint": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Contains the fingerprint of the certificate, the client used to authenticate itself.",
 			},
 			"ssl_origin_port": {
 				Type:        schema.TypeInt,
@@ -385,15 +428,6 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
 			},
-			"host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
-			},
 			"available_attributes": {
 				Type:     schema.TypeSet,
 				Computed: true,
@@ -411,7 +445,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 }
 
 // resourceCustomizeDiffTagSettings
-func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	availableAttributes := []string{}
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
@@ -437,7 +471,7 @@ func resourceCustomizeDiffTagSettings(ctx context.Context, d *schema.ResourceDif
 }
 
 // resourceMyrasecTagSettingsCreate
-func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -479,7 +513,7 @@ func resourceMyrasecTagSettingsCreate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecTagSettingsRead ...
-func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -511,7 +545,7 @@ func resourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecTagSettingsUpdate
-func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -553,7 +587,7 @@ func resourceMyrasecTagSettingsUpdate(ctx context.Context, d *schema.ResourceDat
 }
 
 // resourceMyrasecTagSettingsDelete
-func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -603,8 +637,8 @@ func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceDat
 }
 
 // buildTagSettings ...
-func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, error) {
-	tagSettingsMap := make(map[string]interface{})
+func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
+	tagSettingsMap := make(map[string]any)
 
 	resource := resourceMyrasecTagSettings()
 	for name, attr := range resource.Schema {
@@ -635,7 +669,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 				}
 			case schema.TypeList:
 				settingsList := []string{}
-				for _, item := range value.([]interface{}) {
+				for _, item := range value.([]any) {
 					settingsList = append(settingsList, item.(string))
 				}
 				tagSettingsMap[name] = settingsList
@@ -656,15 +690,15 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]interface{
 }
 
 // setTagSettingsData ...
-func setTagSettingsData(d *schema.ResourceData, settingsData interface{}, tagId int) {
+func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
 	d.Set("tag_id", tagId)
 
-	settings, _ := settingsData.(*map[string]interface{})
+	settings, _ := settingsData.(*map[string]any)
 	log.Println(settings)
 
 	resource := resourceMyrasecSettings().Schema
 	availableAttributes := []string{}
-	for k, v := range (*settings)["settings"].(map[string]interface{}) {
+	for k, v := range (*settings)["settings"].(map[string]any) {
 		d.Set(k, v)
 		doAppend := appendAvailableAttributes(v, k, resource)
 		if doAppend {

@@ -33,7 +33,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				Description: "The Domain for the DNS record.",
@@ -61,7 +61,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
@@ -73,7 +73,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"ttl": {
 				Type:     schema.TypeInt,
 				Required: true,
-				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
+				ValidateFunc: func(i any, s string) (warnings []string, errors []error) {
 
 					values := []int{300, 600, 900, 1800, 3600, 7200, 18000, 43200, 86400}
 
@@ -89,8 +89,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			"record_type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA", "PTR"}, false),
-				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV, CAA and PTR.",
+				ValidateFunc: validation.StringInSlice([]string{"A", "AAAA", "MX", "CNAME", "TXT", "NS", "SRV", "CAA", "PTR", "DS"}, false),
+				Description:  "A record type to identify the type of a record. Valid types are: A, AAAA, MX, CNAME, TXT, NS, SRV, CAA , PTR and DS.",
 			},
 			"alternative_cname": {
 				Type:        schema.TypeString,
@@ -153,6 +153,36 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Optional:    true,
 				Description: "Port for SRV records.",
 			},
+			"weight": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Weight for SRV records.",
+			},
+			"caa_tag": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Tag value for `CAA` records. Available values are `issue`, `issuewild`, `issuemail`, `issuevmc`, `iodef`, `contactemail` and `contactphone`.",
+			},
+			"caa_flags": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Flags value for `CAA` records.",
+			},
+			"encryption": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Encryption for `DS` records. Available values are `3` (DSA/SHA1), `5` (RSA/SHA1), `6` (DSA-NSEC3-SHA1), `7` (RSASHA1-NSEC3-SHA1), `8` (RSA/SHA-256), `10` (RSA/SHA-512), `12` (GOST R 35.10-2001), `13` (ECDSA-P256/SHA256), `14` (ECDSA-P384/SHA384), `15` (ED25519) and `16` (ED448).",
+			},
+			"hash_type": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Hash type for `DS` records. Available values are `1` (SHA-1), `2` (SHA-256), `3` (GOST R 34.11-94) and `4` (SHA-384).",
+			},
+			"identificationnumber": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "ID (key tag) for `DS` records.",
+			},
 			"upstream_options": {
 				Type:     schema.TypeList,
 				MaxItems: 1,
@@ -160,8 +190,8 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					oldUpstream, newUpstream := d.GetChange("upstream_options.0")
 
-					uoOld, _ := oldUpstream.(map[string]interface{})
-					uoNew, _ := newUpstream.(map[string]interface{})
+					uoOld, _ := oldUpstream.(map[string]any)
+					uoNew, _ := newUpstream.(map[string]any)
 
 					maxFailsOld, maxFailsOk := uoOld["max_fails"].(int)
 					weighOld, weightOk := uoOld["weight"].(int)
@@ -231,7 +261,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 	}
 }
 
-func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta any) error {
 
 	domainName := d.Get("domain_name").(string)
 	recordType := d.Get("record_type").(string)
@@ -313,12 +343,12 @@ func validateMxValue(recordType string, value string) error {
 }
 
 // resourceMyrasecDNSRecordCreate ...
-func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -350,7 +380,7 @@ func resourceMyrasecDNSRecordCreate(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordRead ...
-func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, ok := d.GetOk("domain_name")
@@ -395,7 +425,7 @@ func resourceMyrasecDNSRecordRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 // resourceMyrasecDNSRecordUpdate ...
-func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -412,7 +442,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[INFO] Updating DNS record: %v", recordID)
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -455,7 +485,7 @@ func resourceMyrasecDNSRecordUpdate(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordDelete ...
-func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -472,7 +502,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("[INFO] Deleting DNS record: %v", recordID)
 
-	record, err := buildDNSRecord(d, meta)
+	record, err := buildDNSRecord(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -512,7 +542,7 @@ func resourceMyrasecDNSRecordDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 // resourceMyrasecDNSRecordImport ...
-func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	domainName, recordID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -539,18 +569,24 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 }
 
 // buildDNSRecord ...
-func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecord, error) {
+func buildDNSRecord(d *schema.ResourceData) (*myrasec.DNSRecord, error) {
 	record := &myrasec.DNSRecord{
-		Name:             d.Get("name").(string),
-		Value:            d.Get("value").(string),
-		RecordType:       d.Get("record_type").(string),
-		TTL:              d.Get("ttl").(int),
-		AlternativeCNAME: d.Get("alternative_cname").(string),
-		Active:           d.Get("active").(bool),
-		Enabled:          d.Get("enabled").(bool),
-		Priority:         d.Get("priority").(int),
-		Port:             d.Get("port").(int),
-		Comment:          d.Get("comment").(string),
+		Name:                 d.Get("name").(string),
+		Value:                d.Get("value").(string),
+		RecordType:           d.Get("record_type").(string),
+		TTL:                  d.Get("ttl").(int),
+		AlternativeCNAME:     d.Get("alternative_cname").(string),
+		Active:               d.Get("active").(bool),
+		Enabled:              d.Get("enabled").(bool),
+		Priority:             d.Get("priority").(int),
+		Port:                 d.Get("port").(int),
+		Comment:              d.Get("comment").(string),
+		Weight:               d.Get("weight").(int),
+		CAATag:               d.Get("caa_tag").(string),
+		CAAFlags:             d.Get("caa_flags").(int),
+		Encryption:           d.Get("encryption").(int),
+		HashType:             d.Get("hash_type").(int),
+		IdentificationNumber: d.Get("identificationnumber").(int),
 	}
 
 	if d.Get("record_id").(int) > 0 {
@@ -579,7 +615,7 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 		return record, nil
 	}
 
-	for _, upstream := range options.([]interface{}) {
+	for _, upstream := range options.([]any) {
 		opts, err := buildUpstreamOptions(upstream)
 		if err != nil {
 			return nil, err
@@ -592,10 +628,10 @@ func buildDNSRecord(d *schema.ResourceData, meta interface{}) (*myrasec.DNSRecor
 }
 
 // buildUpstreamOptions ...
-func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error) {
+func buildUpstreamOptions(upstream any) (*myrasec.UpstreamOptions, error) {
 	options := &myrasec.UpstreamOptions{}
 
-	for key, val := range upstream.(map[string]interface{}) {
+	for key, val := range upstream.(map[string]any) {
 		switch key {
 		case "upstream_id":
 			options.ID = val.(int)
@@ -628,7 +664,7 @@ func buildUpstreamOptions(upstream interface{}) (*myrasec.UpstreamOptions, error
 }
 
 // findDNSRecord ...
-func findDNSRecord(recordID int, meta interface{}, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
+func findDNSRecord(recordID int, meta any, domainID int) (*myrasec.DNSRecord, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -676,11 +712,17 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.Set("created", record.Created.Format(time.RFC3339))
 	d.Set("modified", record.Modified.Format(time.RFC3339))
 	d.Set("comment", record.Comment)
+	d.Set("weight", record.Weight)
+	d.Set("caa_tag", record.CAATag)
+	d.Set("caa_flags", record.CAAFlags)
+	d.Set("encryption", record.Encryption)
+	d.Set("hash_type", record.HashType)
+	d.Set("identificationnumber", record.IdentificationNumber)
 	d.Set("domain_name", domainName)
 	d.Set("domain_id", domainID)
 
 	if record.UpstreamOptions != nil && record.UpstreamOptions.ID > 0 {
-		d.Set("upstream_options", []map[string]interface{}{
+		d.Set("upstream_options", []map[string]any{
 			{
 				"upstream_id":  record.UpstreamOptions.ID,
 				"created":      record.UpstreamOptions.Created.Format(time.RFC3339),

@@ -36,7 +36,7 @@ func resourceMyrasecSettings() *schema.Resource {
 			"subdomain_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -90,11 +90,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"round_robin", "ip_hash", "least_conn", "cookie_based"}, false),
 				Description:  "Specifies with which method requests are balanced between upstream servers.",
 			},
-			"cookie_name": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specifies the cookie name when balancing_method is cookie_based",
-			},
 			"block_not_whitelisted": {
 				Type:        schema.TypeBool,
 				Required:    false,
@@ -123,6 +118,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    false,
 				Optional:    true,
+				Deprecated:  "This setting has no effect anymore.",
 				Description: "Use subdomain as Content Delivery Node (CDN).",
 			},
 			"client_max_body_size": {
@@ -132,12 +128,23 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.IntBetween(0, ClientMaxBodySize),
 				Description:  fmt.Sprintf("Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum %d MB.", ClientMaxBodySize),
 			},
+			"cookie_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specifies the cookie name when balancing_method is cookie_based",
+			},
 			"diffie_hellman_exchange": {
 				Type:         schema.TypeInt,
 				Required:     false,
 				Optional:     true,
 				ValidateFunc: validation.IntInSlice(diffieHellmanExchangeValues),
 				Description:  "The Diffie-Hellman key exchange parameter length.",
+			},
+			"disable_forwarded_for": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Disable the forwarded for replacement.",
 			},
 			"enable_origin_sni": {
 				Type:        schema.TypeBool,
@@ -150,11 +157,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.",
-			},
-			"disable_forwarded_for": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Disable the forwarded for replacement.",
 			},
 			"forwarded_for_replacement": {
 				Type:     schema.TypeString,
@@ -171,6 +173,15 @@ func resourceMyrasecSettings() *schema.Resource {
 					return false
 				},
 				Description: "Set your own X-Forwarded-For header.",
+			},
+			"host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"hsts": {
 				Type:        schema.TypeBool,
@@ -213,6 +224,12 @@ func resourceMyrasecSettings() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Description: "Optimization of images.",
+			},
+			"ip_lock": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Prevent accidental IP address changes if activated. This setting is only available on 'domain level' (general domain settings).",
 			},
 			"ipv6_active": {
 				Type:        schema.TypeBool,
@@ -262,12 +279,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Enables / disables the upstream error reporting.",
 			},
-			"myra_ssl_header": {
-				Type:        schema.TypeBool,
-				Required:    false,
-				Optional:    true,
-				Description: "Activates the X-Myra-SSL Header.",
-			},
 			"myra_ssl_certificate": {
 				Type:     schema.TypeSet,
 				Required: false,
@@ -285,6 +296,12 @@ func resourceMyrasecSettings() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Description: "The private key for the SSL Certificate",
+			},
+			"myra_ssl_header": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Activates the X-Myra-SSL Header.",
 			},
 			"next_upstream": {
 				Type:     schema.TypeSet,
@@ -329,6 +346,16 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 5, 10, 15, 30, 45, 60}),
 				Description:  "Timeout for establishing a connection to the upstream server.",
+			},
+			"proxy_host_header": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Proxy host header",
+				Deprecated:  "Please use `host_header` instead",
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "$myra_host" && new == ""
+				},
 			},
 			"proxy_read_timeout": {
 				Type:         schema.TypeInt,
@@ -380,6 +407,33 @@ func resourceMyrasecSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Activates the SPDY protocol.",
 			},
+			"ssl_client_verify": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Enables verification of client certificates.",
+			},
+			"ssl_client_certificate": {
+				Type:     schema.TypeSet,
+				Required: false,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.",
+			},
+			"ssl_client_header_verification": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "The name of the header, which contains the ssl verification status.",
+			},
+			"ssl_client_header_fingerprint": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Contains the fingerprint of the certificate, the client used to authenticate itself.",
+			},
 			"ssl_origin_port": {
 				Type:        schema.TypeInt,
 				Required:    false,
@@ -408,25 +462,6 @@ func resourceMyrasecSettings() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"allow", "block"}, false),
 				Description:  "Default policy for the Web Application Firewall in case of rule error.",
 			},
-			"proxy_host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				Deprecated:  "Please use `host_header` instead",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
-			},
-			"host_header": {
-				Type:        schema.TypeString,
-				Required:    false,
-				Optional:    true,
-				Description: "Proxy host header",
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return old == "$myra_host" && new == ""
-				},
-			},
 			"available_attributes": {
 				Type:     schema.TypeSet,
 				Computed: true,
@@ -444,7 +479,7 @@ func resourceMyrasecSettings() *schema.Resource {
 }
 
 // resourceCustomizeDiffSettings
-func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	availableAttributes := []string{}
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
@@ -485,7 +520,7 @@ func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
 		size := len(d.Get(name).(*schema.Set).List())
 		isNullValue = size == 0
 	case schema.TypeList:
-		size := len(d.Get(name).([]interface{}))
+		size := len(d.Get(name).([]any))
 		isNullValue = size == 0
 	case schema.TypeString:
 		value := d.Get(name)
@@ -495,7 +530,7 @@ func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
 }
 
 // resourceMyrasecSettingsCreate ...
-func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -531,7 +566,7 @@ func resourceMyrasecSettingsCreate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecSettingsRead ...
-func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -584,7 +619,7 @@ func resourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecSettingsUpdate ...
-func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -621,7 +656,7 @@ func resourceMyrasecSettingsUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecSettingsDelete restores the default setting values
-func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -666,8 +701,8 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // buildSettings ...
-func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, error) {
-	settingsMap := make(map[string]interface{})
+func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
+	settingsMap := make(map[string]any)
 
 	resource := resourceMyrasecSettings()
 	for name, attr := range resource.Schema {
@@ -705,7 +740,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 				}
 			case schema.TypeList:
 				settingsList := []string{}
-				for _, item := range value.([]interface{}) {
+				for _, item := range value.([]any) {
 					settingsList = append(settingsList, item.(string))
 				}
 				settingsMap[name] = settingsList
@@ -725,7 +760,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]interface{}, 
 }
 
 // setSettingsData ...
-func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomainName string, domainID int) {
+func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName string, domainID int) {
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
@@ -739,11 +774,11 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 		d.Set(name, nil)
 	}
 
-	allSettings, _ := settingsData.(*map[string]interface{})
+	allSettings, _ := settingsData.(*map[string]any)
 	domainSettings := (*allSettings)["domain"]
 
 	availableAttributes := []string{}
-	mapSettings, ok := domainSettings.(map[string]interface{})
+	mapSettings, ok := domainSettings.(map[string]any)
 	if ok {
 		for k, v := range mapSettings {
 			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
@@ -767,7 +802,7 @@ func setSettingsData(d *schema.ResourceData, settingsData interface{}, subDomain
 	}
 }
 
-func appendAvailableAttributes(v interface{}, k string, resource map[string]*schema.Schema) bool {
+func appendAvailableAttributes(v any, k string, resource map[string]*schema.Schema) bool {
 	append := false
 
 	if _, ok := resource[k]; !ok {
@@ -790,7 +825,7 @@ func appendAvailableAttributes(v interface{}, k string, resource map[string]*sch
 	if _, ok := v.(string); ok && v != "" {
 		append = true
 	}
-	if _, ok := v.([]interface{}); ok {
+	if _, ok := v.([]any); ok {
 		append = true
 	}
 

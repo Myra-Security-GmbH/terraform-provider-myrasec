@@ -82,7 +82,7 @@ func dataSourceMyrasecIPRanges() *schema.Resource {
 }
 
 // dataSourceMyrasecIPRangesRead ...
-func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareIPRangeFilter(d.Get("filter"))
 	if f == nil {
 		f = &ipRangeFilter{}
@@ -104,9 +104,9 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	ipRangeData := make([]interface{}, 0)
+	ipRangeData := make([]any, 0)
 	for _, r := range ranges {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":       r.ID,
 			"created":  r.Created.Format(time.RFC3339),
 			"modified": r.Modified.Format(time.RFC3339),
@@ -137,7 +137,7 @@ func dataSourceMyrasecIPRangesRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 // prepareIPRangeFilter fetches the panic that can happen in parseIPRangeFilter
-func prepareIPRangeFilter(d interface{}) *ipRangeFilter {
+func prepareIPRangeFilter(d any) *ipRangeFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareIPRangeFilter", r)
@@ -147,12 +147,12 @@ func prepareIPRangeFilter(d interface{}) *ipRangeFilter {
 	return parseIPRangeFilter(d)
 }
 
-// parseRateLimitFilter converts the filter data to a rateLimitFilter struct
-func parseIPRangeFilter(d interface{}) *ipRangeFilter {
-	cfg := d.([]interface{})
+// parseIPRangeFilter converts the filter data to a ipRangeFilter struct
+func parseIPRangeFilter(d any) *ipRangeFilter {
+	cfg := d.([]any)
 	f := &ipRangeFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	ipVersionType, ok := m["type"]
 	if ok {
@@ -168,7 +168,7 @@ func parseIPRangeFilter(d interface{}) *ipRangeFilter {
 }
 
 // listIPRanges ...
-func listIPRanges(meta interface{}, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
+func listIPRanges(meta any, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var ranges []myrasec.IPRange
 	pageSize := 250

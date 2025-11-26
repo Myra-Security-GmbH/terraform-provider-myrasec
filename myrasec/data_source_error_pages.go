@@ -50,10 +50,6 @@ func dataSourceMyrasecErrorPages() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
-						"content": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 						"subdomain_name": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -70,7 +66,7 @@ func dataSourceMyrasecErrorPages() *schema.Resource {
 }
 
 // dataSourceMyrasecErrorPageRead ...
-func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareErrorPageFilter(d.Get("filter"))
 	if f == nil {
 		f = &errorPageFilter{}
@@ -83,7 +79,7 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 		return diags
 	}
 
-	errorPageData := make([]interface{}, 0)
+	errorPageData := make([]any, 0)
 
 	for _, ep := range errorPages {
 
@@ -97,12 +93,11 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 			modified = ep.Modified.Format(time.RFC3339)
 		}
 
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":             ep.ID,
 			"created":        created,
 			"modified":       modified,
 			"error_code":     ep.ErrorCode,
-			"content":        ep.Content,
 			"subdomain_name": ep.SubDomainName,
 		}
 
@@ -118,7 +113,7 @@ func dataSourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData,
 }
 
 // prepareErrorPageFilter fetches the panic that can happen in parseErrorPageFilter
-func prepareErrorPageFilter(d interface{}) *errorPageFilter {
+func prepareErrorPageFilter(d any) *errorPageFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareErrorPageFilter", r)
@@ -129,11 +124,11 @@ func prepareErrorPageFilter(d interface{}) *errorPageFilter {
 }
 
 // parseErrorPageFilter converts the filter data to a errorPageFilter struct
-func parseErrorPageFilter(d interface{}) *errorPageFilter {
-	cfg := d.([]interface{})
+func parseErrorPageFilter(d any) *errorPageFilter {
+	cfg := d.([]any)
 	f := &errorPageFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	domainName, ok := m["domain_name"]
 	if ok {
@@ -144,7 +139,7 @@ func parseErrorPageFilter(d interface{}) *errorPageFilter {
 }
 
 // listErrorPages ...
-func listErrorPages(meta interface{}, domainName string, params map[string]string) ([]myrasec.ErrorPage, diag.Diagnostics) {
+func listErrorPages(meta any, domainName string, params map[string]string) ([]myrasec.ErrorPage, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var errorPages []myrasec.ErrorPage
 	pageSize := 250

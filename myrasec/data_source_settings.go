@@ -85,11 +85,23 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"cookie_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"diffie_hellman_exchange": {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"disable_forwarded_for": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"enable_origin_sni": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"enforce_cache_ttl": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -125,25 +137,15 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"ip_lock": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"ipv6_active": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
 						"limit_allowed_http_method": {
-							Type:     schema.TypeSet,
-							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
-						"myra_ssl_certificate": {
-							Type:     schema.TypeSet,
-							Computed: true,
-							Elem: &schema.Schema{
-								Type: schema.TypeString,
-							},
-						},
-						"myra_ssl_certificate_key": {
 							Type:     schema.TypeSet,
 							Computed: true,
 							Elem: &schema.Schema{
@@ -172,6 +174,20 @@ func dataSourceMyrasecSettings() *schema.Resource {
 						"monitoring_send_alert": {
 							Type:     schema.TypeBool,
 							Computed: true,
+						},
+						"myra_ssl_certificate": {
+							Type:     schema.TypeSet,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"myra_ssl_certificate_key": {
+							Type:     schema.TypeSet,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
 						},
 						"myra_ssl_header": {
 							Type:     schema.TypeBool,
@@ -207,6 +223,10 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"proxy_host_header": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"proxy_read_timeout": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -239,6 +259,25 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"ssl_client_verify": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_certificate": {
+							Type:     schema.TypeSet,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"ssl_client_header_verification": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_header_fingerprint": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"ssl_origin_port": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -258,10 +297,6 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"proxy_host_header": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 					},
 				},
 			},
@@ -273,7 +308,7 @@ func dataSourceMyrasecSettings() *schema.Resource {
 	}
 }
 
-func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareSettingsFilter(d.Get("filter"))
 	if f == nil {
 		f = &settingsFilter{}
@@ -284,8 +319,8 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	settingData := make([]interface{}, 0)
-	settingData = append(settingData, map[string]interface{}{
+	settingData := make([]any, 0)
+	settingData = append(settingData, map[string]any{
 		"subdomain_name":                  f.subDomainName,
 		"access_log":                      settings.AccessLog,
 		"antibot_post_flood":              settings.AntibotPostFlood,
@@ -299,8 +334,11 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"cache_revalidate":                settings.CacheRevalidate,
 		"cdn":                             settings.CDN,
 		"client_max_body_size":            settings.ClientMaxBodySize,
+		"cookie_name":                     settings.CookieName,
 		"diffie_hellman_exchange":         settings.DiffieHellmanExchange,
+		"disable_forwarded_for":           settings.DisableForwardFor,
 		"enable_origin_sni":               settings.EnableOriginSNI,
+		"enforce_cache_ttl":               settings.EnforceCacheTTL,
 		"forwarded_for_replacement":       settings.ForwardedForReplacement,
 		"hsts":                            settings.HSTS,
 		"hsts_include_subdomains":         settings.HSTSIncludeSubdomains,
@@ -309,6 +347,7 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"http_origin_port":                settings.HTTPOriginPort,
 		"ignore_nocache":                  settings.IgnoreNoCache,
 		"image_optimization":              settings.ImageOptimization,
+		"ip_lock":                         settings.IPLock,
 		"ipv6_active":                     settings.IPv6Active,
 		"limit_allowed_http_method":       settings.LimitAllowedHTTPMethod,
 		"limit_tls_version":               settings.LimitTLSVersion,
@@ -325,6 +364,7 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"proxy_cache_bypass":              settings.ProxyCacheBypass,
 		"proxy_cache_stale":               settings.ProxyCacheStale,
 		"proxy_connect_timeout":           settings.ProxyConnectTimeout,
+		"proxy_host_header":               settings.ProxyHostHeader,
 		"proxy_read_timeout":              settings.ProxyReadTimeout,
 		"request_limit_block":             settings.RequestLimitBlock,
 		"request_limit_level":             settings.RequestLimitLevel,
@@ -333,11 +373,14 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"rewrite":                         settings.Rewrite,
 		"source_protocol":                 settings.SourceProtocol,
 		"spdy":                            settings.Spdy,
+		"ssl_client_verify":               settings.SSLClientVerify,
+		"ssl_client_certificate":          settings.SSLClientCertificate,
+		"ssl_client_header_verification":  settings.SSLClientHeaderVerification,
+		"ssl_client_header_fingerprint":   settings.SSLClientHeaderFingerprint,
 		"ssl_origin_port":                 settings.SSLOriginPort,
 		"waf_enable":                      settings.WAFEnable,
 		"waf_levels_enable":               settings.WAFLevelsEnable,
 		"waf_policy":                      settings.WAFPolicy,
-		"proxy_host_header":               settings.ProxyHostHeader,
 	})
 
 	if err := d.Set("settings", settingData); err != nil {
@@ -349,7 +392,7 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-func listSettings(meta interface{}, subDomainName string) (*myrasec.Settings, diag.Diagnostics) {
+func listSettings(meta any, subDomainName string) (*myrasec.Settings, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -375,7 +418,7 @@ func listSettings(meta interface{}, subDomainName string) (*myrasec.Settings, di
 	return settings, diags
 }
 
-func prepareSettingsFilter(d interface{}) *settingsFilter {
+func prepareSettingsFilter(d any) *settingsFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareSettingsFilter", r)
@@ -385,11 +428,11 @@ func prepareSettingsFilter(d interface{}) *settingsFilter {
 	return parseSettingsFilter(d)
 }
 
-func parseSettingsFilter(d interface{}) *settingsFilter {
-	cfg := d.([]interface{})
+func parseSettingsFilter(d any) *settingsFilter {
+	cfg := d.([]any)
 	f := &settingsFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {

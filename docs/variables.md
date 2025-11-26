@@ -54,6 +54,7 @@ variable "myrasec_dns_record-record_type" {
     "SRV"   = "SRV"
     "CAA"   = "CAA"
     "PTR"   = "PTR"
+    "DS"    = "DS"
   }
 }
 
@@ -197,7 +198,6 @@ variable "myrasec_tag-type" {
   default = {
     "CACHE"      = "CACHE"
     "CONFIG"     = "CONFIG"
-    "RATE_LIMIT" = "RATE_LIMIT"
     "WAF"        = "WAF"
   }
 }
@@ -244,6 +244,11 @@ variable "myrasec_waf_rule-condition-matching_type-default" {
     "EXACT"  = "EXACT"
     "PREFIX" = "PREFIX"
     "SUFFIX" = "SUFFIX"
+    "NOT_REGEX"  = "NOT REGEX"
+    "NOT_IREGEX" = "NOT IREGEX"
+    "NOT_EXACT"  = "NOT EXACT"
+    "NOT_PREFIX" = "NOT PREFIX"
+    "NOT_SUFFIX" = "NOT SUFFIX"
   }
 }
 
@@ -265,22 +270,53 @@ variable "myrasec_waf_rule-condition-name-out" {
 
 variable "myrasec_waf_rule-action-type" {
   default = {
-    "modify_header"     = "modify_header"
-    "add_header"        = "add_header"
-    "remove_header"     = "remove_header"
-    "change_upstream"   = "change_upstream"
-    "origin_rate_limit" = "origin_rate_limit"
-    "score"             = "score"
-    "uri_subst"         = "uri_subst"
-    "set_http_status"   = "set_http_status"
+    "add_header"                = "add_header"
+    "allow"                     = "allow"
+    "block"                     = "block"
+    "change_upstream"           = "change_upstream"
+    "log"                       = "log"
+    "modify_header"             = "modify_header"
+    "origin_rate_limit"         = "origin_rate_limit"
+    "remove_header"             = "remove_header"
+    "remove_header_value_regex" = "remove_header_value_regex"
+    "remove_query_string"       = "del_qs_param"
+    "del_qs_param"              = "del_qs_param"
+    "score"                     = "score"
+    "set_http_status"           = "set_http_status"
+    "uri_subst"                 = "uri_subst"
+    "verify_human"              = "verify_human"
   }
 }
 
 variable "myrasec_waf_rule-action-set_http_status" {
   default = {
-    300 = 300
+    301 = 301
     302 = 302
-    400 = 400
+    404 = 404
+  }
+}
+
+variable "myrasec_waf_rule-action-origin_rate_limit" {
+  default = {
+    1 = 1
+    2 = 2
+    5 = 5
+    10 = 10
+    15 = 15
+    30 = 30
+    45 = 45
+    60 = 60
+    120 = 120
+    180 = 180
+    300 = 300
+    600 = 600
+    1200 = 1200
+    3600 = 3600
+    10800 = 10800
+    21600 = 21600
+    43200 = 43200
+    64800 = 64800
+    86400 = 86400
   }
 }
 
@@ -288,18 +324,6 @@ variable "myrasec_ip_ranges-type" {
   default = {
     "ipv4" = "ipv4"
     "ipv6" = "ipv6"
-  }
-}
-
-variable "myrasec_ratelimit-value" {
-  default = {
-    "very_low"  = 4000
-    "low"       = 2000
-    "normal"    = 1000
-    "high"      = 500
-    "very_high" = 100
-    "extreme"   = 60
-    "disabled"  = 0
   }
 }
 ```

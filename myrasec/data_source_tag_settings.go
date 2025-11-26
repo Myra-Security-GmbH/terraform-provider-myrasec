@@ -85,11 +85,23 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"cookie_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"diffie_hellman_exchange": {
 							Type:     schema.TypeInt,
 							Computed: true,
 						},
+						"disable_forwarded_for": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 						"enable_origin_sni": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"enforce_cache_ttl": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -122,6 +134,10 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Computed: true,
 						},
 						"image_optimization": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"ip_lock": {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
@@ -159,10 +175,6 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"myra_ssl_header": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"myra_ssl_certificate": {
 							Type:     schema.TypeSet,
 							Computed: true,
@@ -176,6 +188,10 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
+						},
+						"myra_ssl_header": {
+							Type:     schema.TypeBool,
+							Computed: true,
 						},
 						"next_upstream": {
 							Type:     schema.TypeSet,
@@ -239,6 +255,25 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"ssl_client_verify": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_certificate": {
+							Type:     schema.TypeSet,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"ssl_client_header_verification": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"ssl_client_header_fingerprint": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"ssl_origin_port": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -258,10 +293,6 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"proxy_host_header": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
 					},
 				},
 			},
@@ -273,7 +304,7 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 	}
 }
 
-func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagSettingsFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagSettingsFilter{}
@@ -284,8 +315,8 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		return diags
 	}
 
-	settingData := make([]interface{}, 0)
-	settingData = append(settingData, map[string]interface{}{
+	settingData := make([]any, 0)
+	settingData = append(settingData, map[string]any{
 		"tag_id":                          f.tagID,
 		"access_log":                      settings.AccessLog,
 		"antibot_post_flood":              settings.AntibotPostFlood,
@@ -299,8 +330,11 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"cache_revalidate":                settings.CacheRevalidate,
 		"cdn":                             settings.CDN,
 		"client_max_body_size":            settings.ClientMaxBodySize,
+		"cookie_name":                     settings.CookieName,
 		"diffie_hellman_exchange":         settings.DiffieHellmanExchange,
+		"disable_forwarded_for":           settings.DisableForwardFor,
 		"enable_origin_sni":               settings.EnableOriginSNI,
+		"enforce_cache_ttl":               settings.EnforceCacheTTL,
 		"forwarded_for_replacement":       settings.ForwardedForReplacement,
 		"hsts":                            settings.HSTS,
 		"hsts_include_subdomains":         settings.HSTSIncludeSubdomains,
@@ -309,6 +343,7 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"http_origin_port":                settings.HTTPOriginPort,
 		"ignore_nocache":                  settings.IgnoreNoCache,
 		"image_optimization":              settings.ImageOptimization,
+		"ip_lock":                         settings.IPLock,
 		"ipv6_active":                     settings.IPv6Active,
 		"limit_allowed_http_method":       settings.LimitAllowedHTTPMethod,
 		"limit_tls_version":               settings.LimitTLSVersion,
@@ -333,11 +368,14 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"rewrite":                         settings.Rewrite,
 		"source_protocol":                 settings.SourceProtocol,
 		"spdy":                            settings.Spdy,
+		"ssl_client_verify":               settings.SSLClientVerify,
+		"ssl_client_certificate":          settings.SSLClientCertificate,
+		"ssl_client_header_verification":  settings.SSLClientHeaderVerification,
+		"ssl_client_header_fingerprint":   settings.SSLClientHeaderFingerprint,
 		"ssl_origin_port":                 settings.SSLOriginPort,
 		"waf_enable":                      settings.WAFEnable,
 		"waf_levels_enable":               settings.WAFLevelsEnable,
 		"waf_policy":                      settings.WAFPolicy,
-		"proxy_host_header":               settings.ProxyHostHeader,
 	})
 
 	if err := d.Set("settings", settingData); err != nil {
@@ -349,7 +387,7 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-func listTagSettings(meta interface{}, tagID int) (*myrasec.Settings, diag.Diagnostics) {
+func listTagSettings(meta any, tagID int) (*myrasec.Settings, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -366,7 +404,7 @@ func listTagSettings(meta interface{}, tagID int) (*myrasec.Settings, diag.Diagn
 	return settings, diags
 }
 
-func prepareTagSettingsFilter(d interface{}) *tagSettingsFilter {
+func prepareTagSettingsFilter(d any) *tagSettingsFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagSettingsFilter", r)
@@ -376,11 +414,11 @@ func prepareTagSettingsFilter(d interface{}) *tagSettingsFilter {
 	return parseTagSettingsFilter(d)
 }
 
-func parseTagSettingsFilter(d interface{}) *tagSettingsFilter {
-	cfg := d.([]interface{})
+func parseTagSettingsFilter(d any) *tagSettingsFilter {
+	cfg := d.([]any)
 	f := &tagSettingsFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	tagID, ok := m["tag_id"]
 	if ok {

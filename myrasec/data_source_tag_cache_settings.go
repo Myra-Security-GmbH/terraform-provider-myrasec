@@ -82,6 +82,10 @@ func dataSourceMyrasecTagCacheSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"comment": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -94,7 +98,7 @@ func dataSourceMyrasecTagCacheSettings() *schema.Resource {
 }
 
 // dataSourceMyrasecTagCacheSettingsRead ...
-func dataSourceMyrasecTagCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecTagCacheSettingsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareTagCacheSettingFilter(d.Get("filter"))
 	if f == nil {
 		f = &tagCacheSettingFilter{}
@@ -110,7 +114,7 @@ func dataSourceMyrasecTagCacheSettingsRead(ctx context.Context, d *schema.Resour
 		return err
 	}
 
-	settingData := make([]interface{}, 0)
+	settingData := make([]any, 0)
 	if f.tagId > 0 {
 		settings, diags := createSettingsData(f.tagId, meta, params)
 		if diags.HasError() {
@@ -137,15 +141,15 @@ func dataSourceMyrasecTagCacheSettingsRead(ctx context.Context, d *schema.Resour
 }
 
 // createSettingsData
-func createSettingsData(tagId int, meta interface{}, params map[string]string) ([]interface{}, diag.Diagnostics) {
+func createSettingsData(tagId int, meta any, params map[string]string) ([]any, diag.Diagnostics) {
 	settings, diags := listTagCacheSettings(tagId, meta, params)
-	settingData := make([]interface{}, 0)
+	settingData := make([]any, 0)
 	if diags.HasError() {
 		return settingData, diags
 	}
 
 	for _, r := range settings {
-		settingData = append(settingData, map[string]interface{}{
+		settingData = append(settingData, map[string]any{
 			"id":            r.ID,
 			"created":       r.Created.Format(time.RFC3339),
 			"modified":      r.Modified.Format(time.RFC3339),
@@ -157,6 +161,7 @@ func createSettingsData(tagId int, meta interface{}, params map[string]string) (
 			"sort":          r.Sort,
 			"enabled":       r.Enabled,
 			"enforce":       r.Enforce,
+			"comment":       r.Comment,
 		})
 	}
 
@@ -164,7 +169,7 @@ func createSettingsData(tagId int, meta interface{}, params map[string]string) (
 }
 
 // prepareTagCacheSettingFilter fetches the panic that can happen in parseTagCacheSettingFilter
-func prepareTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
+func prepareTagCacheSettingFilter(d any) *tagCacheSettingFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareTagCacheSettingFilter", r)
@@ -175,11 +180,11 @@ func prepareTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
 }
 
 // parseTagCacheSettingFilter converts the filter data to a tagCacheSettingFilter struct
-func parseTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
-	cfg := d.([]interface{})
+func parseTagCacheSettingFilter(d any) *tagCacheSettingFilter {
+	cfg := d.([]any)
 	f := &tagCacheSettingFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	tagId, ok := m["tag_id"]
 	if ok {
@@ -195,7 +200,7 @@ func parseTagCacheSettingFilter(d interface{}) *tagCacheSettingFilter {
 }
 
 // listTagCacheSettings ...
-func listTagCacheSettings(tagId int, meta interface{}, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
+func listTagCacheSettings(tagId int, meta any, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var settings []myrasec.CacheSetting
 	pageSize := 250

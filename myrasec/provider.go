@@ -49,7 +49,6 @@ func Provider() *schema.Provider {
 			"myrasec_redirects":             dataSourceMyrasecRedirects(),
 			"myrasec_settings":              dataSourceMyrasecSettings(),
 			"myrasec_ip_filters":            dataSourceMyrasecIPFilters(),
-			"myrasec_ratelimits":            dataSourceMyrasecRateLimits(),
 			"myrasec_waf_rules":             dataSourceMyrasecWAFRules(),
 			"myrasec_waf_conditions":        dataSourceMyrasecWAFConditions(),
 			"myrasec_waf_actions":           dataSourceMyrasecWAFActions(),
@@ -61,8 +60,11 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_templates": dataSourceMyrasecMaintenanceTemplates(),
 			"myrasec_tags":                  dataSourceMyrasecTags(),
 			"myrasec_tag_cache_settings":    dataSourceMyrasecTagCacheSettings(),
+			"myrasec_tag_information":       dataSourceMyrasecTagInformation(),
 			"myrasec_tag_settings":          dataSourceMyrasecTagSettings(),
 			"myrasec_tag_waf_rules":         dataSourceMyrasecTagWAFRules(),
+			"myrasec_waitingrooms":          dataSourceMyrasecWaitingRooms(),
+			"myrasec_api_keys":              dataSourceMyrasecApiKeys(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"myrasec_domain":               resourceMyrasecDomain(),
@@ -71,7 +73,6 @@ func Provider() *schema.Provider {
 			"myrasec_redirect":             resourceMyrasecRedirect(),
 			"myrasec_settings":             resourceMyrasecSettings(),
 			"myrasec_ip_filter":            resourceMyrasecIPFilter(),
-			"myrasec_ratelimit":            resourceMyrasecRateLimit(),
 			"myrasec_waf_rule":             resourceMyrasecWAFRule(),
 			"myrasec_ssl_certificate":      resourceMyrasecSSLCertificate(),
 			"myrasec_error_page":           resourceMyrasecErrorPage(),
@@ -79,15 +80,18 @@ func Provider() *schema.Provider {
 			"myrasec_maintenance_template": resourceMyrasecMaintenanceTemplate(),
 			"myrasec_tag":                  resourceMyrasecTag(),
 			"myrasec_tag_cache_setting":    resourceMyrasecTagCacheSetting(),
+			"myrasec_tag_information":      resourceMyrasecTagInformation(),
 			"myrasec_tag_waf_rule":         resourceMyrasecTagWAFRule(),
 			"myrasec_tag_settings":         resourceMyrasecTagSettings(),
+			"myrasec_waitingroom":          resourceMyrasecWaitingRoom(),
+			"myrasec_api_key":              resourceMyrasecApiKey(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
 
 // providerConfigure ...
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	config := Config{
 		APIKey:        d.Get("api_key").(string),
 		Secret:        d.Get("secret").(string),

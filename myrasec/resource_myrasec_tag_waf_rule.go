@@ -77,7 +77,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 			"direction": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					return strings.ToLower(i.(string))
 				},
 				ValidateFunc: validation.StringInSlice([]string{"in", "out"}, false),
@@ -123,20 +123,6 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 							Computed:    true,
 							Description: "ID of the WAF rule condition.",
 						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -174,25 +160,6 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action_id": {
-							Type:        schema.TypeInt,
-							Computed:    true,
-							Description: "ID of the WAF rule.",
-						},
-						"modified": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of last modification.",
-						},
-						"created": {
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Date of creation.",
-						},
-						"force_custom_values": {
-							Type:     schema.TypeBool,
-							Optional: true,
-						},
 						"available_phases": {
 							Type:     schema.TypeInt,
 							Computed: true,
@@ -217,7 +184,7 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				},
 			},
 		},
-		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i interface{}) error {
+		CustomizeDiff: func(ctx context.Context, rd *schema.ResourceDiff, i any) error {
 			err := validateActions(rd)
 			if err != nil {
 				return err
@@ -237,12 +204,12 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 }
 
 // resourceMyrasecTagWAFRuleCreate ...
-func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -282,7 +249,7 @@ func resourceMyrasecTagWAFRuleCreate(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleRead ...
-func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	tagID, ok := d.GetOk("tag_id")
@@ -316,7 +283,7 @@ func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecTagWAFRuleUpdate ...
-func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -333,7 +300,7 @@ func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("[INFO] Updating WAF rule: %v", ruleID)
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -363,7 +330,7 @@ func resourceMyrasecTagWAFRuleUpdate(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleDelete ...
-func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -380,7 +347,7 @@ func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("[INFO] Deleting WAF rule: %v", ruleID)
 
-	rule, err := buildTagWAFRule(d, meta)
+	rule, err := buildTagWAFRule(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -403,7 +370,7 @@ func resourceMyrasecTagWAFRuleDelete(ctx context.Context, d *schema.ResourceData
 }
 
 // resourceMyrasecTagWAFRuleImport ...
-func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	tag, ruleID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -423,7 +390,7 @@ func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData
 }
 
 // buildTagWAFRule ...
-func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFRule, error) {
+func buildTagWAFRule(d *schema.ResourceData) (*myrasec.TagWAFRule, error) {
 	rule := &myrasec.TagWAFRule{
 		TagId:         d.Get("tag_id").(int),
 		Name:          d.Get("name").(string),
@@ -445,6 +412,13 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 		}
 	}
 
+	date := d.Get("expire_date").(string)
+	expireDate, err := types.ParseDate(date)
+	if err != nil {
+		return nil, err
+	}
+	rule.ExpireDate = expireDate
+
 	created, err := types.ParseDate(d.Get("created").(string))
 	if err != nil {
 		return nil, err
@@ -461,7 +435,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 	if !ok {
 		rule.Conditions = make([]*myrasec.WAFCondition, 0)
 	}
-	for _, condition := range conditions.([]interface{}) {
+	for _, condition := range conditions.([]any) {
 		c, err := buildWAFCondition(condition)
 		if err != nil {
 			return nil, err
@@ -474,7 +448,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 		return rule, nil
 	}
 
-	for _, action := range actions.([]interface{}) {
+	for _, action := range actions.([]any) {
 		a, err := buildWAFAction(action)
 		if err != nil {
 			return nil, err
@@ -487,7 +461,7 @@ func buildTagWAFRule(d *schema.ResourceData, meta interface{}) (*myrasec.TagWAFR
 }
 
 // findTagWAFRule ...
-func findTagWAFRule(wafRuleID int, tagID int, meta interface{}) (*myrasec.TagWAFRule, diag.Diagnostics) {
+func findTagWAFRule(wafRuleID int, tagID int, meta any) (*myrasec.TagWAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -557,53 +531,9 @@ func setTagWAFRuleData(d *schema.ResourceData, rule *myrasec.TagWAFRule) {
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
 
-	conditions := []interface{}{}
-	for _, condition := range rule.Conditions {
-
-		c := map[string]interface{}{
-			"condition_id":        condition.ID,
-			"force_custom_values": condition.ForceCustomValues,
-			"available_phases":    condition.AvailablePhases,
-			"alias":               condition.Alias,
-			"category":            condition.Category,
-			"matching_type":       condition.MatchingType,
-			"name":                condition.Name,
-			"key":                 condition.Key,
-			"value":               condition.Value,
-		}
-
-		if condition.Created != nil {
-			c["created"] = condition.Created.Format(time.RFC3339)
-		}
-
-		if condition.Modified != nil {
-			c["modified"] = condition.Modified.Format(time.RFC3339)
-		}
-
-		conditions = append(conditions, c)
-	}
+	conditions := createConditions(rule.Conditions)
 	d.Set("conditions", conditions)
 
-	actions := []interface{}{}
-	for _, action := range rule.Actions {
-		a := map[string]interface{}{
-			"action_id":           action.ID,
-			"force_custom_values": action.ForceCustomValues,
-			"available_phases":    action.AvailablePhases,
-			"name":                action.Name,
-			"type":                action.Type,
-			"value":               action.Value,
-			"custom_key":          action.CustomKey,
-		}
-
-		if action.Created != nil {
-			a["created"] = action.Created.Format(time.RFC3339)
-		}
-
-		if action.Modified != nil {
-			a["modified"] = action.Modified.Format(time.RFC3339)
-		}
-		actions = append(actions, a)
-	}
+	actions := createActions(rule.Actions)
 	d.Set("actions", actions)
 }

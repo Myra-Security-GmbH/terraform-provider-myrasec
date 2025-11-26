@@ -50,6 +50,10 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"configuration_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"subject": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -144,7 +148,7 @@ func dataSourceMyrasecSSLCertificates() *schema.Resource {
 }
 
 // dataSourceMyrasecSSLCertificatesRead ...
-func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareSSLCertificateFilter(d.Get("filter"))
 	if f == nil {
 		f = &sslCertificateFilter{}
@@ -157,7 +161,7 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 		return diags
 	}
 
-	certificateData := make([]interface{}, 0)
+	certificateData := make([]any, 0)
 
 	for _, c := range certificates {
 
@@ -170,11 +174,12 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 		if c.Created != nil {
 			modified = c.Certificate.Modified.Format(time.RFC3339)
 		}
-		data := map[string]interface{}{
+		data := map[string]any{
 			"domain_name":          f.domainName,
 			"id":                   c.Certificate.ID,
 			"created":              created,
 			"modified":             modified,
+			"configuration_name":   c.SslConfigurationName,
 			"subject":              c.Certificate.Subject,
 			"algorithm":            c.Certificate.Algorithm,
 			"valid_from":           c.Certificate.ValidFrom.Format(time.RFC3339),
@@ -187,10 +192,10 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 			"subdomains":           c.Subdomains,
 		}
 
-		if c.Intermediates != nil && len(c.Intermediates) > 0 {
-			intermediates := make([]map[string]interface{}, 0)
+		if len(c.Intermediates) > 0 {
+			intermediates := make([]map[string]any, 0)
 			for _, inter := range c.Intermediates {
-				intermediates = append(intermediates, map[string]interface{}{
+				intermediates = append(intermediates, map[string]any{
 					"subject":       inter.Certificate.Subject,
 					"algorithm":     inter.Certificate.Algorithm,
 					"fingerprint":   inter.Certificate.Fingerprint,
@@ -216,7 +221,7 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 }
 
 // prepareSSLCertificateFilter fetches the panic that can happen in parseSSLCertificateFilter
-func prepareSSLCertificateFilter(d interface{}) *sslCertificateFilter {
+func prepareSSLCertificateFilter(d any) *sslCertificateFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareRedirectFilter", r)
@@ -227,11 +232,11 @@ func prepareSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 }
 
 // parseSSLCertificateFilter converts the filter data to a sslCertificateFilter struct
-func parseSSLCertificateFilter(d interface{}) *sslCertificateFilter {
-	cfg := d.([]interface{})
+func parseSSLCertificateFilter(d any) *sslCertificateFilter {
+	cfg := d.([]any)
 	f := &sslCertificateFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	domainName, ok := m["domain_name"]
 	if ok {
@@ -242,7 +247,7 @@ func parseSSLCertificateFilter(d interface{}) *sslCertificateFilter {
 }
 
 // listSSLCertificates ...
-func listSSLCertificates(meta interface{}, domainName string, params map[string]string) ([]myrasec.SSLCertificate, diag.Diagnostics) {
+func listSSLCertificates(meta any, domainName string, params map[string]string) ([]myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var certificates []myrasec.SSLCertificate
 	pageSize := 250

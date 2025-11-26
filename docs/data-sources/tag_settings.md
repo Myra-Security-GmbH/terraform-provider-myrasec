@@ -33,12 +33,15 @@ The following arguments are supported:
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
-* `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`.
+* `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`. **Deprecated.**
 * `client_max_body_size` (Optional) Sets the maximum allowed size of the client request body, specified in the “Content-Length” request header field. Maximum 5120MB. Default `10`.
 * `cookie_name` (Optional) This value is required when `balancing_method` is set to `cookie_based`.
-* `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024` or `2048`. Default `2048`.
+* `diffie_hellman_exchange` (Optional) The Diffie-Hellman key exchange parameter length. Valid values are: `1024`, `2048` or `4096`. Default `2048`.
+* `disable_forwarded_for` (Optional) Disable the forwarded for replacement.
 * `enable_origin_sni` (Optional) Enable or disable origin SNI. Default `true`.
+* `enforce_cache_ttl` (Optional) Enforce using given cache TTL settings instead of origin cache information. This will set the Cache-Control header max-age to the given TTL.
 * `forwarded_for_replacement` (Optional) Set your own X-Forwarded-For header. Default `X-Forwarded-For`.
+* `host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.
 * `hsts` (Optional) HSTS Strict Transport Security (HSTS). Default `false`.
 * `hsts_include_subdomains` (Optional) HSTS includeSubDomains directive. Default `false`.
 * `hsts_max_age` (Optional) HSTS max-age. Default `31536000`.
@@ -47,6 +50,7 @@ The following arguments are supported:
 * `ignore_nocache` (Optional) If activated, no-cache headers (Cache-Control: [private|no-store|no-cache]) will be ignored. Default `false`.
 * `image_optimization` (Optional) Optimization of images. Default `true`.
 * `ipv6_active` (Optional) Allow connections via IPv6 to your systems. Default `true`.
+* `ip_lock` (Oprional) Prevent accidential IP address changes if activated. This setting is only available on "domain level" (general domain settings). Default `false`.
 * `limit_allowed_http_method` (Optional) List of allowed HTTP methods. Valid values are `GET`, `HEAD`, `POST`, `PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `OPTIONS`, `PROPFIND`, `PROPPATCH`, `LOCK`, `UNLOCK`, and `PATCH`. Default allows all.
 * `limit_tls_version` (Optional) List of TLS versions that will be used. Valid values are `TLSv1`, `TLSv1.1`, `TLSv1.2` and `TLSv1.3`. Default uses all.
 * `log_format` (Optional) Use a different log format. Default `myra-combined-waf`.
@@ -70,8 +74,11 @@ The following arguments are supported:
 * `rewrite` (Optional) Enable the JavaScript optimization. Default `false`.
 * `source_protocol` (Optional) Protocol to query the origin server. Valid values are `same`, `http` or `https`. Default `same`.
 * `spdy` (Optional) Activates the SPDY protocol.. Default `true`.
+* `ssl_client_verify` (Optional) Enables verification of client certificates.
+* `ssl_client_certificate` (Optional) Specifies a file with trusted CA certificates in the PEM format used to verify client certificates.
+* `ssl_client_header_verification` (Optional) The name of the header, which contains the ssl verification status.
+* `ssl_client_header_fingerprint` (Optional) Contains the fingerprint of the certificate, the client used to authenticate itself.
 * `ssl_origin_port` (Optional) Allows to set a port for communication with origin via SSL. Default `443`.
 * `waf_enable` (Optional) Enables / disables the Web Application Firewall. Default `false`.
 * `waf_levels_enable` (Optional) Level of applied WAF rules. Valid values are `waf_tag`, `waf_domain` and `waf_subdomain`. Default `waf_tag`, `waf_domain` and `waf_subdomain`.
 * `waf_policy` (Optional) Default policy for the Web Application Firewall in case of rule error. Valid values are `allow` or `block`. Default `allow`.
-* `proxy_host_header` (Optional) If set it will be used as host header, default is `$myra_host`. To reuse the default value it must be set to an empty string.

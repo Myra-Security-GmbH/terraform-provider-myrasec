@@ -1,6 +1,7 @@
 package myrasec
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,7 +13,7 @@ import (
 )
 
 // findDomainByDomainName ...
-func findDomainByDomainName(meta interface{}, domainName string) (domain *myrasec.Domain, diags diag.Diagnostics) {
+func findDomainByDomainName(meta any, domainName string) (domain *myrasec.Domain, diags diag.Diagnostics) {
 
 	client := meta.(*myrasec.API)
 	domain, err := client.FetchDomain(domainName)
@@ -29,7 +30,7 @@ func findDomainByDomainName(meta interface{}, domainName string) (domain *myrase
 }
 
 // findDomainIDByDomainName ...
-func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainName string) (domainID int, diags diag.Diagnostics) {
+func findDomainIDByDomainName(d *schema.ResourceData, meta any, domainName string) (domainID int, diags diag.Diagnostics) {
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
@@ -47,7 +48,7 @@ func findDomainIDByDomainName(d *schema.ResourceData, meta interface{}, domainNa
 }
 
 // findDomainID ...
-func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags diag.Diagnostics) {
+func findDomainID(d *schema.ResourceData, meta any) (domainID int, diags diag.Diagnostics) {
 
 	stateDomainID, ok := d.GetOk("domain_id")
 
@@ -64,6 +65,14 @@ func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags
 
 		subDomainName := name.(string)
 
+		if myrasec.IsGeneralDomainName(subDomainName) && strings.HasPrefix(subDomainName, "ALL-") {
+			var err error
+			domainID, err = myrasec.ExtractDomainIdFromGeneralDomainName(subDomainName)
+			if err == nil {
+				return domainID, diags
+			}
+		}
+
 		domain, diags := findDomainBySubdomainName(meta, subDomainName)
 		if diags.HasError() || domain == nil {
 			return 0, diags
@@ -77,7 +86,7 @@ func findDomainID(d *schema.ResourceData, meta interface{}) (domainID int, diags
 }
 
 // findSubdomainNameAndDomainID ...
-func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (domainID int, subDomainName string, diags diag.Diagnostics) {
+func findSubdomainNameAndDomainID(d *schema.ResourceData, meta any) (domainID int, subDomainName string, diags diag.Diagnostics) {
 
 	name, ok := d.GetOk("subdomain_name")
 	if !ok {
@@ -92,22 +101,30 @@ func findSubdomainNameAndDomainID(d *schema.ResourceData, meta interface{}) (dom
 	subDomainName = name.(string)
 
 	stateDomainID, ok := d.GetOk("domain_id")
-
-	if !ok {
-		domain, diags := findDomainBySubdomainName(meta, subDomainName)
-		if diags.HasError() || domain == nil {
-			return 0, subDomainName, diags
-		}
-		domainID = domain.ID
-	} else {
+	if ok {
 		domainID = stateDomainID.(int)
+		return domainID, subDomainName, diags
 	}
+
+	if myrasec.IsGeneralDomainName(subDomainName) && strings.HasPrefix(subDomainName, "ALL-") {
+		var err error
+		domainID, err = myrasec.ExtractDomainIdFromGeneralDomainName(subDomainName)
+		if err == nil {
+			return domainID, subDomainName, diags
+		}
+	}
+
+	domain, diags := findDomainBySubdomainName(meta, subDomainName)
+	if diags.HasError() || domain == nil {
+		return 0, subDomainName, diags
+	}
+	domainID = domain.ID
 
 	return domainID, subDomainName, diags
 }
 
 // findDomainBySubdomainName ...
-func findDomainBySubdomainName(meta interface{}, subDomainName string) (*myrasec.Domain, diag.Diagnostics) {
+func findDomainBySubdomainName(meta any, subDomainName string) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -167,4 +184,10 @@ func IntInSlice(needle int, haystack []int) bool {
 // formatError returns the error message with a timestamp appended to it
 func formatError(err error) string {
 	return fmt.Sprintf("%s: %s", time.Now().Format(time.RFC3339Nano), err.Error())
+}
+
+func createContentHash(content string) string {
+	h := sha256.New()
+	h.Write([]byte(content))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

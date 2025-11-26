@@ -85,8 +85,8 @@ func dataSourceMyrasecWAFRules() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
-						"template": {
-							Type:     schema.TypeBool,
+						"copied_from": {
+							Type:     schema.TypeInt,
 							Computed: true,
 						},
 						"process_next": {
@@ -181,7 +181,7 @@ func dataSourceMyrasecWAFRules() *schema.Resource {
 }
 
 // dataSourceMyrasecWAFRulesRead ...
-func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	f := prepareWAFRuleFilter(d.Get("filter"))
 	if f == nil {
 		f = &wafRuleFilter{}
@@ -201,9 +201,9 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 		return diags
 	}
 
-	ruleData := make([]interface{}, 0)
+	ruleData := make([]any, 0)
 	for _, r := range rules {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"id":             r.ID,
 			"created":        r.Created.Format(time.RFC3339),
 			"modified":       r.Modified.Format(time.RFC3339),
@@ -217,17 +217,16 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 			"rule_type":      r.RuleType,
 			"sort":           r.Sort,
 			"sync":           r.Sync,
-			"template":       r.Template,
 		}
 
 		if r.ExpireDate != nil {
 			data["expire_date"] = r.ExpireDate.Format(time.RFC3339)
 		}
 
-		if r.Conditions != nil && len(r.Conditions) > 0 {
-			conditions := make([]map[string]interface{}, 0)
+		if len(r.Conditions) > 0 {
+			conditions := make([]map[string]any, 0)
 			for _, c := range r.Conditions {
-				conditions = append(conditions, map[string]interface{}{
+				conditions = append(conditions, map[string]any{
 					"force_custom_values": c.ForceCustomValues,
 					"available_phases":    c.AvailablePhases,
 					"alias":               c.Alias,
@@ -241,10 +240,10 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 			data["conditions"] = conditions
 		}
 
-		if r.Actions != nil && len(r.Actions) > 0 {
-			actions := make([]map[string]interface{}, 0)
+		if len(r.Actions) > 0 {
+			actions := make([]map[string]any, 0)
 			for _, a := range r.Actions {
-				actions = append(actions, map[string]interface{}{
+				actions = append(actions, map[string]any{
 					"force_custom_values": a.ForceCustomValues,
 					"available_phases":    a.AvailablePhases,
 					"name":                a.Name,
@@ -269,7 +268,7 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 // listWAFRules ..
-func listWAFRules(meta interface{}, subDomainName string, params map[string]string) ([]myrasec.WAFRule, diag.Diagnostics) {
+func listWAFRules(meta any, subDomainName string, params map[string]string) ([]myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var rules []myrasec.WAFRule
 	pageSize := 250
@@ -313,7 +312,7 @@ func listWAFRules(meta interface{}, subDomainName string, params map[string]stri
 }
 
 // prepareWAFRuleFilter ...
-func prepareWAFRuleFilter(d interface{}) *wafRuleFilter {
+func prepareWAFRuleFilter(d any) *wafRuleFilter {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("[DEBUG] recovered in prepareWAFRuleFilter", r)
@@ -324,11 +323,11 @@ func prepareWAFRuleFilter(d interface{}) *wafRuleFilter {
 }
 
 // parseWAFRuleFilter ...
-func parseWAFRuleFilter(d interface{}) *wafRuleFilter {
-	cfg := d.([]interface{})
+func parseWAFRuleFilter(d any) *wafRuleFilter {
+	cfg := d.([]any)
 	f := &wafRuleFilter{}
 
-	m := cfg[0].(map[string]interface{})
+	m := cfg[0].(map[string]any)
 
 	subDomainName, ok := m["subdomain_name"]
 	if ok {

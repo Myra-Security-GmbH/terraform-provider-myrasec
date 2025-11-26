@@ -50,7 +50,7 @@ func resourceMyrasecRedirect() *schema.Resource {
 			"subdomain_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					name := i.(string)
 					if myrasec.IsGeneralDomainName(name) {
 						return name
@@ -116,12 +116,12 @@ func resourceMyrasecRedirect() *schema.Resource {
 }
 
 // resourceMyrasecRedirectCreate ...
-func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
 
-	redirect, err := buildRedirect(d, meta)
+	redirect, err := buildRedirect(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -146,7 +146,7 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 	if errImport != nil {
 		log.Printf("[DEBUG] auto-import failed: %s", errImport)
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  "Error creating redirect",
 			Detail:   formatError(err),
 		})
@@ -158,7 +158,7 @@ func resourceMyrasecRedirectCreate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecRedirectRead ...
-func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	redirectID, err := strconv.Atoi(d.Id())
@@ -192,7 +192,7 @@ func resourceMyrasecRedirectRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceMyrasecRedirectUpdate ...
-func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -209,7 +209,7 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[INFO] Updating redirect: %v", redirectID)
 
-	redirect, err := buildRedirect(d, meta)
+	redirect, err := buildRedirect(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -240,7 +240,7 @@ func resourceMyrasecRedirectUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecRedirectDelete ...
-func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -257,7 +257,7 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("[INFO] Deleting redirect: %v", redirectID)
 
-	redirect, err := buildRedirect(d, meta)
+	redirect, err := buildRedirect(d)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -285,7 +285,7 @@ func resourceMyrasecRedirectDelete(ctx context.Context, d *schema.ResourceData, 
 }
 
 // resourceMyrasecRedirectImport ...
-func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 
 	subDomainName, redirectID, err := parseResourceServiceID(d.Id())
 	if err != nil {
@@ -312,7 +312,7 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 }
 
 // buildRedirect ...
-func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect, error) {
+func buildRedirect(d *schema.ResourceData) (*myrasec.Redirect, error) {
 	redirect := &myrasec.Redirect{
 		Type:          d.Get("type").(string),
 		MatchingType:  d.Get("matching_type").(string),
@@ -350,7 +350,7 @@ func buildRedirect(d *schema.ResourceData, meta interface{}) (*myrasec.Redirect,
 }
 
 // findRedirect ...
-func findRedirect(redirectID int, meta interface{}, subDomainName string, domainID int) (*myrasec.Redirect, diag.Diagnostics) {
+func findRedirect(redirectID int, meta any, subDomainName string, domainID int) (*myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
@@ -395,7 +395,7 @@ func setRedirectData(d *schema.ResourceData, redirect *myrasec.Redirect, domainI
 }
 
 // importExistingRedirect ...
-func importExistingRedirect(redirect *myrasec.Redirect, domainId int, subDomainName string, meta interface{}) (*myrasec.Redirect, error) {
+func importExistingRedirect(redirect *myrasec.Redirect, domainId int, subDomainName string, meta any) (*myrasec.Redirect, error) {
 	client := meta.(*myrasec.API)
 
 	params := map[string]string{

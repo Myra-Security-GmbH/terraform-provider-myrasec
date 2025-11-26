@@ -30,4 +30,4 @@ The following arguments are supported
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `name` The name of the maintenance template.
-* `content` The HTML content of the maintenance template.
+* `content_hash` To reduce the data in the tfstate file, only the sha256 hash of the content is stored
