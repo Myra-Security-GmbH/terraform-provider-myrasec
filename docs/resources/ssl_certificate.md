@@ -2,6 +2,8 @@
 
 Provides a Myra Security SSL certificate resource.
 
+**Myra managed certificates can not be handled with this resource type**
+
 ## Example usage
 
 ```hcl
