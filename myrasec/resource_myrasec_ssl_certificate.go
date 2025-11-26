@@ -20,6 +20,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+func validateNotBlank(val any, key string) (ws []string, errors []error) {
+	if s, ok := val.(string); ok {
+		if strings.TrimSpace(s) == "" {
+			errors = append(errors, fmt.Errorf("%s must not be empty or whitespace", key))
+		}
+	}
+	return
+}
+
 func resourceMyrasecSSLCertificate() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceMyrasecSSLCertificateCreate,
@@ -55,15 +64,17 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"certificate": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Certificate",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Certificate",
+				ValidateFunc: validateNotBlank,
 			},
 			"key": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Sensitive:   true,
-				Description: "Unencrypted private key",
+				Type:         schema.TypeString,
+				Required:     true,
+				Sensitive:    true,
+				Description:  "Unencrypted private key",
+				ValidateFunc: validateNotBlank,
 			},
 			"subject": {
 				Type:        schema.TypeString,
@@ -168,7 +179,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 
 			certBlock, _ := pem.Decode([]byte(certificate.(string)))
 			if certBlock == nil {
-				log.Fatal("Failed to decode PEM block for certificate")
+				return errors.New("Failed to decode PEM block for certificate")
 			}
 
 			cert, err := x509.ParseCertificate(certBlock.Bytes)
@@ -428,6 +439,9 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 	cert, diags := findSSLCertificate(certID, meta, domainID)
 	if diags.HasError() || cert == nil {
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
+	}
+	if cert.Managed {
+		return nil, fmt.Errorf("This certificate is managed by Myra")
 	}
 
 	d.SetId(strconv.Itoa(certID))
