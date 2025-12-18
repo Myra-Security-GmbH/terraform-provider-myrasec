@@ -714,7 +714,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
 		if name == "proxy_host_header" {
-			if _, ok := d.GetOk("host_header"); ok {
+			if val, ok := d.GetOk("host_header"); ok && val != "" && val != "$myra_host" {
 				name = "host_header"
 			} else {
 				continue
