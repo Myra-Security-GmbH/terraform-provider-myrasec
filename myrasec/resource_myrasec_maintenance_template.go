@@ -148,8 +148,13 @@ func resourceMyrasecMaintenanceTemplateRead(ctx context.Context, d *schema.Resou
 	}
 
 	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainID)
-	if diags.HasError() || template == nil {
+	if diags.HasError() {
 		return diags
+	}
+
+	if template == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setMaintenanceTemplateData(d, template, domainID)
@@ -350,12 +355,6 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta any, domainID int) 
 		}
 		page++
 	}
-
-	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Warning,
-		Summary:  "Unable to find maintenance template",
-		Detail:   fmt.Sprintf("Unable to find maintenance template with ID = [%d]", maintenanceTemplateID),
-	})
 	return nil, diags
 }
 
