@@ -25,6 +25,14 @@ provider "myrasec" {
 ...
 ```
 
+In case you prefer to use the API token for authentication, you can use this token, too:
+```
+# Configure the Myra Security Provider
+provider "myrasec" {
+  api_token = "${var.myra_api_token}"
+}
+```
+
 ## Variables
 Some attributes in the resources require specific values, therefore we created a list of variables that you can import to your terraform project:
 [Variable list](variables.md)
