@@ -48,7 +48,7 @@ func (c Config) Client() (*myrasec.API, error) {
 	if c.APIToken != "" {
 		api, err = myrasec.NewWithToken(c.APIToken)
 	} else {
-		api, err := myrasec.New(c.APIKey, c.Secret)
+		api, err = myrasec.New(c.APIKey, c.Secret)
 	}
 	if err != nil {
 		return nil, err
