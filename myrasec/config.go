@@ -26,8 +26,7 @@ type Config struct {
 func (c Config) validate() error {
 	var err *multierror.Error
 
-	hasToken = c.APIToken != ""
-
+	hasToken := c.APIToken != ""
 	if !hasToken && c.APIKey == "" {
 		err = multierror.Append(err, fmt.Errorf("API Key must be configured for the Myrasec provider"))
 	}
