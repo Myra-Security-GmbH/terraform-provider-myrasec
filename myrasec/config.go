@@ -14,6 +14,7 @@ import (
 type Config struct {
 	APIKey        string
 	Secret        string
+	APIToken      string
 	Language      string
 	APIBaseURL    string
 	APICacheTTL   int
@@ -25,10 +26,16 @@ type Config struct {
 func (c Config) validate() error {
 	var err *multierror.Error
 
-	if c.APIKey == "" {
+	hasToken := c.APIToken != ""
+
+	if !hasToken && c.APIKey == "" && c.Secret == "" {
+		err = multierror.Append(err, fmt.Errorf("API token or API Key and API Secret is required for using the Myrasec provider"))
+	}
+
+	if !hasToken && c.APIKey == "" {
 		err = multierror.Append(err, fmt.Errorf("API Key must be configured for the Myrasec provider"))
 	}
-	if c.Secret == "" {
+	if !hasToken && c.Secret == "" {
 		err = multierror.Append(err, fmt.Errorf("API Secret must be configured for the Myrasec provider"))
 	}
 
@@ -41,7 +48,13 @@ func (c Config) validate() error {
 
 // Client returns a new instance of myrasec API client
 func (c Config) Client() (*myrasec.API, error) {
-	api, err := myrasec.New(c.APIKey, c.Secret)
+	var api *myrasec.API
+	var err error
+	if c.APIToken != "" {
+		api, err = myrasec.NewWithToken(c.APIToken)
+	} else {
+		api, err = myrasec.New(c.APIKey, c.Secret)
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -13,15 +13,21 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"api_key": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Required:    false,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_KEY", nil),
 				Description: "Your MYRA API Key",
 			},
 			"secret": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Required:    false,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_SECRET", nil),
 				Description: "Your MYRA API Secret",
+			},
+			"api_token": {
+				Type:        schema.TypeString,
+				Required:    false,
+				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_TOKEN", nil),
+				Description: "Your MYRA API Token",
 			},
 			"language": {
 				Type:        schema.TypeString,
@@ -95,6 +101,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.D
 	config := Config{
 		APIKey:        d.Get("api_key").(string),
 		Secret:        d.Get("secret").(string),
+		APIToken:      d.Get("api_token").(string),
 		Language:      d.Get("language").(string),
 		APIBaseURL:    d.Get("api_base_url").(string),
 		APICacheTTL:   d.Get("api_cache_ttl").(int),
