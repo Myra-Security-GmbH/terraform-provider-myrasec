@@ -27,6 +27,11 @@ func (c Config) validate() error {
 	var err *multierror.Error
 
 	hasToken := c.APIToken != ""
+
+	if !hasToken && c.APIKey == "" && c.Secret == "" {
+		err = multierror.Append(err, fmt.Errorf("API token or API Key and API Secret is required for using the Myrasec provider"))
+	}
+
 	if !hasToken && c.APIKey == "" {
 		err = multierror.Append(err, fmt.Errorf("API Key must be configured for the Myrasec provider"))
 	}
