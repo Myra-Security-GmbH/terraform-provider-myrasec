@@ -115,7 +115,7 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
 			Summary:  "Error creating domain",
-			Detail:   formatError(err),
+			Detail:   formatError(errImport),
 		})
 
 		return diags

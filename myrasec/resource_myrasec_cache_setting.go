@@ -148,7 +148,7 @@ func resourceMyrasecCacheSettingCreate(ctx context.Context, d *schema.ResourceDa
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
 			Summary:  "Error creating cache setting",
-			Detail:   formatError(err),
+			Detail:   formatError(errImport),
 		})
 		return diags
 	}
