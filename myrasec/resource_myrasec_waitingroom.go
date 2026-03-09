@@ -405,7 +405,7 @@ func setWaitingRoomData(d *schema.ResourceData, waitingRoom *myrasec.WaitingRoom
 	d.Set("modified", waitingRoom.Modified.Format(time.RFC3339))
 	d.Set("name", waitingRoom.Name)
 	d.Set("vhost_id", waitingRoom.VhostId)
-	d.Set("subdomain_ame", waitingRoom.SubDomainName)
+	d.Set("subdomain_name", waitingRoom.SubDomainName)
 	d.Set("max_concurrent", waitingRoom.MaxConcurrent)
 	d.Set("session_timeout", waitingRoom.SessionTimeout)
 	d.Set("wait_refresh", waitingRoom.WaitRefresh)

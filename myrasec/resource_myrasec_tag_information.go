@@ -352,7 +352,7 @@ func setTagInformationData(d *schema.ResourceData, information *myrasec.TagInfor
 	}
 
 	d.Set("key", information.Key)
-	d.Set("valye", information.Value)
+	d.Set("value", information.Value)
 	d.Set("comment", information.Comment)
 }
 
