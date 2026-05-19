@@ -95,11 +95,13 @@ matching_type = "EQUALS|GREATER_THAN|LESS_THAN"
 value = "1"
 ```
 ```hcl
-name = "arg|cookie|custom_header|postarg"
+name = "arg|cookie|custom_header|header|header_custom|postarg"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 key = "SOME KEY"
 value = "SOME VALUE"
 ```
+
+`custom_header` is the legacy variant kept for backwards compatibility. New rules should use `header` (matches any standard or custom HTTP header) or `header_custom` (matches only custom headers, rejects standard HTTP header names).
 ```hcl
 name = "country|continent"
 matching_type = "EQUALS|NOT_EQUALS"
@@ -112,7 +114,7 @@ matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFI
 value = "SOME VALUE"
 ```
 ```hcl
-name = "custom_header"
+name = "custom_header|header|header_custom"
 matching_type = "EXACT|IREGEX|PREFIX|REGEX|SUFFIX|NOT EXACT|NOT IREGEX|NOT PREFIX|NOT REGEX|NOT SUFFIX"
 key = "SOME KEY"
 value = "SOME VALUE"
