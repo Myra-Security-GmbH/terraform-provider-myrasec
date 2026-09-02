@@ -30,6 +30,6 @@ The following arguments are supported:
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `subdomain_name` The Subdomain for the error page.
-* `error_code` Error code of the error page.
+* `error_code` Error code of the error page. Valid codes are: `400`, `404`, `405`, `429`, `500`, `502`, `503`, `504` and `9999` for `blocked`.
 
 Note: Content is not part of data source, it is only available in resource.

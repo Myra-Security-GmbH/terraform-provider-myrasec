@@ -8,6 +8,7 @@ Add this as `myrasec_variables.tf` to your terraform project:
 variable "myrasec_errorpage-error_code" {
   default = {
     "bad_request"           = 400
+    "not_found"             = 404
     "method_not_allowed"    = 405
     "too_many_requests"     = 429
     "internal_server_error" = 500

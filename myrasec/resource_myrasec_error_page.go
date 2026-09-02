@@ -56,7 +56,7 @@ func resourceMyrasecErrorPage() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     true,
 				Description:  "Error code of the error page.",
-				ValidateFunc: validation.IntInSlice([]int{400, 405, 429, 500, 502, 503, 504, 9999}),
+				ValidateFunc: validation.IntInSlice([]int{400, 404, 405, 429, 500, 502, 503, 504, 9999}),
 				ForceNew:     true,
 			},
 			"content": {
@@ -248,7 +248,7 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
-	if IntInSlice(id, []int{400, 405, 429, 500, 502, 503, 504, 9999}) {
+	if IntInSlice(id, []int{400, 404, 405, 429, 500, 502, 503, 504, 9999}) {
 		errorPage, diags = findErrorPageByErrorCode(subDomainName, id, meta, domain.ID)
 	} else {
 		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domain.ID)
