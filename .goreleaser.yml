@@ -29,6 +29,9 @@ builds:
   ignore:
     - goos: darwin
       goarch: '386'
+    # 32-bit windows/arm was removed in Go 1.26
+    - goos: windows
+      goarch: arm
   binary: '{{ .ProjectName }}_v{{ .Version }}'
 archives:
 - formats: zip

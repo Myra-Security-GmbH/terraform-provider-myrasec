@@ -10,6 +10,10 @@ rm -rf testbuild-terraform-provider-${PKG_NAME}_*
 
 for OS in ${TEST_BUILD_OS[@]}; do
 	for ARCH in ${TEST_BUILD_ARCHS[@]};	do
+		# 32-bit windows/arm was removed in Go 1.26
+		if [ "${OS}" = "windows" ] && [ "${ARCH}" = "arm" ]; then
+			continue
+		fi
         echo "Building ${OS}/${ARCH}: testbuild-terraform-provider-${PKG_NAME}_${VERSION}_${OS}_${ARCH}"
 		env GOOS=${OS} GOARCH=${ARCH} ${GO} build -o testbuild-terraform-provider-${PKG_NAME}_${VERSION}_${OS}_${ARCH}
 	done
