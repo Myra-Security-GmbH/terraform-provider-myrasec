@@ -31,6 +31,8 @@ var requiredActionKeyValue = []string{
 }
 var requiredConditionKey = []string{
 	"custom_header",
+	"header",
+	"header_custom",
 	"cookie",
 	"arg",
 	"postarg",
