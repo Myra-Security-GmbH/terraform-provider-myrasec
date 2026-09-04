@@ -327,4 +327,37 @@ variable "myrasec_ip_ranges-type" {
     "ipv6" = "ipv6"
   }
 }
+
+variable "myrasec_ssl_certificate_request-certificate_provider" {
+  default = {
+    "lets_encrypt" = "LETS_ENCRYPT"
+    "sectigo"      = "SECTIGO"
+    "dtrust"       = "DTRUST"
+  }
+}
+
+variable "myrasec_ssl_certificate_request-algorithm" {
+  default = {
+    "rsa2048"  = "RSA2048"
+    "rsa4096"  = "RSA4096"
+    "rsa8192"  = "RSA8192"
+    "ecdsa256" = "ECDSA256"
+    "ecdsa384" = "ECDSA384"
+  }
+}
+
+variable "myrasec_ssl_certificate_request-signature_algorithm" {
+  default = {
+    "sha256" = "SHA256"
+    "sha384" = "SHA384"
+    "sha512" = "SHA512"
+  }
+}
+
+variable "myrasec_ssl_provider_credentials-certificate_provider" {
+  default = {
+    "sectigo" = "SECTIGO"
+    "dtrust"  = "DTRUST"
+  }
+}
 ```
