@@ -257,6 +257,10 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		return domainDiag
 	}
 
+	if cert.CertToRefresh > 0 {
+		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
+	}
+
 	resp, err := client.CreateSSLCertificate(cert, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -268,7 +272,8 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
-	return resourceMyrasecSSLCertificateRead(ctx, d, meta)
+	diags = append(diags, resourceMyrasecSSLCertificateRead(ctx, d, meta)...)
+	return diags
 }
 
 // resourceMyrasecSSLCertificateRead ...
@@ -354,6 +359,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		cert, err = client.UpdateSSLCertificate(cert, domainID)
 	} else if cert.ID > 0 {
 		log.Println("[INFO] Replace certificate")
+		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
 		cert.CertToRefresh = cert.ID
 		cert.ID = 0
 		cert, err = client.CreateSSLCertificate(cert, domainID)
@@ -373,6 +379,32 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	setSSLCertificateData(d, cert, domainName, domainID)
+
+	return diags
+}
+
+func warnIfIPLockEnabled(meta any, domainID int) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	client := meta.(*myrasec.API)
+
+	settings, err := client.ListSettings(domainID, fmt.Sprintf("ALL-%d", domainID), nil)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "Could not verify the IP lock setting before refreshing the certificate",
+			Detail:   formatError(err),
+		})
+		return diags
+	}
+
+	if settings != nil && settings.IPLock != nil && *settings.IPLock {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "IP lock is enabled for this domain",
+			Detail:   "Refreshing or replacing the SSL certificate can reassign the IP address of its subdomains. IP lock is enabled for this domain but does not prevent this on a certificate refresh. Verify the subdomain IP addresses after applying and restore them if they changed.",
+		})
+	}
 
 	return diags
 }
