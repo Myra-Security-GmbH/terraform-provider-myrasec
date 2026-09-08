@@ -80,7 +80,10 @@ func resourceMyrasecMaintenance() *schema.Resource {
 					}
 
 					end, err := types.ParseDate(i.(string))
-					if err != nil || end == nil {
+					if err != nil {
+						return warn, append(errors, err)
+					}
+					if end == nil {
 						return warn, errors
 					}
 
