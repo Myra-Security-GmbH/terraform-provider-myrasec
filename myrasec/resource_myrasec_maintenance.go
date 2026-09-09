@@ -79,14 +79,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 						return nil, errors
 					}
 
-					end, err := types.ParseDate(i.(string))
-					if err != nil {
-						return warn, append(errors, err)
-					}
-					if end == nil {
-						return warn, errors
-					}
-
+					end, _ := types.ParseDate(i.(string))
 					now := time.Now()
 					if end.Before(now) {
 						warn = append(warn, "This maintenance page is expired you can remove this from your configuration")
@@ -145,16 +138,13 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				return fmt.Errorf("invalid end date %q: %w", endStringNew, err)
 			}
 
-			if startDate == nil || endDate == nil {
-				return nil
-			}
-
 			now := time.Now()
 
-			if endStringOld.(string) == "" && endDate.Before(now) {
+			if endDate != nil && endStringOld.(string) == "" && endDate.Before(now) {
 				return fmt.Errorf("this maintenance page can not be created in the past")
+			}
 
-			} else if endDate.Before(startDate.Time) {
+			if startDate != nil && endDate != nil && endDate.Before(startDate.Time) {
 				return fmt.Errorf("end date should not be before start date")
 			}
 

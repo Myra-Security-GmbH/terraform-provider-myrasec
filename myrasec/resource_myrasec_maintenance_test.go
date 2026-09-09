@@ -2,18 +2,19 @@ package myrasec
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestMaintenanceCreateWithUTCZDate(t *testing.T) {
+const unknownConfigValue = "74D93920-ED26-11E3-AC10-0800200C9A66"
+
+func diffMaintenance(t *testing.T, start, end any) error {
+	t.Helper()
+
 	res := resourceMyrasecMaintenance()
-
-	start := time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339)
-	end := time.Now().Add(720 * time.Hour).UTC().Format(time.RFC3339)
-
 	cfg := terraform.NewResourceConfigRaw(map[string]any{
 		"subdomain_name": "www.example.com",
 		"content":        "<html><body>Maintenance</body></html>",
@@ -21,22 +22,51 @@ func TestMaintenanceCreateWithUTCZDate(t *testing.T) {
 		"end":            end,
 	})
 
-	if _, err := res.Diff(context.Background(), nil, cfg, nil); err != nil {
+	_, err := res.Diff(context.Background(), nil, cfg, nil)
+	return err
+}
+
+func TestMaintenanceDiffUnknownEndDoesNotPanic(t *testing.T) {
+	start := time.Now().UTC().Format(time.RFC3339)
+
+	if err := diffMaintenance(t, start, unknownConfigValue); err != nil {
 		t.Fatalf("unexpected diff error: %v", err)
 	}
 }
 
-func TestMaintenanceCreateWithUnknownEnd(t *testing.T) {
-	res := resourceMyrasecMaintenance()
+func TestMaintenanceDiffUnknownStartDoesNotPanic(t *testing.T) {
+	end := time.Now().Add(720 * time.Hour).UTC().Format(time.RFC3339)
 
-	cfg := terraform.NewResourceConfigRaw(map[string]any{
-		"subdomain_name": "www.example.com",
-		"content":        "<html><body>Maintenance</body></html>",
-		"start":          time.Now().UTC().Format(time.RFC3339),
-		"end":            "",
-	})
-
-	if _, err := res.Diff(context.Background(), nil, cfg, nil); err != nil {
+	if err := diffMaintenance(t, unknownConfigValue, end); err != nil {
 		t.Fatalf("unexpected diff error: %v", err)
+	}
+}
+
+func TestMaintenanceDiffPastEndOnCreate(t *testing.T) {
+	start := time.Now().Add(-2 * time.Hour).UTC().Format(time.RFC3339)
+	end := time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339)
+
+	err := diffMaintenance(t, start, end)
+	if err == nil || !strings.Contains(err.Error(), "can not be created in the past") {
+		t.Fatalf("expected past-date error, got: %v", err)
+	}
+}
+
+func TestMaintenanceDiffEndBeforeStart(t *testing.T) {
+	start := time.Now().Add(48 * time.Hour).UTC().Format(time.RFC3339)
+	end := time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
+
+	err := diffMaintenance(t, start, end)
+	if err == nil || !strings.Contains(err.Error(), "end date should not be before start date") {
+		t.Fatalf("expected end-before-start error, got: %v", err)
+	}
+}
+
+func TestMaintenanceDiffUnknownStartPastEndStillRejected(t *testing.T) {
+	end := time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339)
+
+	err := diffMaintenance(t, unknownConfigValue, end)
+	if err == nil || !strings.Contains(err.Error(), "can not be created in the past") {
+		t.Fatalf("expected past-date error with unknown start, got: %v", err)
 	}
 }
