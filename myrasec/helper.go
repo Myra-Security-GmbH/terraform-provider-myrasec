@@ -2,12 +2,15 @@ package myrasec
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -190,4 +193,63 @@ func createContentHash(content string) string {
 	h := sha256.New()
 	h.Write([]byte(content))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// isNotFoundError reports whether the passed error says that the requested object does not exist.
+// The API answers a missing object with HTTP 404 or, for the managed certificate endpoints,
+// with HTTP 403 carrying a "does-not-exist" violation. Violations of other status codes refer
+// to referenced objects (e.g. a dangling credentials ID in a 400) and are not a not-found.
+func isNotFoundError(err error) bool {
+	var apiErr *myrasec.APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+
+	if apiErr.StatusCode == http.StatusNotFound {
+		return true
+	}
+
+	if apiErr.StatusCode != http.StatusForbidden {
+		return false
+	}
+
+	for _, v := range apiErr.Violations {
+		if v != nil && strings.Contains(v.Message, "does-not-exist") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// formatDateTime formats the passed date as RFC3339 and returns an empty string for a nil date
+func formatDateTime(dt *types.DateTime) string {
+	if dt == nil {
+		return ""
+	}
+	return dt.Format(time.RFC3339)
+}
+
+// expandStringSet converts the passed *schema.Set of strings to a []string slice.
+// A value of another type is a schema error and panics like every other d.Get assertion.
+func expandStringSet(v any) []string {
+	set := v.(*schema.Set)
+
+	result := make([]string, 0, set.Len())
+	for _, item := range set.List() {
+		result = append(result, item.(string))
+	}
+	return result
+}
+
+// normalizeDomainName lowercases the passed name and removes a trailing dot
+func normalizeDomainName(name string) string {
+	return strings.ToLower(myrasec.RemoveTrailingDot(name))
+}
+
+// hashDomainName is a schema.Set hash function for domain names. It hashes the normalized
+// name, so that a non-canonical configuration value ("WWW.Example.com.") and the canonical
+// value returned by the API land in the same set element and do not produce a permanent diff.
+func hashDomainName(v any) int {
+	return schema.HashString(normalizeDomainName(v.(string)))
 }
