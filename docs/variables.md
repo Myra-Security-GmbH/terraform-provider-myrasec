@@ -7,15 +7,16 @@ Add this as `myrasec_variables.tf` to your terraform project:
 ```hcl
 variable "myrasec_errorpage-error_code" {
   default = {
-    "bad_request"           = 400
-    "not_found"             = 404
-    "method_not_allowed"    = 405
-    "too_many_requests"     = 429
-    "internal_server_error" = 500
-    "bad_gateway"           = 502
-    "service_unavailable"   = 503
-    "gateway_timeout"       = 504
-    "blocked_request"       = 9999
+    "bad_request"              = 400
+    "not_found"                = 404
+    "method_not_allowed"       = 405
+    "request_entity_too_large" = 413
+    "too_many_requests"        = 429
+    "internal_server_error"    = 500
+    "bad_gateway"              = 502
+    "service_unavailable"      = 503
+    "gateway_timeout"          = 504
+    "blocked_request"          = 9999
   }
 }
 
