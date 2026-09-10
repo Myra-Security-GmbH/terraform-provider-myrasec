@@ -83,6 +83,61 @@ func TestBuildSSLCertificateRequestEmptyCollections(t *testing.T) {
 	}
 }
 
+func TestKeepSSLCertificateRequestIDs(t *testing.T) {
+	current := &myrasec.SSLCertificateRequest{
+		SubjectAlternativeNames: []myrasec.SSLCertificateRequestSAN{
+			{ID: 10, Name: "www.example.com"},
+			{ID: 11, Name: "*.example.org"},
+		},
+		Assignments: []myrasec.SSLCertificateRequestAssignment{
+			{ID: 20, SubDomainName: "www.example.com"},
+			{ID: 21, SubDomainName: "old.example.com"},
+		},
+	}
+
+	request := &myrasec.SSLCertificateRequest{
+		SubjectAlternativeNames: []myrasec.SSLCertificateRequestSAN{
+			{Name: "WWW.Example.com."},
+			{Name: "*.example.org"},
+			{Name: "new.example.com"},
+		},
+		Assignments: []myrasec.SSLCertificateRequestAssignment{
+			{SubDomainName: "WWW.Example.com."},
+			{SubDomainName: "new.example.com"},
+		},
+	}
+
+	keepSSLCertificateRequestIDs(request, current)
+
+	// Entries removed from the configuration (old.example.com) must not come back.
+	wantSANs := []myrasec.SSLCertificateRequestSAN{
+		{ID: 10, Name: "WWW.Example.com."},
+		{ID: 11, Name: "*.example.org"},
+		{ID: 0, Name: "new.example.com"},
+	}
+	if len(request.SubjectAlternativeNames) != len(wantSANs) {
+		t.Fatalf("SubjectAlternativeNames = %+v, want %d entries", request.SubjectAlternativeNames, len(wantSANs))
+	}
+	for i, want := range wantSANs {
+		if got := request.SubjectAlternativeNames[i]; got.ID != want.ID || got.Name != want.Name {
+			t.Errorf("SubjectAlternativeNames[%d] = %+v, want %+v", i, got, want)
+		}
+	}
+
+	wantAssignments := []myrasec.SSLCertificateRequestAssignment{
+		{ID: 20, SubDomainName: "WWW.Example.com."},
+		{ID: 0, SubDomainName: "new.example.com"},
+	}
+	if len(request.Assignments) != len(wantAssignments) {
+		t.Fatalf("Assignments = %+v, want %d entries", request.Assignments, len(wantAssignments))
+	}
+	for i, want := range wantAssignments {
+		if got := request.Assignments[i]; got.ID != want.ID || got.SubDomainName != want.SubDomainName {
+			t.Errorf("Assignments[%d] = %+v, want %+v", i, got, want)
+		}
+	}
+}
+
 func TestFindRedundantSAN(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -284,9 +339,6 @@ func TestSSLCertificateRequestCustomizeDiff(t *testing.T) {
 		})
 	}
 }
-
-// unknownVariableValue is the placeholder the SDK stores for values that are unknown until apply
-const unknownVariableValue = "74D93920-ED26-11E3-AC10-0800200C9A66"
 
 // TestSSLCertificateRequestStateConverges plans a request with non-canonical names, applies the
 // diff, refreshes the state from the canonical API answer and expects the next plan to be empty.

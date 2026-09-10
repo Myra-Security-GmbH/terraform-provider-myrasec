@@ -134,6 +134,13 @@ func validateSSLProviderCredentialsDiff(rd *schema.ResourceDiff) error {
 		return nil
 	}
 
+	// A key pair interpolated from another resource (e.g. tls_private_key) is unknown
+	// until apply and reads as empty here. The check runs again in the apply-time plan,
+	// when the interpolated values are known.
+	if !rd.NewValueKnown("cert") || !rd.NewValueKnown("private_key") {
+		return nil
+	}
+
 	cert := rd.Get("cert").(string)
 	privateKey := rd.Get("private_key").(string)
 	if (cert == "") != (privateKey == "") {

@@ -369,8 +369,7 @@ func resourceMyrasecSSLCertificateRequestUpdate(ctx context.Context, d *schema.R
 		}
 
 		// The current version of the request supplies the immutable algorithm and the IDs
-		// of the stored subject alternative names. Sending a name with its ID keeps the
-		// stored entry, a name without ID replaces it.
+		// of the stored subject alternative names and assignments.
 		current, err := client.GetSSLCertificateRequest(requestID)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -385,16 +384,7 @@ func resourceMyrasecSSLCertificateRequestUpdate(ctx context.Context, d *schema.R
 		request.ID = requestID
 		request.Modified = modified
 		request.Algorithm = current.Algorithm
-
-		sanIDs := make(map[string]int, len(current.SubjectAlternativeNames))
-		for _, san := range current.SubjectAlternativeNames {
-			sanIDs[strings.ToLower(san.Name)] = san.ID
-		}
-		for i, san := range request.SubjectAlternativeNames {
-			if id, ok := sanIDs[strings.ToLower(san.Name)]; ok {
-				request.SubjectAlternativeNames[i].ID = id
-			}
-		}
+		keepSSLCertificateRequestIDs(request, current)
 
 		resp, err := client.UpdateSSLCertificateRequest(request)
 		if err != nil {
@@ -505,6 +495,32 @@ func buildSSLCertificateRequest(d *schema.ResourceData) *myrasec.SSLCertificateR
 	}
 
 	return request
+}
+
+// keepSSLCertificateRequestIDs copies the IDs of the stored subject alternative names and
+// assignments of current into the matching entries of request. Sending an entry with its ID
+// keeps the stored entry, an entry without ID replaces it, so an update without the IDs
+// would recreate every name and assignment on the server.
+func keepSSLCertificateRequestIDs(request, current *myrasec.SSLCertificateRequest) {
+	sanIDs := make(map[string]int, len(current.SubjectAlternativeNames))
+	for _, san := range current.SubjectAlternativeNames {
+		sanIDs[normalizeDomainName(san.Name)] = san.ID
+	}
+	for i, san := range request.SubjectAlternativeNames {
+		if id, ok := sanIDs[normalizeDomainName(san.Name)]; ok {
+			request.SubjectAlternativeNames[i].ID = id
+		}
+	}
+
+	assignmentIDs := make(map[string]int, len(current.Assignments))
+	for _, assignment := range current.Assignments {
+		assignmentIDs[normalizeDomainName(assignment.SubDomainName)] = assignment.ID
+	}
+	for i, assignment := range request.Assignments {
+		if id, ok := assignmentIDs[normalizeDomainName(assignment.SubDomainName)]; ok {
+			request.Assignments[i].ID = id
+		}
+	}
 }
 
 // findSSLCertificateRequest returns the request with the passed ID or nil when it does not exist
