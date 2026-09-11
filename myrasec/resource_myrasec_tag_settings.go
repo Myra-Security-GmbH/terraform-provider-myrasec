@@ -658,7 +658,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 		if ok && !clean {
 			switch attr.Type {
 			case schema.TypeBool:
-				tagSettingsMap[name] = value.(bool)
+				tagSettingsMap[name] = settingsBoolValue(name, value.(bool))
 			case schema.TypeInt:
 				tagSettingsMap[name] = value.(int)
 			case schema.TypeString:
@@ -699,7 +699,9 @@ func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
 	resource := resourceMyrasecSettings().Schema
 	availableAttributes := []string{}
 	for k, v := range (*settings)["settings"].(map[string]any) {
-		d.Set(k, v)
+		if err := d.Set(k, v); err != nil {
+			log.Printf("[WARN] Ignoring tag setting %s with value %v from the API: %v", k, v, err)
+		}
 		doAppend := appendAvailableAttributes(v, k, resource)
 		if doAppend {
 			availableAttributes = append(availableAttributes, k)

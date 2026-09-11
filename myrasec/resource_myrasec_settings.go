@@ -729,7 +729,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if ok && !clean {
 			switch attr.Type {
 			case schema.TypeBool:
-				settingsMap[name] = value.(bool)
+				settingsMap[name] = settingsBoolValue(name, value.(bool))
 			case schema.TypeInt:
 				settingsMap[name] = value.(int)
 			case schema.TypeString:
@@ -787,7 +787,9 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 			if _, ok := resource[k]; !ok {
 				continue
 			}
-			d.Set(k, v)
+			if err := d.Set(k, v); err != nil {
+				log.Printf("[WARN] Ignoring setting %s with value %v from the API: %v", k, v, err)
+			}
 			doAppend := appendAvailableAttributes(v, k, resource)
 			if doAppend {
 				availableAttributes = append(availableAttributes, k)
