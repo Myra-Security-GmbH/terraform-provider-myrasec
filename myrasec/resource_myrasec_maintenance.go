@@ -128,14 +128,23 @@ func resourceMyrasecMaintenance() *schema.Resource {
 			startString := rd.Get("start")
 			endStringOld, endStringNew := rd.GetChange("end")
 
-			startDate, _ := types.ParseDate(startString.(string))
-			endDate, _ := types.ParseDate(endStringNew.(string))
+			startDate, err := types.ParseDate(startString.(string))
+			if err != nil {
+				return fmt.Errorf("invalid start date %q: %w", startString, err)
+			}
+
+			endDate, err := types.ParseDate(endStringNew.(string))
+			if err != nil {
+				return fmt.Errorf("invalid end date %q: %w", endStringNew, err)
+			}
+
 			now := time.Now()
 
-			if endStringOld.(string) == "" && endDate.Before(now) {
+			if endDate != nil && endStringOld.(string) == "" && endDate.Before(now) {
 				return fmt.Errorf("this maintenance page can not be created in the past")
+			}
 
-			} else if endDate.Before(startDate.Time) {
+			if startDate != nil && endDate != nil && endDate.Before(startDate.Time) {
 				return fmt.Errorf("end date should not be before start date")
 			}
 
