@@ -13,21 +13,21 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"api_key": {
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_KEY", nil),
 				Description: "Your MYRA API Key",
 			},
 			"secret": {
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_SECRET", nil),
 				Description: "Your MYRA API Secret",
 			},
 			"api_token": {
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_TOKEN", nil),
 				Description: "Your MYRA API Token",
