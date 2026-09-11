@@ -253,3 +253,19 @@ func normalizeDomainName(name string) string {
 func hashDomainName(v any) int {
 	return schema.HashString(normalizeDomainName(v.(string)))
 }
+
+// settingsBoolValue converts a boolean setting to the value the settings API expects.
+// The API declares ip_lock as a string parameter and only maps the values "yes" and "no"
+// to a boolean. A JSON boolean is coerced to "1" or "" there and stored verbatim: the
+// platform treats such a value as "lock disabled" and the settings response returns it as
+// a string, which does not fit the boolean attribute and leaves the state without a value.
+// Every other boolean setting is sent as JSON boolean.
+func settingsBoolValue(name string, value bool) any {
+	if name != "ip_lock" {
+		return value
+	}
+	if value {
+		return "yes"
+	}
+	return "no"
+}
