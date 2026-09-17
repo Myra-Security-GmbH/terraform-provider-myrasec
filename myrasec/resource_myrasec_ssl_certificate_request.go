@@ -127,6 +127,14 @@ func resourceMyrasecSSLCertificateRequest() *schema.Resource {
 				Description:  "Signature algorithm of the requested certificate. Valid values: SHA256, SHA384, SHA512. Empty means the system default. Accepted for SECTIGO and DTRUST only.",
 				ValidateFunc: validation.StringInSlice(sslCertificateRequestSignatureAlgorithms, false),
 			},
+			"include_cross_signed_roots": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				// No provider restriction at plan time: the API accepts and returns the value for every
+				// provider, so it never leaves a permanent diff. Today only SECTIGO chains carry such cross-signs.
+				Description: "Serve the certificate chain as delivered by the certificate authority, including its cross-signed certificates, for clients on an outdated trust store. A self-signed root is never served. A change does not re-issue the certificate, it applies from the next issuance or renewal.",
+			},
 			"configuration_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -482,6 +490,7 @@ func buildSSLCertificateRequest(d *schema.ResourceData) *myrasec.SSLCertificateR
 		SSLProviderCredentialsID: d.Get("ssl_provider_credentials_id").(int),
 		RenewalInterval:          d.Get("renewal_interval").(int),
 		SignatureAlgorithm:       d.Get("signature_algorithm").(string),
+		IncludeCrossSignedRoots:  d.Get("include_cross_signed_roots").(bool),
 		SubjectAlternativeNames:  []myrasec.SSLCertificateRequestSAN{},
 		Assignments:              []myrasec.SSLCertificateRequestAssignment{},
 	}
@@ -575,6 +584,7 @@ func setSSLCertificateRequestData(d *schema.ResourceData, request *myrasec.SSLCe
 	d.Set("ssl_provider_credentials_id", request.SSLProviderCredentialsID)
 	d.Set("renewal_interval", request.RenewalInterval)
 	d.Set("signature_algorithm", request.SignatureAlgorithm)
+	d.Set("include_cross_signed_roots", request.IncludeCrossSignedRoots)
 	d.Set("status", request.Status)
 	d.Set("failure_reason", request.FailureReason)
 	d.Set("customer_actionable", request.CustomerActionable)
