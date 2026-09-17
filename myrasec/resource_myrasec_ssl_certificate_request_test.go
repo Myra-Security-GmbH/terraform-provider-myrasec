@@ -32,6 +32,7 @@ func TestBuildSSLCertificateRequest(t *testing.T) {
 	d.Set("ssl_provider_credentials_id", 42)
 	d.Set("renewal_interval", 30)
 	d.Set("signature_algorithm", "SHA384")
+	d.Set("include_cross_signed_roots", true)
 
 	request := buildSSLCertificateRequest(d)
 
@@ -52,6 +53,9 @@ func TestBuildSSLCertificateRequest(t *testing.T) {
 	}
 	if request.SignatureAlgorithm != "SHA384" {
 		t.Errorf("SignatureAlgorithm = %q, want SHA384", request.SignatureAlgorithm)
+	}
+	if !request.IncludeCrossSignedRoots {
+		t.Error("IncludeCrossSignedRoots = false, want true")
 	}
 
 	names := make(map[string]bool)
@@ -411,6 +415,71 @@ func TestSSLCertificateRequestStateConverges(t *testing.T) {
 	}
 	if diff != nil && !diff.Empty() {
 		t.Errorf("expected an empty plan without configuration_name, got changes: %v", diff.Attributes)
+	}
+}
+
+// TestSSLCertificateRequestIncludeCrossSignedRoots pins the three properties the option needs:
+// it defaults to off, the API answer round-trips into the state without a permanent diff (for a
+// provider without such chains too, the API stores the value for every provider) and toggling it
+// plans an in-place update, never a replacement: a replacement would re-issue a paid certificate.
+func TestSSLCertificateRequestIncludeCrossSignedRoots(t *testing.T) {
+	r := resourceMyrasecSSLCertificateRequest()
+	ctx := context.Background()
+
+	if def := r.Schema["include_cross_signed_roots"].Default; def != false {
+		t.Errorf("include_cross_signed_roots default = %v, want false: an existing config must keep today's chain", def)
+	}
+	if r.Schema["include_cross_signed_roots"].ForceNew {
+		t.Error("include_cross_signed_roots must not be ForceNew, a change would replace the request and re-issue the certificate")
+	}
+
+	for _, provider := range []string{"SECTIGO", "DTRUST"} {
+		t.Run(provider, func(t *testing.T) {
+			raw := map[string]any{
+				"certificate_provider":        provider,
+				"algorithm":                   "ECDSA256",
+				"subject_alternative_names":   []any{"www.example.com"},
+				"ssl_provider_credentials_id": 42,
+				"include_cross_signed_roots":  true,
+			}
+
+			d := r.TestResourceData()
+			d.SetId("1")
+			setSSLCertificateRequestData(d, &myrasec.SSLCertificateRequest{
+				ID:                       1,
+				Provider:                 provider,
+				Algorithm:                "ECDSA256",
+				Status:                   "CREATED",
+				SSLProviderCredentialsID: 42,
+				IncludeCrossSignedRoots:  true,
+				SubjectAlternativeNames:  []myrasec.SSLCertificateRequestSAN{{ID: 10, Name: "www.example.com"}},
+			})
+			refreshed := d.State()
+
+			if got := refreshed.Attributes["include_cross_signed_roots"]; got != "true" {
+				t.Fatalf("include_cross_signed_roots = %q after refresh, want true", got)
+			}
+
+			diff, err := r.Diff(ctx, refreshed, terraform.NewResourceConfigRaw(raw), nil)
+			if err != nil {
+				t.Fatalf("plan failed: %v", err)
+			}
+			if diff != nil && !diff.Empty() {
+				t.Errorf("expected an empty plan after refresh, got changes: %v", diff.Attributes)
+			}
+
+			raw["include_cross_signed_roots"] = false
+			diff, err = r.Diff(ctx, refreshed, terraform.NewResourceConfigRaw(raw), nil)
+			if err != nil {
+				t.Fatalf("plan with the option switched off failed: %v", err)
+			}
+			if diff == nil || diff.Attributes["include_cross_signed_roots"] == nil {
+				t.Fatalf("expected a planned change of include_cross_signed_roots, got %v", diff)
+			}
+			if diff.RequiresNew() {
+				t.Error("switching include_cross_signed_roots must update in place, the plan wants a replacement")
+			}
+		})
 	}
 }
 

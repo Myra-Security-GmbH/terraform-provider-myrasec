@@ -43,3 +43,4 @@ The following arguments are supported:
 * `ssl_provider_credentials_id` ID of the SSL provider credentials used for the issuance.
 * `renewal_interval` Days before expiry at which the certificate is renewed.
 * `signature_algorithm` Signature algorithm of the requested certificate.
+* `include_cross_signed_roots` True if the certificate chain is served as delivered by the certificate authority, including its cross-signed certificates.

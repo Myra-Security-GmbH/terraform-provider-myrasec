@@ -3,7 +3,8 @@ module github.com/Myra-Security-GmbH/terraform-provider-myrasec
 go 1.26.0
 
 require (
-	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.59.0
+	github.com/Myra-Security-GmbH/myrasec-go/v2 v2.60.1-0.20260917103807-83f80f9b3f7b
+	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
 )
@@ -17,7 +18,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-cty v1.5.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-plugin v1.8.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
