@@ -1,5 +1,5 @@
-github.com/Myra-Security-GmbH/myrasec-go/v2 v2.59.0 h1:YH4cC/MHH95Ug8DEj0Wf7G4HmPLhQUIEFtW1QBUq0mc=
-github.com/Myra-Security-GmbH/myrasec-go/v2 v2.59.0/go.mod h1:JNnRAqwOMJ3x7VCAhoN9csnqxki2VkeYCXKGDKMN4nE=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.60.1-0.20260924130633-a130237a8dc6 h1:RlamjUN3/KmfdvPJ7o75aEHKH/spsJlYRlhDHywGQSg=
+github.com/Myra-Security-GmbH/myrasec-go/v2 v2.60.1-0.20260924130633-a130237a8dc6/go.mod h1:JNnRAqwOMJ3x7VCAhoN9csnqxki2VkeYCXKGDKMN4nE=
 github.com/Myra-Security-GmbH/signature v1.1.0 h1:/Tv8SilN0P8k5fKArvQHkf9iJWU5H34TSvgEyyZ32f4=
 github.com/Myra-Security-GmbH/signature v1.1.0/go.mod h1:kyX4FQ2XWvJQnvxkWmcyUIqG0jAzGL22fQMf2RTvoj0=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=

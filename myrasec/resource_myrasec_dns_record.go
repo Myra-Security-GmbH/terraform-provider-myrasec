@@ -14,6 +14,7 @@ import (
 	"github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -97,6 +98,11 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Description: "The alternative CNAME that points to the record.",
+			},
+			"alternative_cname_dnssec": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The alternative CNAME in the DNSSEC-signed zone that points to the record. Empty when no signed alias exists.",
 			},
 			"active": {
 				Type:     schema.TypeBool,
@@ -257,8 +263,16 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 			Create: schema.DefaultTimeout(30 * time.Second),
 			Update: schema.DefaultTimeout(30 * time.Second),
 		},
-		CustomizeDiff: checkRecordTypeAndReversedDomain,
+		CustomizeDiff: customdiff.All(
+			checkRecordTypeAndReversedDomain,
+			customdiff.ComputedIf("alternative_cname_dnssec", nameChanged),
+		),
 	}
+}
+
+// nameChanged reports whether the record name changes, which also changes its server-generated aliases
+func nameChanged(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
+	return d.HasChange("name")
 }
 
 func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta any) error {
@@ -705,6 +719,7 @@ func setDNSRecordData(d *schema.ResourceData, record *myrasec.DNSRecord, domainN
 	d.Set("record_type", record.RecordType)
 	d.Set("ttl", record.TTL)
 	d.Set("alternative_cname", record.AlternativeCNAME)
+	d.Set("alternative_cname_dnssec", record.AlternativeCNAMEDNSSEC)
 	d.Set("active", record.Active)
 	d.Set("enabled", record.Enabled)
 	d.Set("priority", record.Priority)
