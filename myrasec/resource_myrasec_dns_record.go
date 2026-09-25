@@ -66,8 +66,7 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 					return strings.ToLower(i.(string))
 				},
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					domainName := d.Get("domain_name")
-					return myrasec.RemoveTrailingDot(old) == myrasec.RemoveTrailingDot(new) || myrasec.RemoveTrailingDot(old) == fmt.Sprintf("%s.%s", new, domainName)
+					return dnsRecordNamesEqual(old, new, d.Get("domain_name").(string))
 				},
 				Description: "Subdomain name of a DNS record.",
 			},
@@ -265,14 +264,27 @@ func resourceMyrasecDNSRecord() *schema.Resource {
 		},
 		CustomizeDiff: customdiff.All(
 			checkRecordTypeAndReversedDomain,
+			customdiff.ComputedIf("alternative_cname", nameChanged),
 			customdiff.ComputedIf("alternative_cname_dnssec", nameChanged),
 		),
 	}
 }
 
-// nameChanged reports whether the record name changes, which also changes its server-generated aliases
+// dnsRecordNamesEqual reports whether two record names address the same record, ignoring case,
+// trailing dots and a name given relative to its domain
+func dnsRecordNamesEqual(oldName, newName, domainName string) bool {
+	oldName = strings.ToLower(myrasec.RemoveTrailingDot(oldName))
+	newName = strings.ToLower(myrasec.RemoveTrailingDot(newName))
+	domainName = strings.ToLower(myrasec.RemoveTrailingDot(domainName))
+
+	return oldName == newName || oldName == fmt.Sprintf("%s.%s", newName, domainName)
+}
+
+// nameChanged reports whether the record name really changes, which also changes its server-generated aliases
 func nameChanged(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
-	return d.HasChange("name")
+	oldName, newName := d.GetChange("name")
+
+	return !dnsRecordNamesEqual(oldName.(string), newName.(string), d.Get("domain_name").(string))
 }
 
 func checkRecordTypeAndReversedDomain(ctx context.Context, d *schema.ResourceDiff, meta any) error {
