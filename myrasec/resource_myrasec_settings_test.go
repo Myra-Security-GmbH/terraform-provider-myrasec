@@ -129,8 +129,10 @@ func TestBuildSettingsPayloadIPLock(t *testing.T) {
 // host_header and its deprecated alias proxy_host_header both map to the API's host_header
 // field, so the payload must resolve to a single deterministic value regardless of schema
 // map iteration order: a configured host_header is sent verbatim (even when another
-// attribute changes in the same apply), an unconfigured host_header falls back to a
-// configured proxy_host_header, neither configured sends null, and a delete nulls it.
+// attribute changes in the same apply, and even when it is the "$myra_host" default so the
+// subdomain keeps forcing that default rather than inheriting the parent), an unconfigured
+// host_header falls back to a configured proxy_host_header (which still drops the
+// "$myra_host" default), neither configured sends null, and a delete nulls it.
 func TestBuildSettingsPayloadHostHeader(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -140,8 +142,10 @@ func TestBuildSettingsPayloadHostHeader(t *testing.T) {
 		want            any
 	}{
 		{name: "host_header set with another changed attribute", hostHeader: ptr("nginx.example.com"), want: "nginx.example.com"},
+		{name: "explicit host_header $myra_host default sent verbatim", hostHeader: ptr("$myra_host"), want: "$myra_host"},
 		{name: "host_header and proxy_host_header unset", want: nil},
 		{name: "deprecated proxy_host_header set only", proxyHostHeader: ptr("legacy.example.com"), want: "legacy.example.com"},
+		{name: "deprecated proxy_host_header $myra_host default dropped", proxyHostHeader: ptr("$myra_host"), want: nil},
 		{name: "host_header set on delete payload", hostHeader: ptr("nginx.example.com"), clean: true, want: nil},
 	}
 

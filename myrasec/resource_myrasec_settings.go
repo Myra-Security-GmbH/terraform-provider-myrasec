@@ -760,23 +760,28 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 	return settingsMap, nil
 }
 
-// hostHeaderValue resolves the host_header value for the update payload deterministically.
-// host_header and its deprecated alias proxy_host_header both map to the API's host_header
-// field, so it is resolved exactly once here rather than in the buildSettings loop, where
-// the random schema map iteration order let the two keys clobber each other. It returns nil
-// for a delete (clean) payload, the configured host_header when set to a real value, then a
-// configured proxy_host_header as a fallback for old deprecated-only configs, and nil when
-// neither is configured. "$myra_host" is treated as unset to match host_header's
-// DiffSuppressFunc.
+// hostHeaderValue resolves the shared API host_header field once, independent of the schema
+// map iteration order, rather than in the buildSettings loop where the random order let
+// host_header and its deprecated alias proxy_host_header clobber each other. A configured
+// host_header is sent verbatim (only an empty string maps to null), with the deprecated
+// proxy_host_header as a fallback that still omits the "$myra_host" default. It returns nil
+// for a delete (clean) payload.
+//
+// An explicit host_header = "$myra_host" is sent as-is on purpose: null behaves like the
+// delete path and removes the subdomain-level value, so the subdomain would inherit the
+// parent domain's custom host_header instead of forcing the default the config asked for.
 func hostHeaderValue(d *schema.ResourceData, clean bool) any {
 	if clean {
 		return nil
 	}
-	for _, name := range []string{"host_header", "proxy_host_header"} {
-		if d.GetRawConfig().GetAttr(name).IsNull() {
-			continue
+	if !d.GetRawConfig().GetAttr("host_header").IsNull() {
+		if value := d.Get("host_header").(string); value != "" {
+			return value
 		}
-		if value := d.Get(name).(string); value != "" && value != "$myra_host" {
+		return nil
+	}
+	if !d.GetRawConfig().GetAttr("proxy_host_header").IsNull() {
+		if value := d.Get("proxy_host_header").(string); value != "" && value != "$myra_host" {
 			return value
 		}
 	}
