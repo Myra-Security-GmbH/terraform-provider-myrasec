@@ -713,12 +713,11 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
-		if name == "proxy_host_header" {
-			if val, ok := d.GetOk("host_header"); ok && val != "" && val != "$myra_host" {
-				name = "host_header"
-			} else {
-				continue
-			}
+		if name == "host_header" || name == "proxy_host_header" {
+			// host_header and its deprecated alias proxy_host_header both target the
+			// API's host_header field. Resolving it once after the loop keeps the value
+			// independent of the schema map's random iteration order (see hostHeaderValue).
+			continue
 		}
 		if name == "forwarded_for_replacement" {
 			disable := d.Get("disable_forwarded_for")
@@ -756,7 +755,32 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		}
 	}
 
+	settingsMap["host_header"] = hostHeaderValue(d, clean)
+
 	return settingsMap, nil
+}
+
+// hostHeaderValue resolves the host_header value for the update payload deterministically.
+// host_header and its deprecated alias proxy_host_header both map to the API's host_header
+// field, so it is resolved exactly once here rather than in the buildSettings loop, where
+// the random schema map iteration order let the two keys clobber each other. It returns nil
+// for a delete (clean) payload, the configured host_header when set to a real value, then a
+// configured proxy_host_header as a fallback for old deprecated-only configs, and nil when
+// neither is configured. "$myra_host" is treated as unset to match host_header's
+// DiffSuppressFunc.
+func hostHeaderValue(d *schema.ResourceData, clean bool) any {
+	if clean {
+		return nil
+	}
+	for _, name := range []string{"host_header", "proxy_host_header"} {
+		if d.GetRawConfig().GetAttr(name).IsNull() {
+			continue
+		}
+		if value := d.Get(name).(string); value != "" && value != "$myra_host" {
+			return value
+		}
+	}
+	return nil
 }
 
 // setSettingsData ...
