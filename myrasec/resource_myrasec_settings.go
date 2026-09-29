@@ -713,12 +713,11 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
 		}
-		if name == "proxy_host_header" {
-			if val, ok := d.GetOk("host_header"); ok && val != "" && val != "$myra_host" {
-				name = "host_header"
-			} else {
-				continue
-			}
+		if name == "host_header" || name == "proxy_host_header" {
+			// host_header and its deprecated alias proxy_host_header both target the
+			// API's host_header field. Resolving it once after the loop keeps the value
+			// independent of the schema map's random iteration order (see hostHeaderValue).
+			continue
 		}
 		if name == "forwarded_for_replacement" {
 			disable := d.Get("disable_forwarded_for")
@@ -756,7 +755,37 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		}
 	}
 
+	settingsMap["host_header"] = hostHeaderValue(d, clean)
+
 	return settingsMap, nil
+}
+
+// hostHeaderValue resolves the shared API host_header field once, independent of the schema
+// map iteration order, rather than in the buildSettings loop where the random order let
+// host_header and its deprecated alias proxy_host_header clobber each other. A configured
+// host_header is sent verbatim (only an empty string maps to null), with the deprecated
+// proxy_host_header as a fallback that still omits the "$myra_host" default. It returns nil
+// for a delete (clean) payload.
+//
+// An explicit host_header = "$myra_host" is sent as-is on purpose: null behaves like the
+// delete path and removes the subdomain-level value, so the subdomain would inherit the
+// parent domain's custom host_header instead of forcing the default the config asked for.
+func hostHeaderValue(d *schema.ResourceData, clean bool) any {
+	if clean {
+		return nil
+	}
+	if !d.GetRawConfig().GetAttr("host_header").IsNull() {
+		if value := d.Get("host_header").(string); value != "" {
+			return value
+		}
+		return nil
+	}
+	if !d.GetRawConfig().GetAttr("proxy_host_header").IsNull() {
+		if value := d.Get("proxy_host_header").(string); value != "" && value != "$myra_host" {
+			return value
+		}
+	}
+	return nil
 }
 
 // setSettingsData ...
