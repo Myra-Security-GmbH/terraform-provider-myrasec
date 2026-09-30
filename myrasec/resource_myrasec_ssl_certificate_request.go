@@ -377,7 +377,7 @@ func resourceMyrasecSSLCertificateRequestUpdate(ctx context.Context, d *schema.R
 		}
 
 		// The current version of the request supplies the immutable algorithm and the IDs
-		// of the stored subject alternative names and assignments.
+		// and timestamps of the stored subject alternative names and assignments.
 		current, err := client.GetSSLCertificateRequest(requestID)
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -506,28 +506,36 @@ func buildSSLCertificateRequest(d *schema.ResourceData) *myrasec.SSLCertificateR
 	return request
 }
 
-// keepSSLCertificateRequestIDs copies the IDs of the stored subject alternative names and
-// assignments of current into the matching entries of request. Sending an entry with its ID
-// keeps the stored entry, an entry without ID replaces it, so an update without the IDs
-// would recreate every name and assignment on the server.
+// keepSSLCertificateRequestIDs copies the IDs and the timestamps of the stored subject
+// alternative names and assignments of current into the matching entries of request. Sending
+// an entry with its ID keeps the stored entry, an entry without ID replaces it, so an update
+// without the IDs would recreate every name and assignment on the server. The API checks the
+// modified timestamp of every entry sent with an ID (optimistic locking) and rejects the whole
+// update when it is missing. The state does not hold these timestamps, they come from the
+// version loaded right before the update. A name or assignment changed outside Terraform
+// between plan and apply is therefore not detected.
 func keepSSLCertificateRequestIDs(request, current *myrasec.SSLCertificateRequest) {
-	sanIDs := make(map[string]int, len(current.SubjectAlternativeNames))
+	sans := make(map[string]myrasec.SSLCertificateRequestSAN, len(current.SubjectAlternativeNames))
 	for _, san := range current.SubjectAlternativeNames {
-		sanIDs[normalizeDomainName(san.Name)] = san.ID
+		sans[normalizeDomainName(san.Name)] = san
 	}
 	for i, san := range request.SubjectAlternativeNames {
-		if id, ok := sanIDs[normalizeDomainName(san.Name)]; ok {
-			request.SubjectAlternativeNames[i].ID = id
+		if stored, ok := sans[normalizeDomainName(san.Name)]; ok {
+			request.SubjectAlternativeNames[i].ID = stored.ID
+			request.SubjectAlternativeNames[i].Created = stored.Created
+			request.SubjectAlternativeNames[i].Modified = stored.Modified
 		}
 	}
 
-	assignmentIDs := make(map[string]int, len(current.Assignments))
+	assignments := make(map[string]myrasec.SSLCertificateRequestAssignment, len(current.Assignments))
 	for _, assignment := range current.Assignments {
-		assignmentIDs[normalizeDomainName(assignment.SubDomainName)] = assignment.ID
+		assignments[normalizeDomainName(assignment.SubDomainName)] = assignment
 	}
 	for i, assignment := range request.Assignments {
-		if id, ok := assignmentIDs[normalizeDomainName(assignment.SubDomainName)]; ok {
-			request.Assignments[i].ID = id
+		if stored, ok := assignments[normalizeDomainName(assignment.SubDomainName)]; ok {
+			request.Assignments[i].ID = stored.ID
+			request.Assignments[i].Created = stored.Created
+			request.Assignments[i].Modified = stored.Modified
 		}
 	}
 }
