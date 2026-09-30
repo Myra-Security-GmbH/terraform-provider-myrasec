@@ -121,6 +121,10 @@ func dataSourceMyrasecSSLCertificateRequests() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"include_cross_signed_roots": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -187,6 +191,7 @@ func dataSourceMyrasecSSLCertificateRequestsRead(ctx context.Context, d *schema.
 			"ssl_provider_credentials_id": r.SSLProviderCredentialsID,
 			"renewal_interval":            r.RenewalInterval,
 			"signature_algorithm":         r.SignatureAlgorithm,
+			"include_cross_signed_roots":  r.IncludeCrossSignedRoots,
 		})
 	}
 

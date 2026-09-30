@@ -2,11 +2,17 @@ package myrasec
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
+	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -32,6 +38,7 @@ func TestBuildSSLCertificateRequest(t *testing.T) {
 	d.Set("ssl_provider_credentials_id", 42)
 	d.Set("renewal_interval", 30)
 	d.Set("signature_algorithm", "SHA384")
+	d.Set("include_cross_signed_roots", true)
 
 	request := buildSSLCertificateRequest(d)
 
@@ -52,6 +59,9 @@ func TestBuildSSLCertificateRequest(t *testing.T) {
 	}
 	if request.SignatureAlgorithm != "SHA384" {
 		t.Errorf("SignatureAlgorithm = %q, want SHA384", request.SignatureAlgorithm)
+	}
+	if !request.IncludeCrossSignedRoots {
+		t.Error("IncludeCrossSignedRoots = false, want true")
 	}
 
 	names := make(map[string]bool)
@@ -84,14 +94,27 @@ func TestBuildSSLCertificateRequestEmptyCollections(t *testing.T) {
 }
 
 func TestKeepSSLCertificateRequestIDs(t *testing.T) {
+	date := func(value string) *types.DateTime {
+		t.Helper()
+		dt, err := types.ParseDate(value)
+		if err != nil {
+			t.Fatalf("invalid test date %q: %v", value, err)
+		}
+		return dt
+	}
+
+	sanCreated, sanModified := date("2026-09-01T10:00:00+02:00"), date("2026-09-02T11:00:00+02:00")
+	wildcardCreated, wildcardModified := date("2026-09-03T12:00:00+02:00"), date("2026-09-04T13:00:00+02:00")
+	assignmentCreated, assignmentModified := date("2026-09-05T14:00:00+02:00"), date("2026-09-06T15:00:00+02:00")
+
 	current := &myrasec.SSLCertificateRequest{
 		SubjectAlternativeNames: []myrasec.SSLCertificateRequestSAN{
-			{ID: 10, Name: "www.example.com"},
-			{ID: 11, Name: "*.example.org"},
+			{ID: 10, Name: "www.example.com", Created: sanCreated, Modified: sanModified},
+			{ID: 11, Name: "*.example.org", Created: wildcardCreated, Modified: wildcardModified},
 		},
 		Assignments: []myrasec.SSLCertificateRequestAssignment{
-			{ID: 20, SubDomainName: "www.example.com"},
-			{ID: 21, SubDomainName: "old.example.com"},
+			{ID: 20, SubDomainName: "www.example.com", Created: assignmentCreated, Modified: assignmentModified},
+			{ID: 21, SubDomainName: "old.example.com", Created: date("2026-09-07T16:00:00+02:00"), Modified: date("2026-09-08T17:00:00+02:00")},
 		},
 	}
 
@@ -109,30 +132,36 @@ func TestKeepSSLCertificateRequestIDs(t *testing.T) {
 
 	keepSSLCertificateRequestIDs(request, current)
 
-	// Entries removed from the configuration (old.example.com) must not come back.
+	// Entries removed from the configuration (old.example.com) must not come back. A kept entry
+	// carries the timestamps of the stored one: the API rejects an entry sent with an ID but
+	// without its modified timestamp. A new entry carries neither ID nor timestamps.
 	wantSANs := []myrasec.SSLCertificateRequestSAN{
-		{ID: 10, Name: "WWW.Example.com."},
-		{ID: 11, Name: "*.example.org"},
+		{ID: 10, Name: "WWW.Example.com.", Created: sanCreated, Modified: sanModified},
+		{ID: 11, Name: "*.example.org", Created: wildcardCreated, Modified: wildcardModified},
 		{ID: 0, Name: "new.example.com"},
 	}
 	if len(request.SubjectAlternativeNames) != len(wantSANs) {
 		t.Fatalf("SubjectAlternativeNames = %+v, want %d entries", request.SubjectAlternativeNames, len(wantSANs))
 	}
 	for i, want := range wantSANs {
-		if got := request.SubjectAlternativeNames[i]; got.ID != want.ID || got.Name != want.Name {
+		got := request.SubjectAlternativeNames[i]
+		if got.ID != want.ID || got.Name != want.Name ||
+			formatDateTime(got.Created) != formatDateTime(want.Created) || formatDateTime(got.Modified) != formatDateTime(want.Modified) {
 			t.Errorf("SubjectAlternativeNames[%d] = %+v, want %+v", i, got, want)
 		}
 	}
 
 	wantAssignments := []myrasec.SSLCertificateRequestAssignment{
-		{ID: 20, SubDomainName: "WWW.Example.com."},
+		{ID: 20, SubDomainName: "WWW.Example.com.", Created: assignmentCreated, Modified: assignmentModified},
 		{ID: 0, SubDomainName: "new.example.com"},
 	}
 	if len(request.Assignments) != len(wantAssignments) {
 		t.Fatalf("Assignments = %+v, want %d entries", request.Assignments, len(wantAssignments))
 	}
 	for i, want := range wantAssignments {
-		if got := request.Assignments[i]; got.ID != want.ID || got.SubDomainName != want.SubDomainName {
+		got := request.Assignments[i]
+		if got.ID != want.ID || got.SubDomainName != want.SubDomainName ||
+			formatDateTime(got.Created) != formatDateTime(want.Created) || formatDateTime(got.Modified) != formatDateTime(want.Modified) {
 			t.Errorf("Assignments[%d] = %+v, want %+v", i, got, want)
 		}
 	}
@@ -411,6 +440,264 @@ func TestSSLCertificateRequestStateConverges(t *testing.T) {
 	}
 	if diff != nil && !diff.Empty() {
 		t.Errorf("expected an empty plan without configuration_name, got changes: %v", diff.Attributes)
+	}
+}
+
+// TestSSLCertificateRequestIncludeCrossSignedRoots pins the three properties the option needs:
+// it defaults to off, the API answer round-trips into the state without a permanent diff (for a
+// provider without such chains too, the API stores the value for every provider) and toggling it
+// plans an in-place update, never a replacement: a replacement would re-issue a paid certificate.
+func TestSSLCertificateRequestIncludeCrossSignedRoots(t *testing.T) {
+	r := resourceMyrasecSSLCertificateRequest()
+	ctx := context.Background()
+
+	if def := r.Schema["include_cross_signed_roots"].Default; def != false {
+		t.Errorf("include_cross_signed_roots default = %v, want false: an existing config must keep today's chain", def)
+	}
+	if r.Schema["include_cross_signed_roots"].ForceNew {
+		t.Error("include_cross_signed_roots must not be ForceNew, a change would replace the request and re-issue the certificate")
+	}
+
+	for _, provider := range []string{"SECTIGO", "DTRUST"} {
+		t.Run(provider, func(t *testing.T) {
+			raw := map[string]any{
+				"certificate_provider":        provider,
+				"algorithm":                   "ECDSA256",
+				"subject_alternative_names":   []any{"www.example.com"},
+				"ssl_provider_credentials_id": 42,
+				"include_cross_signed_roots":  true,
+			}
+
+			d := r.TestResourceData()
+			d.SetId("1")
+			setSSLCertificateRequestData(d, &myrasec.SSLCertificateRequest{
+				ID:                       1,
+				Provider:                 provider,
+				Algorithm:                "ECDSA256",
+				Status:                   "CREATED",
+				SSLProviderCredentialsID: 42,
+				IncludeCrossSignedRoots:  true,
+				SubjectAlternativeNames:  []myrasec.SSLCertificateRequestSAN{{ID: 10, Name: "www.example.com"}},
+			})
+			refreshed := d.State()
+
+			if got := refreshed.Attributes["include_cross_signed_roots"]; got != "true" {
+				t.Fatalf("include_cross_signed_roots = %q after refresh, want true", got)
+			}
+
+			diff, err := r.Diff(ctx, refreshed, terraform.NewResourceConfigRaw(raw), nil)
+			if err != nil {
+				t.Fatalf("plan failed: %v", err)
+			}
+			if diff != nil && !diff.Empty() {
+				t.Errorf("expected an empty plan after refresh, got changes: %v", diff.Attributes)
+			}
+
+			raw["include_cross_signed_roots"] = false
+			diff, err = r.Diff(ctx, refreshed, terraform.NewResourceConfigRaw(raw), nil)
+			if err != nil {
+				t.Fatalf("plan with the option switched off failed: %v", err)
+			}
+			if diff == nil || diff.Attributes["include_cross_signed_roots"] == nil {
+				t.Fatalf("expected a planned change of include_cross_signed_roots, got %v", diff)
+			}
+			if diff.RequiresNew() {
+				t.Error("switching include_cross_signed_roots must update in place, the plan wants a replacement")
+			}
+		})
+	}
+}
+
+// sslCertificateRequestTestAPI emulates the read and update calls of one stored request,
+// including the optimistic locking of the API: an update is rejected unless the request and
+// every subject alternative name and assignment sent with an ID carry the stored modified
+// timestamp. Like the API it compares the formatted timestamps, so the same instant with
+// another UTC offset is a mismatch.
+type sslCertificateRequestTestAPI struct {
+	mu      sync.Mutex
+	request myrasec.SSLCertificateRequest
+	updates []myrasec.SSLCertificateRequest
+}
+
+func (a *sslCertificateRequestTestAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.URL.Path != "/ssl/requests/"+strconv.Itoa(a.request.ID) || (r.Method != http.MethodGet && r.Method != http.MethodPut) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if r.Method == http.MethodPut {
+		var update myrasec.SSLCertificateRequest
+		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		a.updates = append(a.updates, update)
+
+		if !a.unchanged(&update) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error": true, "violationList": [{"message": "The record has been edited in the meantime."}]}`))
+			return
+		}
+
+		a.request.IncludeCrossSignedRoots = update.IncludeCrossSignedRoots
+		a.request.Modified = &types.DateTime{Time: a.request.Modified.Add(time.Minute)}
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]any{"error": false, "data": []*myrasec.SSLCertificateRequest{&a.request}})
+}
+
+// unchanged reports whether the update carries the modified timestamps the entries are stored
+// with. An entry without ID is a new one, an ID that is not stored is rejected.
+func (a *sslCertificateRequestTestAPI) unchanged(update *myrasec.SSLCertificateRequest) bool {
+	same := func(sent, stored *types.DateTime) bool {
+		return sent != nil && sent.Format(time.RFC3339) == stored.Format(time.RFC3339)
+	}
+
+	if !same(update.Modified, a.request.Modified) {
+		return false
+	}
+
+	sans := make(map[int]*types.DateTime)
+	for _, stored := range a.request.SubjectAlternativeNames {
+		sans[stored.ID] = stored.Modified
+	}
+	for _, san := range update.SubjectAlternativeNames {
+		if san.ID == 0 {
+			continue
+		}
+		if stored, ok := sans[san.ID]; !ok || !same(san.Modified, stored) {
+			return false
+		}
+	}
+
+	assignments := make(map[int]*types.DateTime)
+	for _, stored := range a.request.Assignments {
+		assignments[stored.ID] = stored.Modified
+	}
+	for _, assignment := range update.Assignments {
+		if assignment.ID == 0 {
+			continue
+		}
+		if stored, ok := assignments[assignment.ID]; !ok || !same(assignment.Modified, stored) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// TestSSLCertificateRequestUpdate switches include_cross_signed_roots on an existing request
+// through the client the provider builds. The update has to reach the API although it follows a
+// read of the same URL, the API has to accept it (optimistic locking of the stored names and
+// assignments) and the refresh after the update must return the updated request.
+func TestSSLCertificateRequestUpdate(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		cacheTTL int
+	}{
+		{name: "cache disabled", cacheTTL: 0},
+		{name: "default cache", cacheTTL: 30},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			stored := time.Date(2026, 9, 1, 10, 0, 0, 0, time.FixedZone("CEST", 2*60*60))
+			date := func(offset time.Duration) *types.DateTime {
+				return &types.DateTime{Time: stored.Add(offset)}
+			}
+
+			api := &sslCertificateRequestTestAPI{request: myrasec.SSLCertificateRequest{
+				ID:        1,
+				Created:   date(0),
+				Modified:  date(3 * time.Hour),
+				Provider:  "LETS_ENCRYPT",
+				Algorithm: "RSA2048",
+				Status:    "CREATED",
+				SubjectAlternativeNames: []myrasec.SSLCertificateRequestSAN{
+					{ID: 10, Name: "www.example.com", Created: date(0), Modified: date(time.Hour)},
+				},
+				Assignments: []myrasec.SSLCertificateRequestAssignment{
+					{ID: 20, SubDomainName: "www.example.com", Created: date(0), Modified: date(2 * time.Hour)},
+				},
+			}}
+			server := httptest.NewServer(api)
+			t.Cleanup(server.Close)
+
+			client, err := Config{
+				APIToken:    "token",
+				Language:    "en",
+				APIBaseURL:  server.URL + "/%s",
+				APICacheTTL: tc.cacheTTL,
+			}.Client()
+			if err != nil {
+				t.Fatalf("building the API client failed: %v", err)
+			}
+
+			r := resourceMyrasecSSLCertificateRequest()
+			ctx := context.Background()
+
+			state, diags := r.RefreshWithoutUpgrade(ctx, &terraform.InstanceState{ID: "1"}, client)
+			if diags.HasError() {
+				t.Fatalf("refresh failed: %v", diags)
+			}
+
+			config := terraform.NewResourceConfigRaw(map[string]any{
+				"certificate_provider":       "LETS_ENCRYPT",
+				"algorithm":                  "RSA2048",
+				"subject_alternative_names":  []any{"www.example.com"},
+				"subdomains":                 []any{"www.example.com"},
+				"include_cross_signed_roots": true,
+			})
+
+			diff, err := r.Diff(ctx, state, config, client)
+			if err != nil {
+				t.Fatalf("plan failed: %v", err)
+			}
+			if diff == nil || diff.Attributes["include_cross_signed_roots"] == nil {
+				t.Fatalf("expected a planned change of include_cross_signed_roots, got %v", diff)
+			}
+
+			state, diags = r.Apply(ctx, state, diff, client)
+			if diags.HasError() {
+				t.Fatalf("apply failed: %v", diags)
+			}
+
+			if len(api.updates) != 1 {
+				t.Fatalf("the API received %d updates, want 1", len(api.updates))
+			}
+			update := api.updates[0]
+			if len(update.SubjectAlternativeNames) != 1 || update.SubjectAlternativeNames[0].ID != 10 {
+				t.Errorf("SubjectAlternativeNames = %+v, want the stored entry 10 to be kept", update.SubjectAlternativeNames)
+			}
+			if len(update.Assignments) != 1 || update.Assignments[0].ID != 20 {
+				t.Errorf("Assignments = %+v, want the stored entry 20 to be kept", update.Assignments)
+			}
+			if !api.request.IncludeCrossSignedRoots {
+				t.Error("the API still stores include_cross_signed_roots = false after the apply")
+			}
+			if got := state.Attributes["include_cross_signed_roots"]; got != "true" {
+				t.Errorf("include_cross_signed_roots = %q after the apply, want true", got)
+			}
+
+			state, diags = r.RefreshWithoutUpgrade(ctx, state, client)
+			if diags.HasError() {
+				t.Fatalf("refresh after the apply failed: %v", diags)
+			}
+			if got, want := state.Attributes["modified"], formatDateTime(api.request.Modified); got != want {
+				t.Errorf("modified = %q after the refresh, want %q", got, want)
+			}
+
+			diff, err = r.Diff(ctx, state, config, client)
+			if err != nil {
+				t.Fatalf("plan after the apply failed: %v", err)
+			}
+			if diff != nil && !diff.Empty() {
+				t.Errorf("expected an empty plan after the apply, got changes: %v", diff.Attributes)
+			}
+		})
 	}
 }
 
