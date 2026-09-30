@@ -601,6 +601,7 @@ func TestSSLCertificateRequestUpdate(t *testing.T) {
 		cacheTTL int
 	}{
 		{name: "cache disabled", cacheTTL: 0},
+		{name: "default cache", cacheTTL: 30},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			stored := time.Date(2026, 9, 1, 10, 0, 0, 0, time.FixedZone("CEST", 2*60*60))
