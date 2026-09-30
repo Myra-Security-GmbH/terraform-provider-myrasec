@@ -125,6 +125,58 @@ func TestBuildSettingsPayloadIPLock(t *testing.T) {
 	}
 }
 
+// TestBuildSettingsPayloadHostHeader pins the host_header value the update payload sends.
+// host_header and its deprecated alias proxy_host_header both map to the API's host_header
+// field, so the payload must resolve to a single deterministic value regardless of schema
+// map iteration order: a configured host_header is sent verbatim (even when another
+// attribute changes in the same apply, and even when it is the "$myra_host" default so the
+// subdomain keeps forcing that default rather than inheriting the parent), an unconfigured
+// host_header falls back to a configured proxy_host_header (which still drops the
+// "$myra_host" default), neither configured sends null, and a delete nulls it.
+func TestBuildSettingsPayloadHostHeader(t *testing.T) {
+	tests := []struct {
+		name            string
+		hostHeader      *string
+		proxyHostHeader *string
+		clean           bool
+		want            any
+	}{
+		{name: "host_header set with another changed attribute", hostHeader: ptr("nginx.example.com"), want: "nginx.example.com"},
+		{name: "explicit host_header $myra_host default sent verbatim", hostHeader: ptr("$myra_host"), want: "$myra_host"},
+		{name: "host_header and proxy_host_header unset", want: nil},
+		{name: "deprecated proxy_host_header set only", proxyHostHeader: ptr("legacy.example.com"), want: "legacy.example.com"},
+		{name: "deprecated proxy_host_header $myra_host default dropped", proxyHostHeader: ptr("$myra_host"), want: nil},
+		{name: "host_header set on delete payload", hostHeader: ptr("nginx.example.com"), clean: true, want: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			attributes := map[string]string{"subdomain_name": "ALL-1", "ipv6_active": "true"}
+			config := map[string]cty.Value{"subdomain_name": cty.StringVal("ALL-1"), "ipv6_active": cty.True}
+			if tt.hostHeader != nil {
+				attributes["host_header"] = *tt.hostHeader
+				config["host_header"] = cty.StringVal(*tt.hostHeader)
+			}
+			if tt.proxyHostHeader != nil {
+				attributes["proxy_host_header"] = *tt.proxyHostHeader
+				config["proxy_host_header"] = cty.StringVal(*tt.proxyHostHeader)
+			}
+
+			payload, err := buildSettings(configuredResourceData(resourceMyrasecSettings(), attributes, config), tt.clean)
+			if err != nil {
+				t.Fatalf("buildSettings: %v", err)
+			}
+
+			if got, ok := payload["host_header"]; !ok || got != tt.want {
+				t.Errorf("host_header = %#v (present %v), want %#v", got, ok, tt.want)
+			}
+			if _, ok := payload["proxy_host_header"]; ok {
+				t.Errorf("proxy_host_header should not be sent in the payload, got %#v", payload["proxy_host_header"])
+			}
+		})
+	}
+}
+
 func ptr[T any](v T) *T {
 	return &v
 }

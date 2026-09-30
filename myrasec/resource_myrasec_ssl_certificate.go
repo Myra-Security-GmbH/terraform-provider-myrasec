@@ -163,7 +163,7 @@ func resourceMyrasecSSLCertificate() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "Set specific ssl configuration for ciphers and protocols",
-				ValidateFunc: validation.StringInSlice([]string{"Myra-Global-TLS-Default", "2023-mozilla-intermediate", "2023-mozilla-modern"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"Myra-Global-TLS-Default", "2023-mozilla-intermediate", "2023-mozilla-modern", "2026-mozilla-intermediate"}, true),
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 					return newValue == "" || strings.EqualFold(oldValue, newValue)
 				},

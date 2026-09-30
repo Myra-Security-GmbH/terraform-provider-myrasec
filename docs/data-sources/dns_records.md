@@ -37,6 +37,7 @@ The following arguments are supported:
 * `value` Depends on the record type. Typically an IPv4/6 address or a domain entry.
 * `ttl` Time to live.
 * `alternative_cname` The alternative CNAME that points to the record.
+* `alternative_cname_dnssec` The alternative CNAME in the DNSSEC-signed zone (`ax4z-s.com`) that points to the record. Empty when no signed alias exists, for example on reverse mapping domains.
 * `active` Define wether this subdomain should be protected by Myra or not.
 * `enabled` Define wether this DNS record is enabled or not.
 * `priority` Priority of MX records.
