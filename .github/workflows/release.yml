@@ -1,29 +1,49 @@
-# This GitHub action can publish assets for release when a tag is created.
-# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+# This GitHub action builds a draft release for the given version. It is
+# started manually (Actions -> release -> Run workflow) on the commit to release.
 #
-# This uses an action (paultyng/ghaction-import-gpg) that assumes you set your 
+# The tag is only created locally and not pushed: GitHub creates it when the
+# draft gets published, so tag and release (with checksums) appear together,
+# which the OpenTofu registry requires.
+#
+# This uses an action (crazy-max/ghaction-import-gpg) that assumes you set your
 # private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
 # secret. If you would rather own your own GPG handling, please fork this action
 # or use an alternative one for key handling.
 #
-# You will need to pass the `--batch` flag to `gpg` in your signing step 
+# You will need to pass the `--batch` flag to `gpg` in your signing step
 # in `goreleaser` to indicate this is being used in a non-interactive mode.
 #
 name: release
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without leading "v" (e.g. 1.86.0)'
+        required: true
+        type: string
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    env:
+      # Set explicitly, since an older tag may point to the same commit
+      GORELEASER_CURRENT_TAG: v${{ inputs.version }}
     steps:
+      -
+        name: Validate version
+        # GoReleaser would accept e.g. "1.86" and publish a non-semver tag
+        run: |
+          if ! [[ "$GORELEASER_CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid version '${GORELEASER_CURRENT_TAG#v}', expected e.g. 1.86.0"
+            exit 1
+          fi
       -
         name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       -
-        name: Unshallow
-        run: git fetch --prune --unshallow
+        name: Create local tag (not pushed, fails if it already exists)
+        run: git tag "$GORELEASER_CURRENT_TAG"
       -
         name: Set up Go
         uses: actions/setup-go@v5

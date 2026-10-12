@@ -54,5 +54,9 @@ signs:
 release:
   # If you want to manually examine the release before its live, uncomment this line:
   draft: true
+  # The tag does not exist on GitHub until the draft gets published, so
+  # GitHub has to create it on the built commit
+  target_commitish: '{{ .Commit }}'
 changelog:
-  use: github
+  # "github" compares tags via the GitHub API, but the new tag is only local
+  use: git
