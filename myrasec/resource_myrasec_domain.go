@@ -54,6 +54,11 @@ func resourceMyrasecDomain() *schema.Resource {
 				Default:     true,
 				Description: "Auto update flag for the domain.",
 			},
+			"verified": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether domain ownership is verified. Unverified domains are not published. Defaults to true if the API does not return verification status.",
+			},
 			"paused": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -104,25 +109,31 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateDomain(domain)
-	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
-		return resourceMyrasecDomainRead(ctx, d, meta)
+	if err != nil {
+		var errImport error
+		resp, errImport = importExistingDomain(domain, meta)
+		if errImport != nil {
+			log.Printf("[DEBUG] auto-import failed: %s", errImport)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  "Error creating domain",
+				Detail:   formatError(errImport),
+			})
+
+			return diags
+		}
 	}
 
-	domain, errImport := importExistingDomain(domain, meta)
-	if errImport != nil {
-		log.Printf("[DEBUG] auto-import failed: %s", errImport)
+	d.SetId(fmt.Sprintf("%d", resp.ID))
+	diags = resourceMyrasecDomainRead(ctx, d, meta)
+	if resp.IsPendingVerification() || (!diags.HasError() && d.Id() != "" && !d.Get("verified").(bool)) {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
-			Summary:  "Error creating domain",
-			Detail:   formatError(errImport),
+			Summary:  "Domain ownership verification pending",
+			Detail:   fmt.Sprintf("Domain %q is stored but is not published until its ownership is verified. Open the Myra dashboard to view the verification status and follow the instructions there. Terraform does not manage domain verification.", resp.Name),
 		})
-
-		return diags
 	}
-
-	d.SetId(fmt.Sprintf("%d", domain.ID))
-	return resourceMyrasecDomainRead(ctx, d, meta)
+	return diags
 
 }
 
@@ -321,6 +332,7 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.Set("domain_id", domain.ID)
 	d.Set("name", domain.Name)
 	d.Set("auto_update", domain.AutoUpdate)
+	d.Set("verified", !domain.IsPendingVerification())
 	d.Set("created", domain.Created.Format(time.RFC3339))
 	d.Set("modified", domain.Modified.Format(time.RFC3339))
 }

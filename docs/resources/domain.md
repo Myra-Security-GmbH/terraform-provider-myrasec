@@ -30,3 +30,6 @@ The following arguments are supported:
 * `modified` (*Computed*) Date of last modification.
 * `name` (**Required**) Domain name.
 * `auto_update` (Optional) Auto update flag for the domain. Default `true`.
+* `verified` (*Computed*) Whether domain ownership is verified. Defaults to `true` if the API does not return verification status.
+
+A domain with `verified = false` is stored but is not published. Creating or automatically importing such a domain returns a warning. Open the Myra dashboard to view its verification status and follow the instructions there. Terraform does not manage domain verification.
