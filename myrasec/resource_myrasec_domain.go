@@ -115,9 +115,9 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		if errImport != nil {
 			log.Printf("[DEBUG] auto-import failed: %s", errImport)
 			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  "Error creating domain",
-				Detail:   formatError(errImport),
+				Detail:   fmt.Sprintf("%s\nAutomatic import also failed: %s", formatError(err), formatError(errImport)),
 			})
 
 			return diags
