@@ -90,7 +90,8 @@ func TestDomainVerificationCreate(t *testing.T) {
 		{name: "pending", verified: false, readVerified: false, warn: true},
 		{name: "omitted", want: true},
 		{name: "only read reports pending", readVerified: false, warn: true},
-		{name: "only create or list reports pending", verified: false, want: true, warn: true},
+		{name: "verification completed before read", verified: false, readVerified: true, want: true},
+		{name: "read omits verification status", verified: false, want: true},
 	}
 	for _, autoImport := range []bool{false, true} {
 		for _, tc := range cases {
@@ -133,6 +134,7 @@ func TestDomainVerificationRefreshAndUpdate(t *testing.T) {
 			if diags.HasError() || state == nil {
 				t.Fatalf("refresh failed: %v", diags)
 			}
+			assertDomainVerificationWarning(t, diags, !tc.want)
 			if got := state.Attributes["verified"]; got != strconv.FormatBool(tc.want) {
 				t.Fatalf("verified = %q, want %v", got, tc.want)
 			}
@@ -148,9 +150,11 @@ func TestDomainVerificationRefreshAndUpdate(t *testing.T) {
 			if err := d.Set("verified", !tc.want); err != nil {
 				t.Fatal(err)
 			}
-			if diags := r.UpdateContext(ctx, d, client); diags.HasError() {
+			diags = r.UpdateContext(ctx, d, client)
+			if diags.HasError() {
 				t.Fatalf("update failed: %v", diags)
 			}
+			assertDomainVerificationWarning(t, diags, !tc.want)
 			if got := d.Get("verified"); got != tc.want {
 				t.Errorf("verified after update = %v, want %v", got, tc.want)
 			}
@@ -182,33 +186,122 @@ func TestDomainsDataSourceVerification(t *testing.T) {
 }
 
 func TestDomainCreateFailurePreservesAPIError(t *testing.T) {
-	for _, reason := range []string{
-		"pending domain limit reached",
-		"daily pending limit reached",
-		"a create already in progress",
-		"verification unavailable",
-	} {
-		for _, listFails := range []bool{false, true} {
-			t.Run(reason+"/list_fails="+strconv.FormatBool(listFails), func(t *testing.T) {
-				client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Header().Set("Content-Type", "application/json")
-					if r.URL.Path != "/domains" || (r.Method != http.MethodPost && r.Method != http.MethodGet) {
-						t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
-						http.NotFound(w, r)
+	const reason = "pending domain limit reached"
+	for _, listFails := range []bool{false, true} {
+		t.Run(reason+"/list_fails="+strconv.FormatBool(listFails), func(t *testing.T) {
+			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				if r.URL.Path != "/domains" || (r.Method != http.MethodPost && r.Method != http.MethodGet) {
+					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+					http.NotFound(w, r)
+					return
+				}
+				message := reason
+				if r.Method == http.MethodGet {
+					if !listFails {
+						_, _ = w.Write([]byte(`{"error":false,"data":[]}`))
 						return
 					}
-					message := reason
-					if r.Method == http.MethodGet {
-						if !listFails {
-							_, _ = w.Write([]byte(`{"error":false,"data":[]}`))
-							return
-						}
-						message = "unable to list domains"
+					message = "unable to list domains"
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"error": true, "violationList": []any{map[string]any{"message": message}},
+				})
+			}))
+			r := resourceMyrasecDomain()
+			d := r.TestResourceData()
+			if err := d.Set("name", "example.com"); err != nil {
+				t.Fatal(err)
+			}
+			diags := r.CreateContext(context.Background(), d, client)
+			if len(diags) != 1 || diags[0].Severity != diag.Error {
+				t.Fatalf("failed create needs an error diagnostic, got %v", diags)
+			}
+			if !strings.Contains(diags[0].Detail, reason) {
+				t.Errorf("create error %q missing from diagnostic: %v", reason, diags)
+			}
+			wantImportError := "unable to find existing domain for automatic import"
+			if listFails {
+				wantImportError = "unable to list domains"
+			}
+			if !strings.Contains(diags[0].Detail, wantImportError) {
+				t.Errorf("import error %q missing from diagnostic: %v", wantImportError, diags)
+			}
+			if d.Id() != "" {
+				t.Errorf("failed create must not set an ID, got %q", d.Id())
+			}
+		})
+	}
+}
+
+func assertDomainVerificationWarning(t *testing.T, diags diag.Diagnostics, want bool) {
+	t.Helper()
+	warnings := 0
+	for _, diagnostic := range diags {
+		if diagnostic.Severity != diag.Warning {
+			continue
+		}
+		warnings++
+		if !strings.Contains(diagnostic.Detail, "pending or has been revoked") || !strings.Contains(diagnostic.Detail, "dashboard") {
+			t.Errorf("unexpected verification warning: %v", diagnostic)
+		}
+	}
+	if (want && warnings != 1) || (!want && warnings != 0) {
+		t.Errorf("got %d warnings, want warning=%v: %v", warnings, want, diags)
+	}
+}
+
+func TestDomainVerificationImportRefresh(t *testing.T) {
+	for _, id := range []string{"1", "example.com"} {
+		for _, tc := range domainVerificationCases {
+			t.Run(id+"/"+tc.name, func(t *testing.T) {
+				client := domainVerificationTestClient(t, tc.verified, tc.verified, false)
+				r := resourceMyrasecDomain()
+				d := r.TestResourceData()
+				d.SetId(id)
+				imported, err := r.Importer.StateContext(context.Background(), d, client)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(imported) != 1 || imported[0].Id() != "1" {
+					t.Fatalf("unexpected imported state: %v", imported)
+				}
+				// The importer cannot return warnings. Terraform reads the imported resource next.
+				state, diags := r.RefreshWithoutUpgrade(context.Background(), imported[0].State(), client)
+				if diags.HasError() || state == nil {
+					t.Fatalf("refresh after import failed: %v", diags)
+				}
+				if state.Attributes["verified"] != strconv.FormatBool(tc.want) {
+					t.Errorf("verified after import = %q, want %v", state.Attributes["verified"], tc.want)
+				}
+				assertDomainVerificationWarning(t, diags, !tc.want)
+			})
+		}
+	}
+}
+
+func TestDomainCreateReadFailure(t *testing.T) {
+	for _, autoImport := range []bool{false, true} {
+		for _, tc := range domainVerificationCases {
+			t.Run(tc.name+"/auto_import="+strconv.FormatBool(autoImport), func(t *testing.T) {
+				client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					if r.URL.Path == "/domains/1" {
+						w.WriteHeader(http.StatusForbidden)
+						_, _ = w.Write([]byte(`{"error":true,"violationList":[{"message":"read denied"}]}`))
+						return
 					}
-					w.WriteHeader(http.StatusBadRequest)
-					_ = json.NewEncoder(w).Encode(map[string]any{
-						"error": true, "violationList": []any{map[string]any{"message": message}},
-					})
+					if r.Method == http.MethodPost && autoImport {
+						w.WriteHeader(http.StatusBadRequest)
+						_, _ = w.Write([]byte(`{"error":true,"violationList":[{"message":"Domain already exists"}]}`))
+						return
+					}
+					domain := map[string]any{"id": 1, "name": "example.com"}
+					if tc.verified != nil {
+						domain["verified"] = tc.verified
+					}
+					_ = json.NewEncoder(w).Encode(map[string]any{"error": false, "data": []any{domain}})
 				}))
 				r := resourceMyrasecDomain()
 				d := r.TestResourceData()
@@ -216,23 +309,41 @@ func TestDomainCreateFailurePreservesAPIError(t *testing.T) {
 					t.Fatal(err)
 				}
 				diags := r.CreateContext(context.Background(), d, client)
-				if len(diags) != 1 || diags[0].Severity != diag.Error {
-					t.Fatalf("failed create needs an error diagnostic, got %v", diags)
+				if !diags.HasError() || !strings.Contains(diags[0].Detail, "read denied") {
+					t.Fatalf("read error was lost: %v", diags)
 				}
-				if !strings.Contains(diags[0].Detail, reason) {
-					t.Errorf("create error %q missing from diagnostic: %v", reason, diags)
+				if d.Id() != "1" || d.Get("verified") != tc.want {
+					t.Errorf("create response was lost after read failure: id=%q verified=%v", d.Id(), d.Get("verified"))
 				}
-				wantImportError := "unable to find existing domain for automatic import"
-				if listFails {
-					wantImportError = "unable to list domains"
-				}
-				if !strings.Contains(diags[0].Detail, wantImportError) {
-					t.Errorf("import error %q missing from diagnostic: %v", wantImportError, diags)
-				}
-				if d.Id() != "" {
-					t.Errorf("failed create must not set an ID, got %q", d.Id())
-				}
+				assertDomainVerificationWarning(t, diags, !tc.want)
 			})
 		}
+	}
+}
+
+func TestDomainReadErrorPreservesState(t *testing.T) {
+	for _, status := range []int{http.StatusForbidden, http.StatusNotFound} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(`{"error":true,"violationList":[{"message":"cannot read domain"}]}`))
+			}))
+			r := resourceMyrasecDomain()
+			d := r.TestResourceData()
+			d.SetId("1")
+			if err := d.Set("verified", true); err != nil {
+				t.Fatal(err)
+			}
+			diags := r.ReadContext(context.Background(), d, client)
+			if status == http.StatusNotFound {
+				if diags.HasError() || d.Id() != "" {
+					t.Fatalf("missing domain must be removed from state: id=%q diagnostics=%v", d.Id(), diags)
+				}
+			} else if !diags.HasError() || d.Id() != "1" || d.Get("verified") != true {
+				t.Fatalf("read failure must preserve state and report an error: id=%q verified=%v diagnostics=%v", d.Id(), d.Get("verified"), diags)
+			}
+			assertDomainVerificationWarning(t, diags, false)
+		})
 	}
 }

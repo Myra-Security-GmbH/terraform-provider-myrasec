@@ -117,7 +117,7 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error creating domain",
-				Detail:   fmt.Sprintf("%s\nAutomatic import also failed: %s", formatError(err), formatError(errImport)),
+				Detail:   formatError(fmt.Errorf("%w\nAutomatic import also failed: %v", err, errImport)),
 			})
 
 			return diags
@@ -126,12 +126,9 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
 	diags = resourceMyrasecDomainRead(ctx, d, meta)
-	if resp.IsPendingVerification() || (!diags.HasError() && d.Id() != "" && !d.Get("verified").(bool)) {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Domain ownership verification pending",
-			Detail:   fmt.Sprintf("Domain %q is stored but is not published until its ownership is verified. Open the Myra dashboard to view the verification status and follow the instructions there. Terraform does not manage domain verification.", resp.Name),
-		})
+	if diags.HasError() {
+		d.Set("verified", !resp.IsPendingVerification())
+		diags = append(diags, domainVerificationDiagnostics(resp)...)
 	}
 	return diags
 
@@ -152,6 +149,9 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	domain, diags := findDomain(domainID, meta)
+	if diags.HasError() {
+		return diags
+	}
 
 	if domain == nil {
 		d.SetId("")
@@ -160,7 +160,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	setDomainData(d, domain)
 
-	return diags
+	return append(diags, domainVerificationDiagnostics(domain)...)
 }
 
 // resourceMyrasecDomainUpdate ...
@@ -195,7 +195,7 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	setDomainData(d, resp)
 
-	return diags
+	return append(diags, domainVerificationDiagnostics(resp)...)
 }
 
 // resourceMyrasecDomainDelete ...
@@ -259,10 +259,9 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	// Terraform refreshes the imported state through ReadContext, which emits diagnostics.
 	d.SetId(strconv.Itoa(domain.ID))
 	d.Set("domain_id", domain.ID)
-
-	resourceMyrasecDomainRead(ctx, d, meta)
 
 	return []*schema.ResourceData{d}, nil
 }
@@ -307,6 +306,9 @@ func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
 
 	d, err := client.GetDomain(domainID)
 	if err != nil {
+		if isNotFoundError(err) {
+			return nil, nil
+		}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error loading domain",
@@ -324,6 +326,17 @@ func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
 		Detail:   fmt.Sprintf("Unable to find domain with ID = [%d]", domainID),
 	})
 	return nil, diags
+}
+
+func domainVerificationDiagnostics(domain *myrasec.Domain) diag.Diagnostics {
+	if !domain.IsPendingVerification() {
+		return nil
+	}
+	return diag.Diagnostics{{
+		Severity: diag.Warning,
+		Summary:  "Domain ownership verification pending or revoked",
+		Detail:   fmt.Sprintf("Domain %q is stored but is not published because its ownership verification is pending or has been revoked. Open the Myra dashboard to view the verification status and follow the instructions there. Terraform does not manage domain verification.", domain.Name),
+	}}
 }
 
 // setDomainData ...
