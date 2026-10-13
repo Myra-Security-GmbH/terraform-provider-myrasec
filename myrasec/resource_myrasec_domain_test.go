@@ -322,26 +322,97 @@ func TestDomainCreateReadFailure(t *testing.T) {
 }
 
 func TestDomainReadErrorPreservesState(t *testing.T) {
-	for _, status := range []int{http.StatusForbidden, http.StatusNotFound} {
-		t.Run(strconv.Itoa(status), func(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		status     int
+		message    string
+		listStatus int
+		listedID   int
+		fullPage   bool
+		noName     bool
+		removed    bool
+	}{
+		{name: "deleted", status: http.StatusForbidden, message: "The entity does not exist.", removed: true},
+		{name: "deleted German", status: http.StatusForbidden, message: "Die Entität existiert nicht.", removed: true},
+		{name: "permission denied", status: http.StatusForbidden, message: "read denied", listedID: 1},
+		{name: "missing message but still listed", status: http.StatusForbidden, message: "The entity does not exist.", listedID: 1},
+		{name: "list denied", status: http.StatusForbidden, message: "The entity does not exist.", listStatus: http.StatusForbidden},
+		{name: "list unavailable", status: http.StatusForbidden, message: "The entity does not exist.", listStatus: http.StatusServiceUnavailable},
+		{name: "name unavailable", status: http.StatusForbidden, message: "The entity does not exist.", noName: true},
+		{name: "recreated with another ID", status: http.StatusForbidden, message: "The entity does not exist.", listedID: 2, removed: true},
+		{name: "found on second page", status: http.StatusForbidden, message: "read denied", fullPage: true, listedID: 1},
+		{name: "missing on all pages", status: http.StatusForbidden, message: "The entity does not exist.", fullPage: true, removed: true},
+		{name: "server error", status: http.StatusInternalServerError, message: "server error"},
+		{name: "HTTP not found", status: http.StatusNotFound, message: "not found", removed: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			listCalls := 0
 			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(status)
-				_, _ = w.Write([]byte(`{"error":true,"violationList":[{"message":"cannot read domain"}]}`))
+				switch r.URL.Path {
+				case "/domains/1":
+					w.WriteHeader(tc.status)
+					_ = json.NewEncoder(w).Encode(map[string]any{"error": true, "violationList": []any{map[string]string{"message": tc.message}}})
+				case "/domains":
+					listCalls++
+					if r.URL.Query().Get("search") != "example.com" || r.URL.Query().Get("page") != strconv.Itoa(listCalls) || r.URL.Query().Get("pageSize") != "100" {
+						t.Errorf("unexpected list parameters: %s", r.URL.RawQuery)
+					}
+					if tc.listStatus != 0 {
+						w.WriteHeader(tc.listStatus)
+						_, _ = w.Write([]byte(`{"error":true,"violationList":[{"message":"listing failed"}]}`))
+						return
+					}
+					domains := []any{}
+					if tc.fullPage && listCalls == 1 {
+						for id := 100; id < 200; id++ {
+							domains = append(domains, map[string]any{"id": id, "name": "other.example.com"})
+						}
+					} else if tc.listedID != 0 {
+						domains = append(domains, map[string]any{"id": tc.listedID, "name": "example.com"})
+					}
+					_ = json.NewEncoder(w).Encode(map[string]any{"error": false, "data": domains})
+				default:
+					t.Errorf("unexpected request: %s", r.URL.Path)
+					http.NotFound(w, r)
+				}
 			}))
 			r := resourceMyrasecDomain()
 			d := r.TestResourceData()
 			d.SetId("1")
+			if !tc.noName {
+				if err := d.Set("name", "example.com"); err != nil {
+					t.Fatal(err)
+				}
+			}
 			if err := d.Set("verified", true); err != nil {
 				t.Fatal(err)
 			}
 			diags := r.ReadContext(context.Background(), d, client)
-			if status == http.StatusNotFound {
+			if tc.removed {
 				if diags.HasError() || d.Id() != "" {
 					t.Fatalf("missing domain must be removed from state: id=%q diagnostics=%v", d.Id(), diags)
 				}
-			} else if !diags.HasError() || d.Id() != "1" || d.Get("verified") != true {
-				t.Fatalf("read failure must preserve state and report an error: id=%q verified=%v diagnostics=%v", d.Id(), d.Get("verified"), diags)
+			} else {
+				if !diags.HasError() || d.Id() != "1" || d.Get("verified") != true {
+					t.Fatalf("read failure must preserve state and report an error: id=%q verified=%v diagnostics=%v", d.Id(), d.Get("verified"), diags)
+				}
+				if !strings.Contains(diags[0].Detail, tc.message) {
+					t.Errorf("original read error was lost: %v", diags)
+				}
+				if tc.listStatus != 0 && !strings.Contains(diags[0].Detail, "listing failed") {
+					t.Errorf("list error was lost: %v", diags)
+				}
+			}
+			wantCalls := 0
+			if tc.status == http.StatusForbidden && !tc.noName {
+				wantCalls = 1
+				if tc.fullPage {
+					wantCalls = 2
+				}
+			}
+			if listCalls != wantCalls {
+				t.Errorf("list calls = %d, want %d", listCalls, wantCalls)
 			}
 			assertDomainVerificationWarning(t, diags, false)
 		})

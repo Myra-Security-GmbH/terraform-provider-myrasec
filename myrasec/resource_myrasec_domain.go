@@ -2,8 +2,10 @@ package myrasec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -148,7 +150,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	domain, diags := findDomain(domainID, meta)
+	domain, diags := findDomain(ctx, domainID, d.Get("name").(string), meta)
 	if diags.HasError() {
 		return diags
 	}
@@ -247,7 +249,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 
 	domainID, err := strconv.Atoi(d.Id())
 	if err == nil {
-		domain, diags = findDomain(domainID, meta)
+		domain, diags = findDomain(ctx, domainID, d.Get("name").(string), meta)
 		if diags.HasError() || domain == nil {
 			return nil, fmt.Errorf("unable to find domain with ID = [%d]", domainID)
 		}
@@ -299,14 +301,26 @@ func buildDomain(d *schema.ResourceData) (*myrasec.Domain, error) {
 }
 
 // findDomain ...
-func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
+func findDomain(ctx context.Context, domainID int, domainName string, meta any) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	d, err := client.GetDomain(domainID)
+	d, err := client.GetDomainContext(ctx, domainID)
 	if err != nil {
-		if isNotFoundError(err) {
+		var apiErr *myrasec.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden {
+			// Missing domains also return 403 with a translated message. Confirm
+			// absence through the listing instead of matching localized text.
+			if domainName != "" {
+				listed, listErr := domainIsListed(ctx, client, domainID, domainName)
+				if listErr != nil {
+					err = fmt.Errorf("%w\nChecking domain existence also failed: %v", err, listErr)
+				} else if !listed {
+					return nil, nil
+				}
+			}
+		} else if isNotFoundError(err) {
 			return nil, nil
 		}
 		diags = append(diags, diag.Diagnostic{
@@ -326,6 +340,29 @@ func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
 		Detail:   fmt.Sprintf("Unable to find domain with ID = [%d]", domainID),
 	})
 	return nil, diags
+}
+
+// Search can return multiple domains, so check every page for the stored ID.
+func domainIsListed(ctx context.Context, client *myrasec.API, domainID int, domainName string) (bool, error) {
+	const pageSize = 100
+	for page := 1; ; page++ {
+		domains, err := client.ListDomainsContext(ctx, map[string]string{
+			"search":   domainName,
+			"page":     strconv.Itoa(page),
+			"pageSize": strconv.Itoa(pageSize),
+		})
+		if err != nil {
+			return false, err
+		}
+		for _, domain := range domains {
+			if domain.ID == domainID {
+				return true, nil
+			}
+		}
+		if len(domains) < pageSize {
+			return false, nil
+		}
+	}
 }
 
 func domainVerificationDiagnostics(domain *myrasec.Domain) diag.Diagnostics {
