@@ -63,6 +63,11 @@ func dataSourceMyrasecDomains() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"verified": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Whether domain ownership is verified. Unverified domains are not published. Defaults to true if the API does not return verification status.",
+						},
 						"paused": {
 							Type:     schema.TypeBool,
 							Computed: true,
@@ -127,6 +132,7 @@ func dataSourceMyrasecDomainsRead(ctx context.Context, d *schema.ResourceData, m
 			"modified":     modified,
 			"name":         r.Name,
 			"auto_update":  r.AutoUpdate,
+			"verified":     !r.IsPendingVerification(),
 			"paused":       r.Paused,
 			"paused_until": r.PausedUntil,
 		})

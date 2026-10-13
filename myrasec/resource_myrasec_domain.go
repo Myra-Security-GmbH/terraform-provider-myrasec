@@ -2,8 +2,10 @@ package myrasec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +55,11 @@ func resourceMyrasecDomain() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 				Description: "Auto update flag for the domain.",
+			},
+			"verified": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether domain ownership is verified. Unverified domains are not published. Defaults to true if the API does not return verification status.",
 			},
 			"paused": {
 				Type:        schema.TypeBool,
@@ -104,25 +111,28 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	time.Sleep(200 * time.Millisecond)
 
 	resp, err := client.CreateDomain(domain)
-	if err == nil {
-		d.SetId(fmt.Sprintf("%d", resp.ID))
-		return resourceMyrasecDomainRead(ctx, d, meta)
+	if err != nil {
+		var errImport error
+		resp, errImport = importExistingDomain(domain, meta)
+		if errImport != nil {
+			log.Printf("[DEBUG] auto-import failed: %s", errImport)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error creating domain",
+				Detail:   formatError(fmt.Errorf("%w\nAutomatic import also failed: %v", err, errImport)),
+			})
+
+			return diags
+		}
 	}
 
-	domain, errImport := importExistingDomain(domain, meta)
-	if errImport != nil {
-		log.Printf("[DEBUG] auto-import failed: %s", errImport)
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Error creating domain",
-			Detail:   formatError(errImport),
-		})
-
-		return diags
+	d.SetId(fmt.Sprintf("%d", resp.ID))
+	diags = resourceMyrasecDomainRead(ctx, d, meta)
+	if diags.HasError() {
+		d.Set("verified", !resp.IsPendingVerification())
+		diags = append(diags, domainVerificationDiagnostics(resp)...)
 	}
-
-	d.SetId(fmt.Sprintf("%d", domain.ID))
-	return resourceMyrasecDomainRead(ctx, d, meta)
+	return diags
 
 }
 
@@ -140,7 +150,10 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		return diags
 	}
 
-	domain, diags := findDomain(domainID, meta)
+	domain, diags := findDomain(ctx, domainID, d.Get("name").(string), meta)
+	if diags.HasError() {
+		return diags
+	}
 
 	if domain == nil {
 		d.SetId("")
@@ -149,7 +162,7 @@ func resourceMyrasecDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	setDomainData(d, domain)
 
-	return diags
+	return append(diags, domainVerificationDiagnostics(domain)...)
 }
 
 // resourceMyrasecDomainUpdate ...
@@ -184,7 +197,7 @@ func resourceMyrasecDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 
 	setDomainData(d, resp)
 
-	return diags
+	return append(diags, domainVerificationDiagnostics(resp)...)
 }
 
 // resourceMyrasecDomainDelete ...
@@ -236,7 +249,7 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 
 	domainID, err := strconv.Atoi(d.Id())
 	if err == nil {
-		domain, diags = findDomain(domainID, meta)
+		domain, diags = findDomain(ctx, domainID, d.Get("name").(string), meta)
 		if diags.HasError() || domain == nil {
 			return nil, fmt.Errorf("unable to find domain with ID = [%d]", domainID)
 		}
@@ -248,10 +261,9 @@ func resourceMyrasecDomainImport(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	// Terraform refreshes the imported state through ReadContext, which emits diagnostics.
 	d.SetId(strconv.Itoa(domain.ID))
 	d.Set("domain_id", domain.ID)
-
-	resourceMyrasecDomainRead(ctx, d, meta)
 
 	return []*schema.ResourceData{d}, nil
 }
@@ -289,13 +301,28 @@ func buildDomain(d *schema.ResourceData) (*myrasec.Domain, error) {
 }
 
 // findDomain ...
-func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
+func findDomain(ctx context.Context, domainID int, domainName string, meta any) (*myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	client := meta.(*myrasec.API)
 
-	d, err := client.GetDomain(domainID)
+	d, err := client.GetDomainContext(ctx, domainID)
 	if err != nil {
+		var apiErr *myrasec.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden {
+			// Missing domains also return 403 with a translated message. Confirm
+			// absence through the listing instead of matching localized text.
+			if domainName != "" {
+				listed, listErr := domainIsListed(ctx, client, domainID, domainName)
+				if listErr != nil {
+					err = fmt.Errorf("%w\nChecking domain existence also failed: %v", err, listErr)
+				} else if !listed {
+					return nil, nil
+				}
+			}
+		} else if isNotFoundError(err) {
+			return nil, nil
+		}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error loading domain",
@@ -315,12 +342,47 @@ func findDomain(domainID int, meta any) (*myrasec.Domain, diag.Diagnostics) {
 	return nil, diags
 }
 
+// Search can return multiple domains, so check every page for the stored ID.
+func domainIsListed(ctx context.Context, client *myrasec.API, domainID int, domainName string) (bool, error) {
+	const pageSize = 100
+	for page := 1; ; page++ {
+		domains, err := client.ListDomainsContext(ctx, map[string]string{
+			"search":   domainName,
+			"page":     strconv.Itoa(page),
+			"pageSize": strconv.Itoa(pageSize),
+		})
+		if err != nil {
+			return false, err
+		}
+		for _, domain := range domains {
+			if domain.ID == domainID {
+				return true, nil
+			}
+		}
+		if len(domains) < pageSize {
+			return false, nil
+		}
+	}
+}
+
+func domainVerificationDiagnostics(domain *myrasec.Domain) diag.Diagnostics {
+	if !domain.IsPendingVerification() {
+		return nil
+	}
+	return diag.Diagnostics{{
+		Severity: diag.Warning,
+		Summary:  "Domain ownership verification pending or revoked",
+		Detail:   fmt.Sprintf("Domain %q is stored but is not published because its ownership verification is pending or has been revoked. Open the Myra dashboard to view the verification status and follow the instructions there. Terraform does not manage domain verification.", domain.Name),
+	}}
+}
+
 // setDomainData ...
 func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.SetId(fmt.Sprintf("%d", domain.ID))
 	d.Set("domain_id", domain.ID)
 	d.Set("name", domain.Name)
 	d.Set("auto_update", domain.AutoUpdate)
+	d.Set("verified", !domain.IsPendingVerification())
 	d.Set("created", domain.Created.Format(time.RFC3339))
 	d.Set("modified", domain.Modified.Format(time.RFC3339))
 }
