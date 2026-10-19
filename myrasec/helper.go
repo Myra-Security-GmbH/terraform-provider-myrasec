@@ -196,8 +196,8 @@ func createContentHash(content string) string {
 }
 
 // isNotFoundError reports whether the passed error says that the requested object does not exist.
-// The API answers a missing object with HTTP 404 or, for the managed certificate endpoints,
-// with HTTP 403 carrying a "does-not-exist" violation. Violations of other status codes refer
+// The API answers a missing object with HTTP 404 or HTTP 403 carrying a
+// "does-not-exist" violation (including localized entity messages). Violations of other status codes refer
 // to referenced objects (e.g. a dangling credentials ID in a 400) and are not a not-found.
 func isNotFoundError(err error) bool {
 	var apiErr *myrasec.APIError
@@ -214,7 +214,11 @@ func isNotFoundError(err error) bool {
 	}
 
 	for _, v := range apiErr.Violations {
-		if v != nil && strings.Contains(v.Message, "does-not-exist") {
+		if v == nil {
+			continue
+		}
+		switch strings.TrimSpace(v.Message) {
+		case "does-not-exist", "api.error.does-not-exist", "The entity does not exist.", "Die Entität existiert nicht.":
 			return true
 		}
 	}
@@ -268,4 +272,21 @@ func settingsBoolValue(name string, value bool) any {
 		return "yes"
 	}
 	return "no"
+}
+
+// parseCompositeIntID parses colon-separated positive identifiers.
+func parseCompositeIntID(id string, parts int) ([]int, error) {
+	tokens := strings.Split(id, ":")
+	if parts < 1 || len(tokens) != parts {
+		return nil, fmt.Errorf("invalid ID %q: expected %d colon-separated positive integers", id, parts)
+	}
+	result := make([]int, parts)
+	for i, token := range tokens {
+		n, err := strconv.Atoi(token)
+		if err != nil || n < 1 || strings.IndexFunc(token, func(r rune) bool { return r < '0' || r > '9' }) >= 0 {
+			return nil, fmt.Errorf("invalid ID %q: each part must be a positive integer", id)
+		}
+		result[i] = n
+	}
+	return result, nil
 }
