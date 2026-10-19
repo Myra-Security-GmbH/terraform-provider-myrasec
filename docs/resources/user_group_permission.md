@@ -10,7 +10,7 @@ variable "group_id" {
 }
 
 resource "myrasec_user_group_permission" "read_domains" {
-  group_id = var.group_id
+  group_id    = var.group_id
   action      = "READ"
   object_type = "Domain"
 }

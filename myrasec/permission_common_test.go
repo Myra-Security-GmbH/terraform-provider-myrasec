@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -109,20 +111,56 @@ func TestPermissionImportAdoptsEffectiveScopes(t *testing.T) {
 	}
 }
 
-func TestUserGroupRoleLookupFailureRetainsState(t *testing.T) {
-	for _, status := range []int{403, 404} {
-		client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/user/groups/7" {
-				accessResponse(w, []any{map[string]any{"id": 7, "name": "team", "parent": 1}})
-				return
-			}
-			accessError(w, status, "Access denied")
-		}))
-		r := resourceMyrasecUserGroup()
-		d := r.TestResourceData()
-		d.SetId("7")
-		if diags := r.ReadContext(context.Background(), d, client); !diags.HasError() || d.Id() != "7" {
-			t.Fatalf("list status %d: state=%v diagnostics=%v", status, d.State(), diags)
+func TestPermissionCreateRejectsInvalidResponse(t *testing.T) {
+	for _, recipient := range []string{"user_id", "group_id"} {
+		for _, id := range []int{0, -1, 8} {
+			t.Run(fmt.Sprintf("%s/%d", recipient, id), func(t *testing.T) {
+				posts := 0
+				client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+					if req.Method == http.MethodPost {
+						posts++
+						accessResponse(w, []any{map[string]any{"id": id, "action": "READ", "objectType": "Domain", "objectPermissionType": permissionType(recipient)}})
+						return
+					}
+					accessResponse(w, []any{})
+				}))
+				r := resourcePermission(recipient)
+				d := schema.TestResourceDataRaw(t, r.Schema, map[string]any{recipient: 7, "action": "READ", "object_type": "Domain"})
+				diags := r.CreateContext(context.Background(), d, client)
+				want := "without a positive ID"
+				if id > 0 {
+					want = "could not be found during read-back"
+				}
+				if !diags.HasError() || !strings.Contains(fmt.Sprint(diags), want) || d.Id() != "" || posts != 1 {
+					t.Fatalf("state=%v posts=%d diagnostics=%v", d.State(), posts, diags)
+				}
+			})
 		}
+	}
+}
+
+func TestPermissionDeleteWaitsForWriter(t *testing.T) {
+	for _, recipient := range []string{"user_id", "group_id"} {
+		t.Run(recipient, func(t *testing.T) {
+			unlock, err := lockPermissionWrites(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer unlock()
+			var requests atomic.Int32
+			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				requests.Add(1)
+				accessResponse(w, []any{})
+			}))
+			r := resourcePermission(recipient)
+			d := schema.TestResourceDataRaw(t, r.Schema, map[string]any{recipient: 7, "action": "READ", "object_type": "Domain", "modified": "2026-10-01T00:00:00Z"})
+			d.SetId("7:8")
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			diags := r.DeleteContext(ctx, d, client)
+			if !diags.HasError() || !strings.Contains(fmt.Sprint(diags), "context deadline exceeded") || d.Id() != "7:8" || requests.Load() != 0 {
+				t.Fatalf("state=%v requests=%d diagnostics=%v", d.State(), requests.Load(), diags)
+			}
+		})
 	}
 }

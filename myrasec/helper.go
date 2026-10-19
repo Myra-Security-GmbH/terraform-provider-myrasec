@@ -290,11 +290,3 @@ func parseCompositeIntID(id string, parts int) ([]int, error) {
 	}
 	return result, nil
 }
-
-func userGroupCreateError(err error) error {
-	var apiErr *myrasec.APIError
-	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden {
-		return fmt.Errorf("%w; group creation requires a parent user group administered by the API key's user. A 403 can mean parent_id is missing or zero, the parent does not exist or is not a user group, the parent belongs to another organization or the user lacks ADMINISTRATOR on the parent", err)
-	}
-	return err
-}

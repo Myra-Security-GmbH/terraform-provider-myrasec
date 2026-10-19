@@ -20,7 +20,7 @@ data "myrasec_user_groups" "administered" {
 
 ## Attributes Reference
 
-* `groups` Flat list of groups in tree traversal order. Pagination applies to root nodes.
+* `groups` Flat list of groups in tree traversal order. The API returns the whole visible tree. Each group ID is included once.
 * `groups.id` ID of the group.
 * `groups.name` Display name.
 * `groups.parent_id` Parent ID or zero for a root group.
@@ -29,7 +29,7 @@ data "myrasec_user_groups" "administered" {
 * `groups.roles` Roles the caller holds on the group.
 * `groups.created` Date of creation.
 * `groups.modified` Date of last modification.
-* `groups.depth` Depth in the returned tree, starting at zero for root nodes. Name filtering preserves the original depth.
+* `groups.depth` Depth of the first matching occurrence in the returned tree, starting at zero for top-level entries. Name filtering preserves the original depth.
 
 ## Notes
 

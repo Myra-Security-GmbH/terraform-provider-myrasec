@@ -2,8 +2,11 @@ package myrasec
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
+	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
@@ -14,18 +17,58 @@ import (
 
 func resourceMyrasecUserGroup() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceMyrasecUserGroupCreate, ReadContext: resourceMyrasecUserGroupRead,
-		UpdateContext: resourceMyrasecUserGroupUpdate, DeleteContext: resourceMyrasecUserGroupDelete,
-		Importer: &schema.ResourceImporter{StateContext: resourceMyrasecUserGroupImport},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Read:   schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(30 * time.Second),
+			Delete: schema.DefaultTimeout(30 * time.Second),
+		},
+		CreateContext: resourceMyrasecUserGroupCreate,
+		ReadContext:   resourceMyrasecUserGroupRead,
+		UpdateContext: resourceMyrasecUserGroupUpdate,
+		DeleteContext: resourceMyrasecUserGroupDelete,
+		Importer:      &schema.ResourceImporter{StateContext: resourceMyrasecUserGroupImport},
 		Schema: map[string]*schema.Schema{
-			"group_id":      {Type: schema.TypeInt, Computed: true},
-			"name":          {Type: schema.TypeString, Required: true, ValidateFunc: validation.StringIsNotWhiteSpace},
-			"parent_id":     accessIDSchema(false),
-			"type":          {Type: schema.TypeString, Computed: true},
-			"members_count": {Type: schema.TypeInt, Computed: true},
-			"roles":         {Type: schema.TypeList, Computed: true, Elem: &schema.Schema{Type: schema.TypeString}},
-			"created":       {Type: schema.TypeString, Computed: true},
-			"modified":      {Type: schema.TypeString, Computed: true},
+			"group_id": {
+				Description: "ID of the user group.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"name": {
+				Description:  "Name of the user group.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringIsNotWhiteSpace,
+			},
+			"parent_id": accessIDSchema("ID of the parent user group.", false),
+			"type": {
+				Description: "Group type returned by the API.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"members_count": {
+				Description: "Number of members in the group.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"roles": {
+				Description: "Roles of the API caller in this group.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			"created": {
+				Description: "Creation timestamp returned by the API.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"modified": {
+				Description: "Last modification timestamp returned by the API.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -165,4 +208,12 @@ func userGroupDataWithRoles(ctx context.Context, client *myrasec.API, group *myr
 	values := userGroupData(group)
 	values["roles"] = found.Roles
 	return values, nil
+}
+
+func userGroupCreateError(err error) error {
+	var apiErr *myrasec.APIError
+	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("%w; group creation requires a parent user group administered by the API key's user. A 403 can mean parent_id is missing or zero, the parent does not exist or is not a user group, the parent belongs to another organization or the user lacks ADMINISTRATOR on the parent", err)
+	}
+	return err
 }

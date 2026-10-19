@@ -217,6 +217,7 @@ func TestUserGroupRejectedMovePreservesState(t *testing.T) {
 
 func TestMembershipUpsertReadAndDelete(t *testing.T) {
 	currentRole := "USER"
+	exists := false
 	removed := false
 	client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/user/group/10/users" && r.URL.Path != "/user/group/10/users/20" {
@@ -224,6 +225,7 @@ func TestMembershipUpsertReadAndDelete(t *testing.T) {
 		}
 		switch r.Method {
 		case http.MethodPost:
+			exists = true
 			body := accessRequest(t, r)
 			if body["userId"] != float64(20) {
 				t.Errorf("body %v", body)
@@ -235,7 +237,7 @@ func TestMembershipUpsertReadAndDelete(t *testing.T) {
 				t.Errorf("query %s", r.URL.RawQuery)
 			}
 			users := []any{}
-			if !removed {
+			if exists && !removed {
 				users = append(users, map[string]any{"id": 20, "roles": []any{map[string]any{"id": 99, "groupId": 11, "role": "USER"}, map[string]any{"id": 30, "groupId": 10, "role": currentRole, "modified": "2026-10-01T00:00:00Z"}}})
 			}
 			accessResponse(w, users)

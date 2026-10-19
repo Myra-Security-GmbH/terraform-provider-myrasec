@@ -46,13 +46,22 @@ func listAccessPages[T any](ctx context.Context, params map[string]string, fetch
 	}
 }
 
-func accessIDSchema(forceNew bool) *schema.Schema {
-	return &schema.Schema{Type: schema.TypeInt, Required: true, ForceNew: forceNew, ValidateFunc: validation.IntAtLeast(1)}
+func accessIDSchema(description string, forceNew bool) *schema.Schema {
+	return &schema.Schema{
+		Description:  description,
+		Type:         schema.TypeInt,
+		Required:     true,
+		ForceNew:     forceNew,
+		ValidateFunc: validation.IntAtLeast(1),
+	}
 }
 
 func accessRoleSchema(required bool) *schema.Schema {
 	return &schema.Schema{
-		Type: schema.TypeString, Required: required, Optional: !required,
+		Description:  "Membership role: USER or ADMINISTRATOR.",
+		Type:         schema.TypeString,
+		Required:     required,
+		Optional:     !required,
 		StateFunc:    func(v any) string { return strings.ToUpper(v.(string)) },
 		ValidateFunc: validation.StringInSlice([]string{myrasec.GroupRoleUser, myrasec.GroupRoleAdministrator}, true),
 	}
@@ -68,7 +77,15 @@ func setAccessData(d *schema.ResourceData, values map[string]any) error {
 }
 
 func accessFilterSchema(fields map[string]*schema.Schema) *schema.Schema {
-	return &schema.Schema{Type: schema.TypeList, Optional: true, MaxItems: 1, Elem: &schema.Resource{Schema: fields}}
+	return &schema.Schema{
+		Description: "Optional filters for the returned collection.",
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Elem: &schema.Resource{
+			Schema: fields,
+		},
+	}
 }
 
 func accessFilter(d *schema.ResourceData) map[string]any {

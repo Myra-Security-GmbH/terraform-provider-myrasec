@@ -381,8 +381,8 @@ variable "myrasec_user_permission-action" {
 
 variable "myrasec_user_group_member-role" {
   default = {
-    "USER"             = "USER"
-    "ADMINISTRATOR"    = "ADMINISTRATOR"
+    "USER"          = "USER"
+    "ADMINISTRATOR" = "ADMINISTRATOR"
   }
 }
 ```

@@ -3,6 +3,7 @@ package myrasec
 import (
 	"context"
 	"fmt"
+	"time"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
@@ -34,21 +35,101 @@ func lockPermissionWrites(ctx context.Context) (func(), error) {
 
 func permissionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"permission_id":   {Type: schema.TypeInt, Computed: true},
-		"action":          {Type: schema.TypeString, Required: true, ForceNew: true, ValidateFunc: validation.StringInSlice(permissionActions, false)},
-		"object_type":     {Type: schema.TypeString, Required: true, ForceNew: true, ValidateFunc: validation.StringIsNotWhiteSpace},
-		"object_instance": {Type: schema.TypeInt, Optional: true, ForceNew: true, ValidateFunc: validation.IntAtLeast(0)},
+		"permission_id": {
+			Description: "ID of the permission grant.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
+		"action": {
+			Description:  "Action allowed by the permission.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice(permissionActions, false),
+		},
+		"object_type": {
+			Description:  "Type of object covered by the permission.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringIsNotWhiteSpace,
+		},
+		"object_instance": {
+			Description:  "Object instance ID. Zero grants access to the object type.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntAtLeast(0),
+		},
 		// These fields describe the object and cannot be set by a permission grant.
-		"name":  {Type: schema.TypeString, Computed: true},
-		"value": {Type: schema.TypeString, Computed: true},
+		"name": {
+			Description: "Object name returned by the API.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"value": {
+			Description: "Object value returned by the API.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		// Requested restrictions and API-derived scope chains have different ownership.
-		"scopes":           {Type: schema.TypeSet, Optional: true, ForceNew: true, Elem: &schema.Schema{Type: schema.TypeInt, ValidateFunc: validation.IntAtLeast(1)}},
-		"effective_scopes": {Type: schema.TypeSet, Computed: true, Elem: &schema.Schema{Type: schema.TypeInt}},
-		"created":          {Type: schema.TypeString, Computed: true}, "modified": {Type: schema.TypeString, Computed: true},
-		"parents": {Type: schema.TypeList, Computed: true, Elem: &schema.Resource{Schema: map[string]*schema.Schema{
-			"id": {Type: schema.TypeInt, Computed: true}, "action": {Type: schema.TypeString, Computed: true},
-			"object_type": {Type: schema.TypeString, Computed: true}, "object_instance": {Type: schema.TypeInt, Computed: true},
-		}}},
+		"scopes": {
+			Description: "Explicit scope IDs restricting this grant.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			ForceNew:    true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+		},
+		"effective_scopes": {
+			Description: "Complete scope chain returned by the API, including derived scopes.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeInt,
+			},
+		},
+		"created": {
+			Description: "Creation timestamp returned by the API.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"modified": {
+			Description: "Last modification timestamp returned by the API.",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"parents": {
+			Description: "Parent permissions returned by the API.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"id": {
+						Description: "ID returned by the API.",
+						Type:        schema.TypeInt,
+						Computed:    true,
+					},
+					"action": {
+						Description: "Action allowed by the permission.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"object_type": {
+						Description: "Type of object covered by the permission.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"object_instance": {
+						Description: "Object instance ID. Zero grants access to the object type.",
+						Type:        schema.TypeInt,
+						Computed:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -80,8 +161,13 @@ func listPermissions(ctx context.Context, client *myrasec.API, recipient string,
 
 func resourcePermission(recipient string) *schema.Resource {
 	fields := permissionSchema()
-	fields[recipient] = accessIDSchema(true)
+	fields[recipient] = accessIDSchema("ID of the permission recipient ("+recipient+").", true)
 	return &schema.Resource{
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(30 * time.Second),
+			Read:   schema.DefaultTimeout(30 * time.Second),
+			Delete: schema.DefaultTimeout(30 * time.Second),
+		},
 		Schema: fields,
 		CreateContext: func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 			unlock, err := lockPermissionWrites(ctx)
@@ -195,7 +281,8 @@ func resourcePermission(recipient string) *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			}
 			return nil, fmt.Errorf("permission %d is not a direct permission of %s %d; inherited permissions must be managed on their owning group", ids[1], recipient, ids[0])
-		}},
+		},
+		},
 	}
 }
 
@@ -249,13 +336,36 @@ func dataSourcePermissions(recipient string) *schema.Resource {
 		field.ForceNew = false
 		field.ValidateFunc = nil
 	}
-	fields["scopes"].Elem = &schema.Schema{Type: schema.TypeInt}
-	fields["object_permission_type"] = &schema.Schema{Type: schema.TypeString, Computed: true}
+	fields["scopes"].Description = "Complete scope chain returned by the API, including derived scopes."
+	fields["scopes"].Elem = &schema.Schema{
+		Type: schema.TypeInt,
+	}
+	fields["object_permission_type"] = &schema.Schema{
+		Description: "Permission origin returned by the API, such as USER or GROUP.",
+		Type:        schema.TypeString,
+		Computed:    true,
+	}
 	return &schema.Resource{
+		Timeouts: &schema.ResourceTimeout{
+			Read: schema.DefaultTimeout(30 * time.Second),
+		},
 		Schema: map[string]*schema.Schema{
-			recipient:     accessIDSchema(false),
-			"filter":      accessFilterSchema(map[string]*schema.Schema{"object_type": {Type: schema.TypeString, Optional: true}}),
-			"permissions": {Type: schema.TypeList, Computed: true, Elem: &schema.Resource{Schema: fields}},
+			recipient: accessIDSchema("ID of the permission recipient ("+recipient+").", false),
+			"filter": accessFilterSchema(map[string]*schema.Schema{
+				"object_type": {
+					Description: "Type of object covered by the permission.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+			}),
+			"permissions": {
+				Description: "Direct and inherited permissions matching the filter.",
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: fields,
+				},
+			},
 		},
 		ReadContext: func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 			id := d.Get(recipient).(int)

@@ -10,7 +10,7 @@ variable "user_id" {
 }
 
 resource "myrasec_user_permission" "read_domains" {
-  user_id = var.user_id
+  user_id     = var.user_id
   action      = "READ"
   object_type = "Domain"
 }
