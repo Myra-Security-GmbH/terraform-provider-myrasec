@@ -163,10 +163,11 @@ func resourcePermission(recipient string) *schema.Resource {
 	fields := permissionSchema()
 	fields[recipient] = accessIDSchema("ID of the permission recipient ("+recipient+").", true)
 	return &schema.Resource{
+		// The write deadline includes waiting for other serialized writes.
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Second),
+			Create: schema.DefaultTimeout(20 * time.Minute),
 			Read:   schema.DefaultTimeout(30 * time.Second),
-			Delete: schema.DefaultTimeout(30 * time.Second),
+			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: fields,
 		CreateContext: func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {

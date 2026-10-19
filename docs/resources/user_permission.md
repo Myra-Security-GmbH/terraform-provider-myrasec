@@ -57,3 +57,7 @@ Import adopts the existing scope chain as API-managed: leave `scopes` omitted fo
 All reads request scoped permissions as well. Root group permissions are supported even though root groups themselves cannot be managed with `myrasec_user_group`.
 
 The user's permission list can also contain inherited group permissions. This resource only manages rows whose recipient type is `USER`. Import inherited rows through `myrasec_user_group_permission` on their owning group instead.
+
+## Timeouts
+
+The `create` and `delete` operations default to 20 minutes. Their timeout includes time spent waiting for the provider process's write lock as well as API requests. The `read` timeout defaults to 30 seconds. Override these limits with a `timeouts` block when needed for larger configurations or slower API responses.

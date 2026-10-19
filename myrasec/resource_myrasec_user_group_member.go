@@ -13,11 +13,12 @@ import (
 
 func resourceMyrasecUserGroupMember() *schema.Resource {
 	return &schema.Resource{
+		// The write deadline includes waiting for other serialized writes.
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(30 * time.Second),
+			Create: schema.DefaultTimeout(20 * time.Minute),
 			Read:   schema.DefaultTimeout(30 * time.Second),
-			Update: schema.DefaultTimeout(30 * time.Second),
-			Delete: schema.DefaultTimeout(30 * time.Second),
+			Update: schema.DefaultTimeout(20 * time.Minute),
+			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		CreateContext: resourceMyrasecUserGroupMemberCreate,
 		UpdateContext: resourceMyrasecUserGroupMemberUpdate,
