@@ -361,4 +361,28 @@ variable "myrasec_ssl_provider_credentials-certificate_provider" {
     "dtrust"  = "DTRUST"
   }
 }
+
+variable "myrasec_user_permission-action" {
+  default = {
+    "READ"             = "READ"
+    "CREATE"           = "CREATE"
+    "EDIT"             = "EDIT"
+    "SWITCH"           = "SWITCH"
+    "ADMIN"            = "ADMIN"
+    "AGENT_MODE"       = "AGENT_MODE"
+    "USER_MODE"        = "USER_MODE"
+    "CACHE_CLEAR"      = "CACHE_CLEAR"
+    "REVIEW"           = "REVIEW"
+    "PUBLISH"          = "PUBLISH"
+    "LOADBALANCE_READ" = "LOADBALANCE_READ"
+    "LOADBALANCE_EDIT" = "LOADBALANCE_EDIT"
+  }
+}
+
+variable "myrasec_user_group_member-role" {
+  default = {
+    "USER"             = "USER"
+    "ADMINISTRATOR"    = "ADMINISTRATOR"
+  }
+}
 ```

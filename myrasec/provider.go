@@ -52,6 +52,11 @@ func Provider() *schema.Provider {
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
+			"myrasec_user_groups":                           dataSourceMyrasecUserGroups(),
+			"myrasec_users":                                 dataSourceMyrasecUsers(),
+			"myrasec_user_group_members":                    dataSourceMyrasecUserGroupMembers(),
+			"myrasec_user_permissions":                      dataSourceMyrasecUserPermissions(),
+			"myrasec_user_group_permissions":                dataSourceMyrasecUserGroupPermissions(),
 			"myrasec_domains":                               dataSourceMyrasecDomains(),
 			"myrasec_dns_records":                           dataSourceMyrasecDNSRecords(),
 			"myrasec_cache_settings":                        dataSourceMyrasecCacheSettings(),
@@ -80,6 +85,10 @@ func Provider() *schema.Provider {
 			"myrasec_ssl_provider_certificates":             dataSourceMyrasecSSLProviderCertificates(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
+			"myrasec_user_group":               resourceMyrasecUserGroup(),
+			"myrasec_user_group_member":        resourceMyrasecUserGroupMember(),
+			"myrasec_user_permission":          resourceMyrasecUserPermission(),
+			"myrasec_user_group_permission":    resourceMyrasecUserGroupPermission(),
 			"myrasec_domain":                   resourceMyrasecDomain(),
 			"myrasec_dns_record":               resourceMyrasecDNSRecord(),
 			"myrasec_cache_setting":            resourceMyrasecCacheSetting(),
