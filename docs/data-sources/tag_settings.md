@@ -59,7 +59,7 @@ The following arguments are supported:
 * `monitoring_send_alert` (Optional) Enables / disables the upstream error reporting. Default `false`.
 * `myra_ssl_header` (Optional) Activates the X-Myra-SSL Header. Default `false`.
 * `myra_ssl_certificate` (Optional) An SSL Certificate (and chain) to be used to make requests on the origin. Default `[]`
-* `myra_ssl_certificate_key` (Optional) The private key(s) for the SSL Certificate(s). Default `[]`
+* `myra_ssl_certificate_key` (Computed, Sensitive) Returns `["<redacted>"]` when a key is configured, otherwise an empty set. Never returns private key material.
 * `next_upstream` (Optional) List of errors that mark the current upstream as "down". Valid values are `error`, `timeout`, `invalid_header`, `http_403`, `http_404`, `http_429`, `http_500`, `http_502`, `http_503`, `http_504` and `off`. Default `error`, `timeout` and `invalid_header`.
 * `only_https` (Optional) Shall the origin server always be requested via HTTPS? Default `false`.
 * `origin_connection_header` (Optional) Connection header. Valid values are `none`, `close` or `upgrade`. Default `none`.

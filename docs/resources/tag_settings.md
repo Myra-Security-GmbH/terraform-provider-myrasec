@@ -54,7 +54,7 @@ The following arguments are supported:
 * `monitoring_send_alert` (Optional) Enables / disables the upstream error reporting. Default `false`.
 * `myra_ssl_header` (Optional) Activates the X-Myra-SSL Header. Default `false`.
 * `myra_ssl_certificate` (Optional) An SSL Certificate (and chain) to be used to make requests on the origin. Default `[]`
-* `myra_ssl_certificate_key` (Optional) The private key(s) for the SSL Certificate(s). Default `[]`
+* `myra_ssl_certificate_key` (Optional, Sensitive) Write-only private keys for the SSL certificates. Omit to preserve the remote value, set new keys to replace it or use `[]` for an empty override. Refresh retains keys already in resource state and never imports server-returned keys. Destroy resets this setting along with the other resource settings. Remote key changes cannot be detected. Configured keys remain in Terraform state, so protect access to state storage.
 * `next_upstream` (Optional) List of errors that mark the current upstream as "down". Valid values are `error`, `timeout`, `invalid_header`, `http_403`, `http_404`, `http_429`, `http_500`, `http_502`, `http_503`, `http_504` and `off`. Default `error`, `timeout` and `invalid_header`.
 * `only_https` (Optional) Shall the origin server always be requested via HTTPS? Default `false`.
 * `origin_connection_header` (Optional) Connection header. Valid values are `none`, `close` or `upgrade`. Default `none`.
@@ -77,3 +77,5 @@ The following arguments are supported:
 * `waf_enable` (Optional) Enables / disables the Web Application Firewall. Default `false`.
 * `waf_levels_enable` (Optional) Level of applied WAF rules. Valid values are `waf_tag`, `waf_domain` and `waf_subdomain`. Default `waf_tag`, `waf_domain` and `waf_subdomain`.
 * `waf_policy` (Optional) Default policy for the Web Application Firewall in case of rule error. Valid values are `allow` or `block`. Default `allow`.
+
+Existing state snapshots can still contain keys fetched by older provider versions. This change does not scrub state history.

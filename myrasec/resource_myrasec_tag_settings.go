@@ -265,13 +265,14 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
 			},
 			"myra_ssl_certificate_key": {
-				Type:     schema.TypeSet,
-				Required: false,
-				Optional: true,
+				Sensitive: true,
+				Type:      schema.TypeSet,
+				Required:  false,
+				Optional:  true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The private key for the SSL Certificate",
+				Description: "Write-only private keys. Omit to preserve, set new keys to replace or use [] for an empty override. Configured keys are stored in Terraform state. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -645,6 +646,10 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 		if name == "tag_id" || name == "available_attributes" {
 			continue
 		}
+		// An omitted private key is unmanaged and must survive unrelated updates.
+		if name == settingsPrivateKey && !clean && !privateKeyConfigured(d) {
+			continue
+		}
 		value, ok := d.GetOk(name)
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
@@ -676,7 +681,6 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 			case schema.TypeSet:
 				settingsList := []string{}
 				for _, v := range value.(*schema.Set).List() {
-					log.Println(v)
 					settingsList = append(settingsList, v.(string))
 				}
 				tagSettingsMap[name] = settingsList
@@ -694,13 +698,15 @@ func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
 	d.Set("tag_id", tagId)
 
 	settings, _ := settingsData.(*map[string]any)
-	log.Println(settings)
 
 	resource := resourceMyrasecSettings().Schema
 	availableAttributes := []string{}
 	for k, v := range (*settings)["settings"].(map[string]any) {
+		if k == settingsPrivateKey {
+			continue
+		}
 		if err := d.Set(k, v); err != nil {
-			log.Printf("[WARN] Ignoring tag setting %s with value %v from the API: %v", k, v, err)
+			log.Printf("[WARN] Ignoring tag setting %s from the API: %v", k, err)
 		}
 		doAppend := appendAvailableAttributes(v, k, resource)
 		if doAppend {

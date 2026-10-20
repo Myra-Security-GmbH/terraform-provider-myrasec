@@ -183,8 +183,9 @@ func dataSourceMyrasecTagSettings() *schema.Resource {
 							},
 						},
 						"myra_ssl_certificate_key": {
-							Type:     schema.TypeSet,
-							Computed: true,
+							Sensitive: true,
+							Type:      schema.TypeSet,
+							Computed:  true,
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
@@ -353,7 +354,7 @@ func dataSourceMyrasecTagSettingsRead(ctx context.Context, d *schema.ResourceDat
 		"monitoring_send_alert":           settings.MonitoringSendAlert,
 		"myra_ssl_header":                 settings.MyraSSLHeader,
 		"myra_ssl_certificate":            settings.MyraSSLCertificate,
-		"myra_ssl_certificate_key":        settings.MyraSSLCertificateKey,
+		"myra_ssl_certificate_key":        redactedPrivateKeys(settings.MyraSSLCertificateKey),
 		"next_upstream":                   settings.NextUpstream,
 		"only_https":                      settings.OnlyHTTPS,
 		"origin_connection_header":        settings.OriginConnectionHeader,

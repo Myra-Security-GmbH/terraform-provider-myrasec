@@ -289,13 +289,14 @@ func resourceMyrasecSettings() *schema.Resource {
 				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
 			},
 			"myra_ssl_certificate_key": {
-				Type:     schema.TypeSet,
-				Required: false,
-				Optional: true,
+				Sensitive: true,
+				Type:      schema.TypeSet,
+				Required:  false,
+				Optional:  true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The private key for the SSL Certificate",
+				Description: "Write-only private keys. Omit to preserve, set new keys to replace or use [] for an empty override. Configured keys are stored in Terraform state. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -709,6 +710,10 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
+		// An omitted private key is unmanaged and must survive unrelated updates.
+		if name == settingsPrivateKey && !clean && !privateKeyConfigured(d) {
+			continue
+		}
 		value, ok := d.GetOk(name)
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
@@ -795,9 +800,9 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 
 	resource := resourceMyrasecSettings().Schema
 
-	// reset attributes befor setting them
+	// Reset attributes before setting them, retaining the configured private key.
 	for name := range resource {
-		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
+		if name == settingsPrivateKey || name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
 		d.Set(name, nil)
@@ -810,6 +815,9 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 	mapSettings, ok := domainSettings.(map[string]any)
 	if ok {
 		for k, v := range mapSettings {
+			if k == settingsPrivateKey {
+				continue
+			}
 			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
 				k = "host_header"
 			}
@@ -817,7 +825,7 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 				continue
 			}
 			if err := d.Set(k, v); err != nil {
-				log.Printf("[WARN] Ignoring setting %s with value %v from the API: %v", k, v, err)
+				log.Printf("[WARN] Ignoring setting %s from the API: %v", k, err)
 			}
 			doAppend := appendAvailableAttributes(v, k, resource)
 			if doAppend {
