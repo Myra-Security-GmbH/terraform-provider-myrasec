@@ -172,12 +172,31 @@ func TestSettingsCertificatePairPlanApplyRefresh(t *testing.T) {
 				if keys, ok := wire[settingsPrivateKey].([]any); ok && len(keys) > 0 {
 					wire[settingsPrivateKey] = []any{redactedPrivateKey}
 				}
+				// Flat and tag responses can represent an unset certificate as an empty list.
+				if _, present := wire[settingsCertificate]; !present {
+					wire[settingsCertificate] = []any{}
+				}
 				d.SetId("1")
 				v.refresh(d, wire)
 				return nil
 			}
 			r.CreateContext = apply
 			r.UpdateContext = apply
+			r.DeleteContext = func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+				var err error
+				payload, err = v.build(d, true)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				for name, value := range payload {
+					if value != nil {
+						return diag.Errorf("destroy sent a non-null value for %s", name)
+					}
+					delete(remote, name)
+				}
+				d.SetId("")
+				return nil
+			}
 			config := map[string]any{}
 			for name, value := range v.base {
 				config[name] = value
@@ -227,6 +246,16 @@ func TestSettingsCertificatePairPlanApplyRefresh(t *testing.T) {
 					t.Fatalf("plan did not converge after refresh: %#v", diff.Attributes)
 				}
 			}
+			destroy := func() {
+				t.Helper()
+				// Terraform supplies a null raw config when the resource is removed.
+				state.RawConfig = cty.NullVal(r.CoreConfigSchema().ImpliedType())
+				var diagnostics diag.Diagnostics
+				state, diagnostics = r.Apply(ctx, state, &terraform.InstanceDiff{Destroy: true}, nil)
+				if diagnostics.HasError() {
+					t.Fatal(diagnostics)
+				}
+			}
 			imported := r.Data(&terraform.InstanceState{ID: "1"})
 			v.refresh(imported, map[string]any{settingsCertificate: []any{"UNMANAGED_CERT"}, settingsPrivateKey: []any{redactedPrivateKey}})
 			for _, name := range []string{settingsCertificate, settingsPrivateKey} {
@@ -248,6 +277,50 @@ func TestSettingsCertificatePairPlanApplyRefresh(t *testing.T) {
 			}
 			if !reflect.DeepEqual(remote[settingsPrivateKey], []string{"UNMANAGED_KEY"}) || !reflect.DeepEqual(remote[settingsCertificate], []string{"UNMANAGED_CERT"}) {
 				t.Fatal("unmanaged pair changed")
+			}
+			destroy()
+			for _, name := range []string{settingsPrivateKey, settingsCertificate} {
+				if _, present := payload[name]; present {
+					t.Fatalf("destroy sent unmanaged pair member %s", name)
+				}
+			}
+			if !reflect.DeepEqual(remote[settingsPrivateKey], []string{"UNMANAGED_KEY"}) || !reflect.DeepEqual(remote[settingsCertificate], []string{"UNMANAGED_CERT"}) {
+				t.Fatal("destroy changed the unmanaged pair")
+			}
+			runApply()
+			converges()
+
+			// A managed key makes a remotely added certificate part of the pair.
+			config[settingsPrivateKey] = []any{"PRIVATE_KEY"}
+			runApply()
+			converges()
+			remote[settingsCertificate] = []string{"REMOTE_CERT"}
+			refreshed := r.Data(state)
+			// Older states can contain a key without listing it in available_attributes.
+			if err := refreshed.Set("available_attributes", []string{"only_https"}); err != nil {
+				t.Fatal(err)
+			}
+			v.refresh(refreshed, map[string]any{
+				settingsCertificate: []any{"REMOTE_CERT"},
+				settingsPrivateKey:  []any{redactedPrivateKey},
+				"only_https":        false,
+			})
+			state = refreshed.State()
+			diff, err := plan()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff == nil {
+				t.Fatal("plan must show removal of the remote certificate when only the key is configured")
+			}
+			certificateDiff := diff.Attributes[settingsCertificate+".#"]
+			if certificateDiff == nil || certificateDiff.Old != "1" || certificateDiff.New != "0" {
+				t.Fatalf("plan must show certificate removal, got %#v", certificateDiff)
+			}
+			runApply()
+			converges()
+			if value, present := payload[settingsCertificate]; !present || value != nil {
+				t.Fatalf("omitted certificate must send null, got %#v", payload)
 			}
 			config["only_https"] = true
 			config[settingsCertificate] = []any{"CERTIFICATE"}
@@ -300,12 +373,46 @@ func TestSettingsCertificatePairPlanApplyRefresh(t *testing.T) {
 				t.Fatal("explicit empty key must send []")
 			}
 			delete(config, settingsPrivateKey)
-			// An unrelated change causes an update even where the SDK equates an empty set and omission.
-			config["only_https"] = false
 			runApply()
 			converges()
 			if key, present := payload[settingsPrivateKey]; !present || key != nil {
 				t.Fatal("omitted key with configured certificate must restore inheritance")
+			}
+			config[settingsCertificate] = []any{}
+			config[settingsPrivateKey] = []any{"PRIVATE_KEY"}
+			runApply()
+			converges()
+			if !reflect.DeepEqual(payload[settingsCertificate], []string{}) {
+				t.Fatalf("explicit empty certificate must send [], got %#v", payload)
+			}
+			destroy()
+			for _, name := range []string{settingsPrivateKey, settingsCertificate} {
+				if value, present := payload[name]; !present || value != nil {
+					t.Fatalf("destroy must reset managed pair member %s, got %#v", name, payload)
+				}
+				if _, present := remote[name]; present {
+					t.Fatalf("destroy retained managed pair member %s", name)
+				}
+			}
+			// Empty overrides still belong to this resource and must be reset on destroy.
+			config[settingsCertificate] = []any{}
+			config[settingsPrivateKey] = []any{}
+			runApply()
+			converges()
+			destroy()
+			for _, name := range []string{settingsPrivateKey, settingsCertificate} {
+				if value, present := payload[name]; !present || value != nil {
+					t.Fatalf("destroy must reset empty override %s, got %#v", name, payload)
+				}
+			}
+			delete(config, settingsCertificate)
+			runApply()
+			converges()
+			delete(config, settingsPrivateKey)
+			runApply()
+			converges()
+			if value, present := payload[settingsPrivateKey]; !present || value != nil {
+				t.Fatalf("removing the only empty override must send null, got %#v", payload)
 			}
 		})
 	}

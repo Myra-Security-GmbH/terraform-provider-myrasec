@@ -8,13 +8,18 @@ const redactedPrivateKey = "<redacted>"
 
 // Preserve only a pair that is neither configured nor represented in prior state.
 // Removing a managed pair must send null for both fields to restore inheritance.
-func certificatePairUnmanaged(d *schema.ResourceData) bool {
+func certificatePairUnmanaged(d *schema.ResourceData, clean bool) bool {
+	// Destroy has no raw configuration; only the existing state establishes ownership.
+	if clean {
+		return !certificatePairInState(d)
+	}
+	oldAttributes, _ := d.GetChange("available_attributes")
 	for _, name := range []string{settingsCertificate, settingsPrivateKey} {
 		if !d.GetRawConfig().GetAttr(name).IsNull() {
 			return false
 		}
 		old, _ := d.GetChange(name)
-		if old.(*schema.Set).Len() > 0 {
+		if old.(*schema.Set).Len() > 0 || oldAttributes.(*schema.Set).Contains(name) {
 			return false
 		}
 	}
@@ -23,12 +28,14 @@ func certificatePairUnmanaged(d *schema.ResourceData) bool {
 
 // An entirely unconfigured pair must not become managed just because refresh saw it.
 func certificatePairInState(d *schema.ResourceData) bool {
-	return d.Get(settingsCertificate).(*schema.Set).Len() > 0 || d.Get(settingsPrivateKey).(*schema.Set).Len() > 0
+	return d.Get(settingsCertificate).(*schema.Set).Len() > 0 || d.Get(settingsPrivateKey).(*schema.Set).Len() > 0 ||
+		d.Get("available_attributes").(*schema.Set).Contains(settingsCertificate) ||
+		d.Get("available_attributes").(*schema.Set).Contains(settingsPrivateKey)
 }
 
-// Match CustomizeDiff's set-size rule without reading any server-provided key.
+// Retain key ownership, including an explicit empty override, without reading server keys.
 func privateKeyAvailableAttributes(d *schema.ResourceData) []string {
-	if d.Get(settingsPrivateKey).(*schema.Set).Len() > 0 {
+	if d.Get(settingsPrivateKey).(*schema.Set).Len() > 0 || d.Get("available_attributes").(*schema.Set).Contains(settingsPrivateKey) {
 		return []string{settingsPrivateKey}
 	}
 	return []string{}

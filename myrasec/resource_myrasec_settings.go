@@ -286,7 +286,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin. An unmanaged certificate/key pair is not imported during refresh; see myra_ssl_certificate_key for pair management rules.",
 			},
 			"myra_ssl_certificate_key": {
 				Sensitive: true,
@@ -508,6 +508,10 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 }
 
 func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
+	// Empty certificate/key overrides are managed values and must remain in state metadata.
+	if name == settingsCertificate || name == settingsPrivateKey {
+		return d.GetRawConfig().GetAttr(name).IsNull()
+	}
 	isNullValue := false
 	switch t.Type {
 	case schema.TypeBool:
@@ -711,7 +715,7 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 			continue
 		}
 		// Preserve an unmanaged certificate/key pair together.
-		if !clean && (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d) {
+		if (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d, clean) {
 			continue
 		}
 		value, ok := d.GetOk(name)
@@ -830,7 +834,7 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 			}
 			doAppend := appendAvailableAttributes(v, k, resource)
 			if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
-				doAppend = false
+				doAppend = d.Get("available_attributes").(*schema.Set).Contains(settingsCertificate)
 			}
 			if doAppend {
 				availableAttributes = append(availableAttributes, k)

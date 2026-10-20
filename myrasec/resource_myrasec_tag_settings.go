@@ -262,7 +262,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin. An unmanaged certificate/key pair is not imported during refresh; see myra_ssl_certificate_key for pair management rules.",
 			},
 			"myra_ssl_certificate_key": {
 				Sensitive: true,
@@ -647,7 +647,7 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 			continue
 		}
 		// Preserve an unmanaged certificate/key pair together.
-		if !clean && (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d) {
+		if (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d, clean) {
 			continue
 		}
 		value, ok := d.GetOk(name)
@@ -711,7 +711,7 @@ func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
 		}
 		doAppend := appendAvailableAttributes(v, k, resource)
 		if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
-			doAppend = false
+			doAppend = d.Get("available_attributes").(*schema.Set).Contains(settingsCertificate)
 		}
 		if doAppend {
 			availableAttributes = append(availableAttributes, k)
