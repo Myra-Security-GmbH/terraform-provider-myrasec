@@ -296,7 +296,7 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Write-only private keys. Omit to preserve, set new keys to replace or use [] for an empty override. Configured keys are stored in Terraform state. Remote key drift cannot be detected.",
+				Description: "Private keys are not read back from the API. Configured keys are stored in Terraform state. Removing a managed certificate/key pair restores inheritance; [] creates an empty override. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -710,8 +710,8 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
-		// An omitted private key is unmanaged and must survive unrelated updates.
-		if name == settingsPrivateKey && !clean && !privateKeyConfigured(d) {
+		// Preserve an unmanaged certificate/key pair together.
+		if !clean && (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d) {
 			continue
 		}
 		value, ok := d.GetOk(name)
@@ -795,6 +795,7 @@ func hostHeaderValue(d *schema.ResourceData, clean bool) any {
 
 // setSettingsData ...
 func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName string, domainID int) {
+	trackCertificate := certificatePairInState(d)
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
@@ -811,11 +812,11 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 	allSettings, _ := settingsData.(*map[string]any)
 	domainSettings := (*allSettings)["domain"]
 
-	availableAttributes := []string{}
+	availableAttributes := privateKeyAvailableAttributes(d)
 	mapSettings, ok := domainSettings.(map[string]any)
 	if ok {
 		for k, v := range mapSettings {
-			if k == settingsPrivateKey {
+			if k == settingsPrivateKey || (k == settingsCertificate && !trackCertificate) {
 				continue
 			}
 			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
@@ -828,6 +829,9 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 				log.Printf("[WARN] Ignoring setting %s from the API: %v", k, err)
 			}
 			doAppend := appendAvailableAttributes(v, k, resource)
+			if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
+				doAppend = false
+			}
 			if doAppend {
 				availableAttributes = append(availableAttributes, k)
 			}

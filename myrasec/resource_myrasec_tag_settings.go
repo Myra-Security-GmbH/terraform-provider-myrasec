@@ -272,7 +272,7 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Write-only private keys. Omit to preserve, set new keys to replace or use [] for an empty override. Configured keys are stored in Terraform state. Remote key drift cannot be detected.",
+				Description: "Private keys are not read back from the API. Configured keys are stored in Terraform state. Removing a managed certificate/key pair restores inheritance; [] creates an empty override. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -646,8 +646,8 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 		if name == "tag_id" || name == "available_attributes" {
 			continue
 		}
-		// An omitted private key is unmanaged and must survive unrelated updates.
-		if name == settingsPrivateKey && !clean && !privateKeyConfigured(d) {
+		// Preserve an unmanaged certificate/key pair together.
+		if !clean && (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d) {
 			continue
 		}
 		value, ok := d.GetOk(name)
@@ -695,20 +695,24 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 
 // setTagSettingsData ...
 func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
+	trackCertificate := certificatePairInState(d)
 	d.Set("tag_id", tagId)
 
 	settings, _ := settingsData.(*map[string]any)
 
 	resource := resourceMyrasecSettings().Schema
-	availableAttributes := []string{}
+	availableAttributes := privateKeyAvailableAttributes(d)
 	for k, v := range (*settings)["settings"].(map[string]any) {
-		if k == settingsPrivateKey {
+		if k == settingsPrivateKey || (k == settingsCertificate && !trackCertificate) {
 			continue
 		}
 		if err := d.Set(k, v); err != nil {
 			log.Printf("[WARN] Ignoring tag setting %s from the API: %v", k, err)
 		}
 		doAppend := appendAvailableAttributes(v, k, resource)
+		if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
+			doAppend = false
+		}
 		if doAppend {
 			availableAttributes = append(availableAttributes, k)
 		}
