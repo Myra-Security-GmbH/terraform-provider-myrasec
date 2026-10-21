@@ -15,7 +15,8 @@ import (
 
 // resourceMyrasecTagSettings
 func resourceMyrasecTagSettings() *schema.Resource {
-	return &schema.Resource{
+	r := &schema.Resource{
+		SchemaVersion: 1,
 		CreateContext: resourceMyrasecTagSettingsCreate,
 		ReadContext:   resourceMyrasecTagSettingsRead,
 		UpdateContext: resourceMyrasecTagSettingsUpdate,
@@ -262,16 +263,17 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin. An unmanaged certificate/key pair is not imported during refresh; see myra_ssl_certificate_key for pair management rules.",
 			},
 			"myra_ssl_certificate_key": {
-				Type:     schema.TypeSet,
-				Required: false,
-				Optional: true,
+				Sensitive: true,
+				Type:      schema.TypeSet,
+				Required:  false,
+				Optional:  true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The private key for the SSL Certificate",
+				Description: "Private keys are not read back from the API. Configured keys are stored in Terraform state. Removing a managed certificate/key pair restores inheritance; [] creates an empty override. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -442,6 +444,8 @@ func resourceMyrasecTagSettings() *schema.Resource {
 		},
 		CustomizeDiff: resourceCustomizeDiffTagSettings,
 	}
+	r.StateUpgraders = certificatePairStateUpgraders(r)
+	return r
 }
 
 // resourceCustomizeDiffTagSettings
@@ -645,6 +649,10 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 		if name == "tag_id" || name == "available_attributes" {
 			continue
 		}
+		// Preserve an unmanaged certificate/key pair together.
+		if (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d, clean) {
+			continue
+		}
 		value, ok := d.GetOk(name)
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
@@ -676,7 +684,6 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 			case schema.TypeSet:
 				settingsList := []string{}
 				for _, v := range value.(*schema.Set).List() {
-					log.Println(v)
 					settingsList = append(settingsList, v.(string))
 				}
 				tagSettingsMap[name] = settingsList
@@ -691,18 +698,24 @@ func buildTagSettings(d *schema.ResourceData, clean bool) (map[string]any, error
 
 // setTagSettingsData ...
 func setTagSettingsData(d *schema.ResourceData, settingsData any, tagId int) {
+	trackCertificate := certificatePairInState(d)
 	d.Set("tag_id", tagId)
 
 	settings, _ := settingsData.(*map[string]any)
-	log.Println(settings)
 
 	resource := resourceMyrasecSettings().Schema
-	availableAttributes := []string{}
+	availableAttributes := privateKeyAvailableAttributes(d)
 	for k, v := range (*settings)["settings"].(map[string]any) {
+		if k == settingsPrivateKey || (k == settingsCertificate && !trackCertificate) {
+			continue
+		}
 		if err := d.Set(k, v); err != nil {
-			log.Printf("[WARN] Ignoring tag setting %s with value %v from the API: %v", k, v, err)
+			log.Printf("[WARN] Ignoring tag setting %s from the API: %v", k, err)
 		}
 		doAppend := appendAvailableAttributes(v, k, resource)
+		if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
+			doAppend = d.Get("available_attributes").(*schema.Set).Contains(settingsCertificate)
+		}
 		if doAppend {
 			availableAttributes = append(availableAttributes, k)
 		}

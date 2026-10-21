@@ -24,7 +24,8 @@ var proxyReadTimeoutValues = []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 6
 
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
-	return &schema.Resource{
+	r := &schema.Resource{
+		SchemaVersion: 1,
 		CreateContext: resourceMyrasecSettingsCreate,
 		ReadContext:   resourceMyrasecSettingsRead,
 		UpdateContext: resourceMyrasecSettingsUpdate,
@@ -286,16 +287,17 @@ func resourceMyrasecSettings() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin.",
+				Description: "Authentication to the origin. An SSL Certificate (and chain) to be used to make requests on the origin. An unmanaged certificate/key pair is not imported during refresh; see myra_ssl_certificate_key for pair management rules.",
 			},
 			"myra_ssl_certificate_key": {
-				Type:     schema.TypeSet,
-				Required: false,
-				Optional: true,
+				Sensitive: true,
+				Type:      schema.TypeSet,
+				Required:  false,
+				Optional:  true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The private key for the SSL Certificate",
+				Description: "Private keys are not read back from the API. Configured keys are stored in Terraform state. Removing a managed certificate/key pair restores inheritance; [] creates an empty override. Remote key drift cannot be detected.",
 			},
 			"myra_ssl_header": {
 				Type:        schema.TypeBool,
@@ -476,6 +478,8 @@ func resourceMyrasecSettings() *schema.Resource {
 		},
 		CustomizeDiff: resourceCustomizeDiffSettings,
 	}
+	r.StateUpgraders = certificatePairStateUpgraders(r)
+	return r
 }
 
 // resourceCustomizeDiffSettings
@@ -507,6 +511,10 @@ func resourceCustomizeDiffSettings(ctx context.Context, d *schema.ResourceDiff, 
 }
 
 func isNullValue(t *schema.Schema, d *schema.ResourceDiff, name string) bool {
+	// Empty certificate/key overrides are managed values and must remain in state metadata.
+	if name == settingsCertificate || name == settingsPrivateKey {
+		return d.GetRawConfig().GetAttr(name).IsNull()
+	}
 	isNullValue := false
 	switch t.Type {
 	case schema.TypeBool:
@@ -709,6 +717,10 @@ func buildSettings(d *schema.ResourceData, clean bool) (map[string]any, error) {
 		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
+		// Preserve an unmanaged certificate/key pair together.
+		if (name == settingsPrivateKey || name == settingsCertificate) && certificatePairUnmanaged(d, clean) {
+			continue
+		}
 		value, ok := d.GetOk(name)
 		if !clean {
 			ok = !d.GetRawConfig().GetAttr(name).IsNull()
@@ -790,14 +802,15 @@ func hostHeaderValue(d *schema.ResourceData, clean bool) any {
 
 // setSettingsData ...
 func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName string, domainID int) {
+	trackCertificate := certificatePairInState(d)
 	d.Set("subdomain_name", subDomainName)
 	d.Set("domain_id", domainID)
 
 	resource := resourceMyrasecSettings().Schema
 
-	// reset attributes befor setting them
+	// Reset attributes before setting them, retaining the configured private key.
 	for name := range resource {
-		if name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
+		if name == settingsPrivateKey || name == "domain_id" || name == "subdomain_name" || name == "available_attributes" {
 			continue
 		}
 		d.Set(name, nil)
@@ -806,10 +819,13 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 	allSettings, _ := settingsData.(*map[string]any)
 	domainSettings := (*allSettings)["domain"]
 
-	availableAttributes := []string{}
+	availableAttributes := privateKeyAvailableAttributes(d)
 	mapSettings, ok := domainSettings.(map[string]any)
 	if ok {
 		for k, v := range mapSettings {
+			if k == settingsPrivateKey || (k == settingsCertificate && !trackCertificate) {
+				continue
+			}
 			if k == "proxy_host_header" && mapSettings["host_header"] == nil {
 				k = "host_header"
 			}
@@ -817,9 +833,12 @@ func setSettingsData(d *schema.ResourceData, settingsData any, subDomainName str
 				continue
 			}
 			if err := d.Set(k, v); err != nil {
-				log.Printf("[WARN] Ignoring setting %s with value %v from the API: %v", k, v, err)
+				log.Printf("[WARN] Ignoring setting %s from the API: %v", k, err)
 			}
 			doAppend := appendAvailableAttributes(v, k, resource)
+			if k == settingsCertificate && d.Get(k).(*schema.Set).Len() == 0 {
+				doAppend = d.Get("available_attributes").(*schema.Set).Contains(settingsCertificate)
+			}
 			if doAppend {
 				availableAttributes = append(availableAttributes, k)
 			}
