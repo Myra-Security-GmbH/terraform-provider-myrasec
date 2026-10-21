@@ -414,6 +414,115 @@ func TestSettingsCertificatePairPlanApplyRefresh(t *testing.T) {
 			if value, present := payload[settingsPrivateKey]; !present || value != nil {
 				t.Fatalf("removing the only empty override must send null, got %#v", payload)
 			}
+			// A single empty override is enough to own the pair on destroy.
+			for _, name := range []string{settingsCertificate, settingsPrivateKey} {
+				config[name] = []any{}
+				runApply()
+				converges()
+				destroy()
+				for _, member := range []string{settingsPrivateKey, settingsCertificate} {
+					if value, present := payload[member]; !present || value != nil {
+						t.Fatalf("destroy with only %s = [] must reset %s, got %#v", name, member, payload)
+					}
+				}
+				delete(config, name)
+				runApply()
+				converges()
+			}
+		})
+	}
+}
+
+func TestSettingsCertificatePairStateUpgrade(t *testing.T) {
+	variants := []struct {
+		name     string
+		resource *schema.Resource
+		base     map[string]any
+		refresh  func(*schema.ResourceData, map[string]any)
+	}{
+		{"subdomain", resourceMyrasecSettings(), map[string]any{"subdomain_name": "www.example.test"}, func(d *schema.ResourceData, v map[string]any) {
+			response := map[string]any{"domain": v}
+			setSettingsData(d, &response, "www.example.test", 1)
+		}},
+		{"tag", resourceMyrasecTagSettings(), map[string]any{"tag_id": 1}, func(d *schema.ResourceData, v map[string]any) {
+			response := map[string]any{"settings": v}
+			setTagSettingsData(d, &response, 1)
+		}},
+	}
+	for _, v := range variants {
+		t.Run(v.name, func(t *testing.T) {
+			r := v.resource
+			ctx := context.Background()
+			if r.SchemaVersion != 1 || len(r.StateUpgraders) != 1 || r.StateUpgraders[0].Version != 0 {
+				t.Fatal("version 0 states must be upgraded")
+			}
+			upgrade := func(certificate, key []any) *terraform.InstanceState {
+				t.Helper()
+				// Version 0 refreshes listed the empty sets the API returns for an unset pair.
+				raw := map[string]any{
+					"id":                   "1",
+					"only_https":           true,
+					settingsCertificate:    certificate,
+					settingsPrivateKey:     key,
+					"available_attributes": []any{"only_https", settingsCertificate, settingsPrivateKey},
+				}
+				for name, value := range v.base {
+					raw[name] = value
+				}
+				upgraded, err := r.StateUpgraders[0].Upgrade(ctx, raw, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				stateBytes, _ := json.Marshal(upgraded)
+				value, err := ctyjson.Unmarshal(stateBytes, r.CoreConfigSchema().ImpliedType())
+				if err != nil {
+					t.Fatal(err)
+				}
+				return terraform.NewInstanceStateShimmedFromValue(value, 1)
+			}
+
+			d := r.Data(upgrade([]any{}, []any{}))
+			if attributes := d.Get("available_attributes").(*schema.Set).List(); !reflect.DeepEqual(attributes, []any{"only_https"}) {
+				t.Fatalf("upgrade kept empty pair members: %#v", attributes)
+			}
+			v.refresh(d, map[string]any{
+				settingsCertificate: []any{"DASHBOARD_CERT"},
+				settingsPrivateKey:  []any{redactedPrivateKey},
+				"only_https":        true,
+			})
+			if d.Get(settingsCertificate).(*schema.Set).Len() != 0 || certificatePairInState(d) {
+				t.Fatal("refresh after upgrade imported an unmanaged pair")
+			}
+
+			// A configured [] override is planned back into available_attributes.
+			state := d.State()
+			config := map[string]any{"only_https": true, settingsCertificate: []any{}}
+			for name, value := range v.base {
+				config[name] = value
+			}
+			rawBytes, _ := json.Marshal(config)
+			var rawConfig ctyjson.SimpleJSONValue
+			if err := rawConfig.UnmarshalJSON(rawBytes); err != nil {
+				t.Fatal(err)
+			}
+			if state.RawConfig, _ = r.CoreConfigSchema().CoerceValue(rawConfig.Value); state.RawConfig.IsNull() {
+				t.Fatal("config fixture did not coerce")
+			}
+			diff, err := r.Diff(ctx, state, terraform.NewResourceConfigRaw(config), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff == nil || diff.Attributes["available_attributes.#"] == nil || diff.Attributes["available_attributes.#"].New != "2" {
+				t.Fatalf("plan must restore the empty certificate override, got %#v", diff)
+			}
+
+			// Non-empty members keep their ownership marker.
+			d = r.Data(upgrade([]any{"MANAGED_CERT"}, []any{"MANAGED_KEY"}))
+			for _, name := range []string{settingsCertificate, settingsPrivateKey} {
+				if !d.Get("available_attributes").(*schema.Set).Contains(name) {
+					t.Fatalf("upgrade dropped managed %s", name)
+				}
+			}
 		})
 	}
 }

@@ -24,7 +24,8 @@ var proxyReadTimeoutValues = []int{1, 2, 5, 10, 15, 30, 45, 60, 120, 180, 300, 6
 
 // resourceMyrasecSettings ...
 func resourceMyrasecSettings() *schema.Resource {
-	return &schema.Resource{
+	r := &schema.Resource{
+		SchemaVersion: 1,
 		CreateContext: resourceMyrasecSettingsCreate,
 		ReadContext:   resourceMyrasecSettingsRead,
 		UpdateContext: resourceMyrasecSettingsUpdate,
@@ -477,6 +478,8 @@ func resourceMyrasecSettings() *schema.Resource {
 		},
 		CustomizeDiff: resourceCustomizeDiffSettings,
 	}
+	r.StateUpgraders = certificatePairStateUpgraders(r)
+	return r
 }
 
 // resourceCustomizeDiffSettings

@@ -15,7 +15,8 @@ import (
 
 // resourceMyrasecTagSettings
 func resourceMyrasecTagSettings() *schema.Resource {
-	return &schema.Resource{
+	r := &schema.Resource{
+		SchemaVersion: 1,
 		CreateContext: resourceMyrasecTagSettingsCreate,
 		ReadContext:   resourceMyrasecTagSettingsRead,
 		UpdateContext: resourceMyrasecTagSettingsUpdate,
@@ -443,6 +444,8 @@ func resourceMyrasecTagSettings() *schema.Resource {
 		},
 		CustomizeDiff: resourceCustomizeDiffTagSettings,
 	}
+	r.StateUpgraders = certificatePairStateUpgraders(r)
+	return r
 }
 
 // resourceCustomizeDiffTagSettings
