@@ -2,7 +2,6 @@ package myrasec
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -12,30 +11,9 @@ import (
 // loaded: a tag that no longer exists drops the rule from the state, every other error keeps
 // the state and fails the run.
 func TestTagWAFRuleReadErrorPreservesState(t *testing.T) {
-	for _, tc := range []struct {
-		name    string
-		status  int
-		message string
-		removed bool
-	}{
-		{name: "tag deleted", status: http.StatusForbidden, message: "The entity does not exist.", removed: true},
-		{name: "tag not found", status: http.StatusNotFound, message: "not found", removed: true},
-		{name: "forbidden with a message", status: http.StatusForbidden, message: "read denied"},
-		{name: "forbidden without body", status: http.StatusForbidden},
-		{name: "server error", status: http.StatusInternalServerError, message: "server error"},
-	} {
+	for _, tc := range readErrorCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				if r.URL.Path != "/tags/1" {
-					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
-				}
-				w.WriteHeader(tc.status)
-				if tc.message == "" {
-					return
-				}
-				_ = json.NewEncoder(w).Encode(map[string]any{"error": true, "violationList": []any{map[string]string{"message": tc.message}}})
-			}))
+			client := domainTestClient(t, apiErrorHandler(t, http.MethodGet, "/tags/1", tc.status, tc.message))
 			d := resourceMyrasecTagWAFRule().TestResourceData()
 			d.SetId("1")
 			for k, v := range map[string]any{"tag_id": 1, "name": "block", "direction": "in"} {
@@ -50,11 +28,7 @@ func TestTagWAFRuleReadErrorPreservesState(t *testing.T) {
 				}
 				return
 			}
-			want := tc.message
-			if want == "" {
-				want = http.StatusText(tc.status)
-			}
-			if !diags.HasError() || !strings.Contains(diags[0].Detail, want) {
+			if !diags.HasError() || !strings.Contains(diags[0].Detail, wantErrorDetail(tc.status, tc.message)) {
 				t.Fatalf("API error was lost: %v", diags)
 			}
 			if d.Id() != "1" || d.Get("name") != "block" {

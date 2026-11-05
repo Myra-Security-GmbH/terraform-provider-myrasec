@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
@@ -109,6 +110,37 @@ func TestDNSRecordAliasesComputedOnRename(t *testing.T) {
 
 			if !tt.wantComputed && diff != nil && len(diff.Attributes) > 0 {
 				t.Errorf("expected no diff, got %v", diff.Attributes)
+			}
+		})
+	}
+}
+
+// TestDNSRecordReadErrorPreservesState pins the read behaviour on API errors: a record that no
+// longer exists is dropped from the state, every other error keeps the state and fails the run
+// instead of planning a recreation.
+func TestDNSRecordReadErrorPreservesState(t *testing.T) {
+	for _, tc := range readErrorCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := domainTestClient(t, apiErrorHandler(t, http.MethodGet, "/domain/1/dns-records/1", tc.status, tc.message))
+			d := resourceMyrasecDNSRecord().TestResourceData()
+			d.SetId("1")
+			for k, v := range map[string]any{"domain_name": "example.com", "domain_id": 1, "name": "www", "value": "192.0.2.1", "ttl": 300, "record_type": "A"} {
+				if err := d.Set(k, v); err != nil {
+					t.Fatal(err)
+				}
+			}
+			diags := resourceMyrasecDNSRecordRead(context.Background(), d, client)
+			if tc.removed {
+				if diags.HasError() || d.Id() != "" {
+					t.Fatalf("missing record was not dropped: id=%q diags=%v", d.Id(), diags)
+				}
+				return
+			}
+			if !diags.HasError() || !strings.Contains(diags[0].Detail, wantErrorDetail(tc.status, tc.message)) {
+				t.Fatalf("API error was lost: %v", diags)
+			}
+			if d.Id() != "1" || d.Get("value") != "192.0.2.1" {
+				t.Errorf("state was cleared after the API error: id=%q value=%q", d.Id(), d.Get("value"))
 			}
 		})
 	}

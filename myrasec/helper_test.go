@@ -3,6 +3,7 @@ package myrasec
 import (
 	"context"
 	"errors"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -63,6 +64,57 @@ func TestListPagesStopsWhenPageIsIgnoredWithoutIDs(t *testing.T) {
 	if len(got) != listPageSize {
 		t.Errorf("got %d rows, want %d", len(got), listPageSize)
 	}
+}
+
+// apiErrorCase is an API answer a test server gives: the status, the violation message (empty
+// for an empty body) and whether a read drops the resource from the state on it.
+type apiErrorCase struct {
+	name    string
+	status  int
+	message string
+	removed bool
+}
+
+// readErrorCases are the API answers every read has to handle: a vanished object drops the
+// resource from the state, every other error keeps the state and fails the run.
+var readErrorCases = []apiErrorCase{
+	{name: "deleted", status: http.StatusForbidden, message: "The entity does not exist.", removed: true},
+	{name: "HTTP not found", status: http.StatusNotFound, message: "not found", removed: true},
+	{name: "forbidden with a message", status: http.StatusForbidden, message: "read denied"},
+	{name: "forbidden without body", status: http.StatusForbidden},
+	{name: "server error", status: http.StatusInternalServerError, message: "server error"},
+}
+
+// updateErrorCases are API answers to a write that the resource has to report.
+var updateErrorCases = []apiErrorCase{
+	{name: "forbidden", status: http.StatusForbidden, message: "update denied"},
+	{name: "server error", status: http.StatusInternalServerError, message: "server error"},
+}
+
+// apiErrorHandler answers the request on method and path with status and, unless message is
+// empty, the violation JSON of the API. The API denies access with an empty body, an empty
+// message models that. Any other request fails the test.
+func apiErrorHandler(t *testing.T, method, path string, status int, message string) http.Handler {
+	t.Helper()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != method || r.URL.Path != path {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		if message == "" {
+			w.WriteHeader(status)
+			return
+		}
+		accessError(w, status, message)
+	})
+}
+
+// wantErrorDetail is the text the diagnostics or the error must carry for an API answer: the
+// violation message or the status text when the body was empty.
+func wantErrorDetail(status int, message string) string {
+	if message == "" {
+		return http.StatusText(status)
+	}
+	return message
 }
 
 // TestListPagesStopsWhenPageRepeatsInAnotherOrder covers an endpoint whose second page holds

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -33,27 +34,10 @@ func ipFilterResourceData(t *testing.T) *schema.ResourceData {
 // no longer exists is dropped from the state, every other error keeps the state and fails
 // the run instead of planning a recreation.
 func TestIPFilterReadErrorPreservesState(t *testing.T) {
-	for _, tc := range []struct {
-		name    string
-		status  int
-		message string
-		removed bool
-	}{
-		{name: "deleted", status: http.StatusForbidden, message: "The entity does not exist.", removed: true},
-		{name: "HTTP not found", status: http.StatusNotFound, message: "not found", removed: true},
-		{name: "permission denied", status: http.StatusForbidden, message: "read denied"},
-		{name: "server error", status: http.StatusInternalServerError, message: "server error"},
-		{name: "unavailable", status: http.StatusServiceUnavailable, message: "try again later"},
-	} {
+	cases := append(slices.Clone(readErrorCases), apiErrorCase{name: "unavailable", status: http.StatusServiceUnavailable, message: "try again later"})
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				if r.URL.Path != "/domain/1/ip-filters/ALL-1/1" {
-					t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
-				}
-				w.WriteHeader(tc.status)
-				_ = json.NewEncoder(w).Encode(map[string]any{"error": true, "violationList": []any{map[string]string{"message": tc.message}}})
-			}))
+			client := domainTestClient(t, apiErrorHandler(t, http.MethodGet, "/domain/1/ip-filters/ALL-1/1", tc.status, tc.message))
 			d := ipFilterResourceData(t)
 			diags := resourceMyrasecIPFilterRead(context.Background(), d, client)
 			if tc.removed {
@@ -62,7 +46,7 @@ func TestIPFilterReadErrorPreservesState(t *testing.T) {
 				}
 				return
 			}
-			if !diags.HasError() || !strings.Contains(diags[0].Detail, tc.message) {
+			if !diags.HasError() || !strings.Contains(diags[0].Detail, wantErrorDetail(tc.status, tc.message)) {
 				t.Fatalf("API error was lost: %v", diags)
 			}
 			if d.Id() != "1" || d.Get("value") != "192.0.2.1" {

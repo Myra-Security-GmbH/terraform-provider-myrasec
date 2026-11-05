@@ -480,3 +480,28 @@ func TestDomainAutoDNS(t *testing.T) {
 		t.Error("auto_dns was suppressed for a new domain")
 	}
 }
+
+// TestDomainImportReportsError pins the importer by ID: a domain the API does not know is
+// reported as missing, every other API error is passed on as it is. The importer has no
+// name to confirm a 403 through the listing, so a 403 is passed on as well.
+func TestDomainImportReportsError(t *testing.T) {
+	for _, tc := range readErrorCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := domainTestClient(t, apiErrorHandler(t, http.MethodGet, "/domains/1", tc.status, tc.message))
+			r := resourceMyrasecDomain()
+			d := r.TestResourceData()
+			d.SetId("1")
+			imported, err := r.Importer.StateContext(context.Background(), d, client)
+			if err == nil || imported != nil {
+				t.Fatalf("import did not fail: %v", imported)
+			}
+			want := wantErrorDetail(tc.status, tc.message)
+			if tc.status == http.StatusNotFound {
+				want = "unable to find domain with ID = [1]"
+			}
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("import error %q does not name %q", err, want)
+			}
+		})
+	}
+}
