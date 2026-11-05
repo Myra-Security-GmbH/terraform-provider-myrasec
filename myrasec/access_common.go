@@ -3,7 +3,6 @@ package myrasec
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
@@ -11,39 +10,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const accessPageSize = 250
-
-// Some permission endpoints return the complete collection regardless of page.
-// Stop when no new IDs arrive, so those endpoints cannot cause an endless loop.
+// listAccessPages collects every page of a permission endpoint, see forEachPage. Access
+// records always carry an ID, a record without one is an error.
 func listAccessPages[T any](ctx context.Context, params map[string]string, fetch func(context.Context, map[string]string) ([]T, error), id func(T) int) ([]T, error) {
-	result := make([]T, 0)
-	seen := make(map[int]bool)
-	params["pageSize"] = strconv.Itoa(accessPageSize)
-	for page := 1; ; page++ {
+	rows, err := listPages(params, id, func(params map[string]string) ([]T, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		params["page"] = strconv.Itoa(page)
 		rows, err := fetch(ctx, params)
 		if err != nil {
 			return nil, err
 		}
-		added := 0
 		for _, row := range rows {
-			key := id(row)
-			if key <= 0 {
+			if id(row) <= 0 {
 				return nil, fmt.Errorf("API returned an access record without a positive ID")
 			}
-			if !seen[key] {
-				result = append(result, row)
-				seen[key] = true
-				added++
-			}
 		}
-		if len(rows) < accessPageSize || added == 0 {
-			return result, nil
-		}
+		return rows, nil
+	})
+	if err != nil {
+		return nil, err
 	}
+	if rows == nil {
+		rows = make([]T, 0)
+	}
+	return rows, nil
 }
 
 func accessIDSchema(description string, forceNew bool) *schema.Schema {

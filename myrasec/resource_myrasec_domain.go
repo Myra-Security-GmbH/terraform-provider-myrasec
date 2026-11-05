@@ -56,6 +56,20 @@ func resourceMyrasecDomain() *schema.Resource {
 				Default:     true,
 				Description: "Auto update flag for the domain.",
 			},
+			"auto_dns": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
+					return d.Id() != ""
+				},
+				Description: "Scan and import the existing DNS records of the domain when it is created. The result may be incomplete depending on the DNS provider. Only used on create, a later change has no effect.",
+			},
+			"reversed": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether the domain is reversed.",
+			},
 			"verified": {
 				Type:        schema.TypeBool,
 				Computed:    true,
@@ -105,6 +119,8 @@ func resourceMyrasecDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		})
 		return diags
 	}
+
+	domain.AutoDNS = d.Get("auto_dns").(bool)
 
 	// REMOVEME
 	// NOTE: This is a temporary "fix"
@@ -344,25 +360,11 @@ func findDomain(ctx context.Context, domainID int, domainName string, meta any) 
 
 // Search can return multiple domains, so check every page for the stored ID.
 func domainIsListed(ctx context.Context, client *myrasec.API, domainID int, domainName string) (bool, error) {
-	const pageSize = 100
-	for page := 1; ; page++ {
-		domains, err := client.ListDomainsContext(ctx, map[string]string{
-			"search":   domainName,
-			"page":     strconv.Itoa(page),
-			"pageSize": strconv.Itoa(pageSize),
-		})
-		if err != nil {
-			return false, err
-		}
-		for _, domain := range domains {
-			if domain.ID == domainID {
-				return true, nil
-			}
-		}
-		if len(domains) < pageSize {
-			return false, nil
-		}
-	}
+	found, err := findInPages(map[string]string{"search": domainName}, func(row myrasec.Domain) int { return row.ID }, func(params map[string]string) ([]myrasec.Domain, error) {
+		return client.ListDomainsContext(ctx, params)
+	}, func(row myrasec.Domain) bool { return row.ID == domainID })
+
+	return found != nil, err
 }
 
 func domainVerificationDiagnostics(domain *myrasec.Domain) diag.Diagnostics {
@@ -382,6 +384,7 @@ func setDomainData(d *schema.ResourceData, domain *myrasec.Domain) {
 	d.Set("domain_id", domain.ID)
 	d.Set("name", domain.Name)
 	d.Set("auto_update", domain.AutoUpdate)
+	d.Set("reversed", domain.Reversed)
 	d.Set("verified", !domain.IsPendingVerification())
 	d.Set("created", domain.Created.Format(time.RFC3339))
 	d.Set("modified", domain.Modified.Format(time.RFC3339))

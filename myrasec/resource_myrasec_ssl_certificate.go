@@ -307,8 +307,12 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	cert, diags := findSSLCertificate(certID, meta, domainID)
-	if diags.HasError() || cert == nil {
+	if diags.HasError() {
 		return diags
+	}
+	if cert == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setSSLCertificateData(d, cert, domainName, domainID)
@@ -465,11 +469,14 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 
 	domainID, diags := findDomainIDByDomainName(d, meta, domainName)
 	if diags.HasError() {
-		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
+		return nil, diagnosticsError(diags)
 	}
 
 	cert, diags := findSSLCertificate(certID, meta, domainID)
-	if diags.HasError() || cert == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if cert == nil {
 		return nil, fmt.Errorf("unable to find SSL certificate for domain [%s] with ID = [%d]", domainName, certID)
 	}
 	if cert.Managed {
@@ -480,8 +487,7 @@ func resourceMyrasecSSLCertificateImport(ctx context.Context, d *schema.Resource
 	d.Set("certificate_id", cert.ID)
 	d.Set("domain_name", domainName)
 
-	resourceMyrasecSSLCertificateRead(ctx, d, meta)
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecSSLCertificateRead)
 }
 
 // buildSSLCertificate ...
@@ -607,8 +613,8 @@ func setSSLCertificateData(d *schema.ResourceData, cert *myrasec.SSLCertificate,
 	d.Set("modified", cert.Modified.Format(time.RFC3339))
 	d.Set("subject", cert.Subject)
 	d.Set("algorithm", cert.Algorithm)
-	d.Set("valid_from", cert.ValidFrom.Format(time.RFC3339))
-	d.Set("valid_to", cert.ValidTo.Format(time.RFC3339))
+	d.Set("valid_from", formatDateTime(cert.ValidFrom))
+	d.Set("valid_to", formatDateTime(cert.ValidTo))
 	d.Set("fingerprint", cert.Fingerprint)
 	d.Set("serial_number", cert.SerialNumber)
 	d.Set("subject_alternatives", cert.SubjectAlternatives)

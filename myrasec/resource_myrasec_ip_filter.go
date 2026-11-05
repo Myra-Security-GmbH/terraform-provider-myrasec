@@ -75,9 +75,10 @@ func resourceMyrasecIPFilter() *schema.Resource {
 				Description: "The IP you want to whitelist or blacklist. By using CIDR notation on IPv4 IPs, you are able to define whole subnets.",
 			},
 			"expire_date": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Expire date schedules the deaktivation of the filter. If none is set, the filter will be active until manual deactivation.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressEquivalentDateTime,
+				Description:      "Expire date schedules the deactivation of the filter. If none is set, the filter will be active until manual deactivation.",
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
@@ -165,6 +166,10 @@ func resourceMyrasecIPFilterRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	filter, diags := findIPFilter(filterID, meta, subDomainName, domainID)
+	if diags.HasError() {
+		return diags
+	}
+
 	if filter == nil {
 		d.SetId("")
 		return nil
@@ -277,12 +282,18 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
-	if diags != nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
 	}
 
 	filter, diags := findIPFilter(filterID, meta, subDomainName, domain.ID)
-	if diags.HasError() || filter == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if filter == nil {
 		return nil, fmt.Errorf("unable to find IP filter for subdomain [%s] with ID = [%d]", subDomainName, filterID)
 	}
 
@@ -290,9 +301,7 @@ func resourceMyrasecIPFilterImport(ctx context.Context, d *schema.ResourceData, 
 	d.Set("filter_id", filter.ID)
 	d.Set("subdomain_name", subDomainName)
 
-	resourceMyrasecIPFilterRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecIPFilterRead)
 }
 
 // buildIPFilter ...
@@ -342,12 +351,7 @@ func findIPFilter(filterID int, meta any, subDomainName string, domainId int) (*
 
 	f, err := client.GetIPFilter(domainId, subDomainName, filterID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Error loading IP filter",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("IP filter", filterID, err)
 	}
 
 	if f != nil {
@@ -375,9 +379,7 @@ func setIPFilterData(d *schema.ResourceData, filter *myrasec.IPFilter, domainId 
 	d.Set("subdomain_name", filter.SubDomainName)
 	d.Set("domain_id", domainId)
 
-	if filter.ExpireDate != nil {
-		d.Set("expire_date", filter.ExpireDate.Format(time.RFC3339))
-	}
+	d.Set("expire_date", formatDateTime(filter.ExpireDate))
 }
 
 // importExistingIPFilter ...

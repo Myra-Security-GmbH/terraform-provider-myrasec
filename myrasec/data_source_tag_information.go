@@ -177,30 +177,19 @@ func parseTagInformationFilter(d any) *tagInformationFilter {
 // listTagInformation ...
 func listTagInformation(tagId int, meta any, params map[string]string) ([]myrasec.TagInformation, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var information []myrasec.TagInformation
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListTagInformation(tagId, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching tag information",
-				Detail:   formatError(err),
-			})
-			return information, diags
-		}
-		information = append(information, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	information, err := listPages(params, func(row myrasec.TagInformation) int { return row.ID }, func(params map[string]string) ([]myrasec.TagInformation, error) {
+		return client.ListTagInformation(tagId, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching tag information",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return information, diags

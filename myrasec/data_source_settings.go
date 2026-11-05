@@ -69,6 +69,30 @@ func dataSourceMyrasecSettings() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"bot_block_ai_category": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"bot_calc_fingerprint": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"bot_customer_regex_0": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"bot_customer_regex_1": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"bot_customer_regex_2": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"bot_external_session_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"cache_enabled": {
 							Type:     schema.TypeBool,
 							Computed: true,
@@ -331,6 +355,12 @@ func dataSourceMyrasecSettingsRead(ctx context.Context, d *schema.ResourceData, 
 		"balancing_method":                settings.BalancingMethod,
 		"block_not_whitelisted":           settings.BlockNotWhitelisted,
 		"block_tor_network":               settings.BlockTorNetwork,
+		"bot_block_ai_category":           settings.BotBlockAICategory,
+		"bot_calc_fingerprint":            settings.BotCalcFingerprint,
+		"bot_customer_regex_0":            settings.BotCustomerRegex0,
+		"bot_customer_regex_1":            settings.BotCustomerRegex1,
+		"bot_customer_regex_2":            settings.BotCustomerRegex2,
+		"bot_external_session_id":         settings.BotExternalSessionID,
 		"cache_enabled":                   settings.CacheEnabled,
 		"cache_revalidate":                settings.CacheRevalidate,
 		"cdn":                             settings.CDN,

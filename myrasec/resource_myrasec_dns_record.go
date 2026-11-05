@@ -577,11 +577,14 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 
 	domainID, diags := findDomainIDByDomainName(d, meta, domainName)
 	if diags.HasError() {
-		return nil, fmt.Errorf("unable to find domainID by domainName: [%s]", domainName)
+		return nil, diagnosticsError(diags)
 	}
 
 	record, diags := findDNSRecord(recordID, meta, domainID)
-	if diags.HasError() || record == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if record == nil {
 		return nil, fmt.Errorf("unable to find DNS record for domain [%s] with ID = [%d]", domainName, recordID)
 	}
 
@@ -589,9 +592,7 @@ func resourceMyrasecDNSRecordImport(ctx context.Context, d *schema.ResourceData,
 	d.Set("record_id", record.ID)
 	d.Set("domain_name", domainName)
 
-	resourceMyrasecDNSRecordRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecDNSRecordRead)
 }
 
 // buildDNSRecord ...
@@ -697,12 +698,7 @@ func findDNSRecord(recordID int, meta any, domainID int) (*myrasec.DNSRecord, di
 
 	r, err := client.GetDNSRecord(domainID, recordID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Error loading DNS record",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("DNS record", recordID, err)
 	}
 	if r != nil {
 		return r, diags

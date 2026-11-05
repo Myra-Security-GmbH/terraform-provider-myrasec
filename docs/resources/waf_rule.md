@@ -46,8 +46,9 @@ The following arguments are supported:
 * `direction` (**Required**) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` (Optional) Your notes on this rule. Default `""`.
 * `log_identifier` (Optional) A comment to identify the matching rule in the access log. Default `""`.
-* `expire_date` (Optional) Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.
+* `expire_date` (Optional) Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation. The value is compared as a point in time, so the same instant written with another time zone offset causes no diff. An unset date is read back as an empty string.
 * `sort` (Optional) The order in which the rules take action. Default `1`. Sort has to be unique to the WAF rule, two rules for same ```subdomain_name``` cannot share the same `sort` value
+* `sync` (Optional) Whether the rule is synchronized to the edge nodes. Default `false`.
 * `process_next` (Optional) After a rule has been applied, the rule chain will be executed as determined. Default `false`.
 * `enabled` Define wether this rule is enabled or not. (Optional) Default `true`.
 * `conditions` (Optional) All conditions of a rule have to be true for a rule to be executed. See below for argument reference.

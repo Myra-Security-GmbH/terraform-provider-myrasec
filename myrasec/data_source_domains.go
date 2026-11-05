@@ -196,30 +196,17 @@ func parseDomainFilter(d any) *domainFilter {
 // listDomains ...
 func listDomains(meta any, params map[string]string) ([]myrasec.Domain, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var domains []myrasec.Domain
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListDomains(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching domains",
-				Detail:   formatError(err),
-			})
-			return domains, diags
-		}
-		domains = append(domains, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	domains, err := listPages(params, func(row myrasec.Domain) int { return row.ID }, client.ListDomains)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching domains",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return domains, diags

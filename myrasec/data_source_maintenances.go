@@ -155,8 +155,6 @@ func parseMaintenanceFilter(d any) *maintenanceFilter {
 // listMaintenances ...
 func listMaintenances(meta any, subdomainName string, params map[string]string) ([]myrasec.Maintenance, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var maintenances []myrasec.Maintenance
-	pageSize := 100
 
 	client := meta.(*myrasec.API)
 	domain, err := client.FetchDomain(subdomainName)
@@ -166,28 +164,19 @@ func listMaintenances(meta any, subdomainName string, params map[string]string) 
 			Summary:  "Error fetching domain for given domain name",
 			Detail:   formatError(err),
 		})
-		return maintenances, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenances(domain.ID, subdomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching maintenances",
-				Detail:   formatError(err),
-			})
-			return maintenances, diags
-		}
-		maintenances = append(maintenances, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	maintenances, err := listPages(params, func(row myrasec.Maintenance) int { return row.ID }, func(params map[string]string) ([]myrasec.Maintenance, error) {
+		return client.ListMaintenances(domain.ID, subdomainName, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching maintenances",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return maintenances, diags

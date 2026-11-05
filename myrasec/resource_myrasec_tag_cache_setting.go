@@ -167,8 +167,12 @@ func resourceMyrasecTagCacheSettingRead(ctx context.Context, d *schema.ResourceD
 	}
 
 	setting, diags := findTagCacheSetting(settingID, tagID.(int), meta)
-	if diags.HasError() || setting == nil {
+	if diags.HasError() {
 		return diags
+	}
+	if setting == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setTagCacheSettingData(d, setting, tagID.(int))
@@ -281,9 +285,7 @@ func resourceMyrasecTagCacheSettingImport(ctx context.Context, d *schema.Resourc
 
 	d.SetId(strconv.Itoa(settingID))
 	d.Set("tag_id", tagID)
-	resourceMyrasecTagCacheSettingRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecTagCacheSettingRead)
 }
 
 // findTagCacheSetting
@@ -292,35 +294,22 @@ func findTagCacheSetting(settingID int, tagID int, meta any) (*myrasec.CacheSett
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.CacheSetting) int { return row.ID }, func(params map[string]string) ([]myrasec.CacheSetting, error) {
+		return client.ListTagCacheSettings(tagID, params)
+	}, func(row myrasec.CacheSetting) bool { return row.ID == settingID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading tag cache settings",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-
-		res, err := client.ListTagCacheSettings(tagID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading tag cache settings",
-				Detail:   formatError(err),
-			})
-		}
-
-		for _, s := range res {
-			if s.ID == settingID {
-				return &s, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
@@ -339,7 +328,7 @@ func setTagCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSettin
 	d.Set("tag_id", tagID)
 	d.Set("created", setting.Created.Format(time.RFC3339))
 	d.Set("modified", setting.Modified.Format(time.RFC3339))
-	d.Set("enabled", setting.Enabled)
+	d.Set("enabled", setting.Enabled != nil && *setting.Enabled)
 	d.Set("enforce", setting.Enforce)
 	d.Set("comment", setting.Comment)
 	d.Set("not_found_ttl", setting.NotFoundTTL)

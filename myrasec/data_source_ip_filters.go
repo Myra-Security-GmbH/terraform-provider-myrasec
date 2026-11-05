@@ -174,8 +174,6 @@ func parseIPFilterFilter(d any) *ipFilterFilter {
 // listIPFilters ...
 func listIPFilters(meta any, subDomainName string, params map[string]string) ([]myrasec.IPFilter, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var filters []myrasec.IPFilter
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -186,28 +184,19 @@ func listIPFilters(meta any, subDomainName string, params map[string]string) ([]
 			Summary:  "Error fetching domain for given subdomain name",
 			Detail:   formatError(err),
 		})
-		return filters, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListIPFilters(domain.ID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching IP filters",
-				Detail:   formatError(err),
-			})
-			return filters, diags
-		}
-		filters = append(filters, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	filters, err := listPages(params, func(row myrasec.IPFilter) int { return row.ID }, func(params map[string]string) ([]myrasec.IPFilter, error) {
+		return client.ListIPFilters(domain.ID, subDomainName, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching IP filters",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return filters, diags

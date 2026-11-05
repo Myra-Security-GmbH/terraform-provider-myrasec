@@ -271,7 +271,6 @@ func dataSourceMyrasecWAFRulesRead(ctx context.Context, d *schema.ResourceData, 
 func listWAFRules(meta any, subDomainName string, params map[string]string) ([]myrasec.WAFRule, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	var rules []myrasec.WAFRule
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -285,30 +284,19 @@ func listWAFRules(meta any, subDomainName string, params map[string]string) ([]m
 		return rules, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWAFRules(domain.ID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching WAF rules",
-				Detail:   formatError(err),
-			})
-			return rules, diags
-		}
-		rules = append(rules, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	rules, err = listPages(params, func(row myrasec.WAFRule) int { return row.ID }, func(params map[string]string) ([]myrasec.WAFRule, error) {
+		return client.ListWAFRules(domain.ID, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching WAF rules",
+			Detail:   formatError(err),
+		})
+		return rules, diags
 	}
 
 	return rules, diags
-
 }
 
 // prepareWAFRuleFilter ...

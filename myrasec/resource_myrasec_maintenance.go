@@ -58,16 +58,11 @@ func resourceMyrasecMaintenance() *schema.Resource {
 				Description: "Date of creation.",
 			},
 			"start": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Start Date for the maintenance.",
-				ValidateFunc: validation.IsRFC3339Time,
-				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-					oldDate, _ := types.ParseDate(oldValue)
-					newDate, _ := types.ParseDate(newValue)
-
-					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
-				},
+				Type:             schema.TypeString,
+				Required:         true,
+				Description:      "Start Date for the maintenance.",
+				ValidateFunc:     validation.IsRFC3339Time,
+				DiffSuppressFunc: suppressEquivalentDateTime,
 			},
 			"end": {
 				Type:        schema.TypeString,
@@ -87,12 +82,7 @@ func resourceMyrasecMaintenance() *schema.Resource {
 
 					return warn, errors
 				},
-				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
-					oldDate, _ := types.ParseDate(oldValue)
-					newDate, _ := types.ParseDate(newValue)
-
-					return oldDate != nil && newDate != nil && oldDate.Equal(newDate.Time)
-				},
+				DiffSuppressFunc: suppressEquivalentDateTime,
 			},
 			"content": {
 				Type:         schema.TypeString,
@@ -324,11 +314,17 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
 	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
 	maintenance, diags := findMaintenance(maintenanceID, meta, subDomainName, domain.ID)
-	if diags.HasError() || maintenance == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if maintenance == nil {
 		return nil, fmt.Errorf("unable to find maintenance for subdomain [%s] with ID = [%d]", subDomainName, maintenanceID)
 	}
 
@@ -340,9 +336,7 @@ func resourceMyrasecMaintenanceImport(ctx context.Context, d *schema.ResourceDat
 	d.Set("content_hash", createContentHash(maintenance.Content))
 	d.Set("subdomain_name", maintenance.FQDN)
 
-	resourceMyrasecMaintenanceRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecMaintenanceRead)
 }
 
 // buildMaintenance
@@ -394,35 +388,22 @@ func findMaintenance(maintenanceID int, meta any, subDomainName string, domainID
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 100
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.Maintenance) int { return row.ID }, func(params map[string]string) ([]myrasec.Maintenance, error) {
+		return client.ListMaintenances(domainID, subDomainName, params)
+	}, func(row myrasec.Maintenance) bool { return row.ID == maintenanceID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading maintenance",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenances(domainID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading maintenance",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
-
-		for _, m := range res {
-			if m.ID == maintenanceID {
-				return &m, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

@@ -170,30 +170,17 @@ func parseSSLProviderCredentialsFilter(d any) *sslProviderCredentialsFilter {
 // listSSLProviderCredentials ...
 func listSSLProviderCredentials(meta any, params map[string]string) ([]myrasec.SSLProviderCredentials, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var credentials []myrasec.SSLProviderCredentials
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLProviderCredentials(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching SSL provider credentials",
-				Detail:   formatError(err),
-			})
-			return credentials, diags
-		}
-		credentials = append(credentials, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	credentials, err := listPages(params, func(row myrasec.SSLProviderCredentials) int { return row.ID }, client.ListSSLProviderCredentials)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching SSL provider credentials",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return credentials, diags

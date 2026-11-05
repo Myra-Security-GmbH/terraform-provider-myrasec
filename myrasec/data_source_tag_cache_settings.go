@@ -159,7 +159,7 @@ func createSettingsData(tagId int, meta any, params map[string]string) ([]any, d
 			"ttl":           r.TTL,
 			"not_found_ttl": r.NotFoundTTL,
 			"sort":          r.Sort,
-			"enabled":       r.Enabled,
+			"enabled":       r.Enabled != nil && *r.Enabled,
 			"enforce":       r.Enforce,
 			"comment":       r.Comment,
 		})
@@ -202,30 +202,19 @@ func parseTagCacheSettingFilter(d any) *tagCacheSettingFilter {
 // listTagCacheSettings ...
 func listTagCacheSettings(tagId int, meta any, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var settings []myrasec.CacheSetting
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListTagCacheSettings(tagId, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching cache settings",
-				Detail:   formatError(err),
-			})
-			return settings, diags
-		}
-		settings = append(settings, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	settings, err := listPages(params, func(row myrasec.CacheSetting) int { return row.ID }, func(params map[string]string) ([]myrasec.CacheSetting, error) {
+		return client.ListTagCacheSettings(tagId, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching cache settings",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return settings, diags

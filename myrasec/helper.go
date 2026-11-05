@@ -1,10 +1,12 @@
 package myrasec
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -147,6 +149,151 @@ func findDomainBySubdomainName(meta any, subDomainName string) (*myrasec.Domain,
 	time.Sleep(100 * time.Millisecond)
 
 	return domain, diags
+}
+
+// lookupDiagnostics converts the error of a single object lookup into diagnostics. A missing
+// object is a warning, the caller drops the resource from the state so the next apply
+// recreates it. Every other error (authorization, network, server) is an error: the state is
+// kept and the run fails instead of silently planning a recreation.
+func lookupDiagnostics(what string, id int, err error) diag.Diagnostics {
+	if isNotFoundError(err) {
+		return diag.Diagnostics{{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("Unable to find %s", what),
+			Detail:   fmt.Sprintf("Unable to find %s with ID = [%d]", what, id),
+		}}
+	}
+
+	return diag.Diagnostics{{
+		Severity: diag.Error,
+		Summary:  fmt.Sprintf("Error loading %s", what),
+		Detail:   formatError(err),
+	}}
+}
+
+// finishImport runs the read function of an imported resource and turns its result into the
+// outcome of the import: an error diagnostic fails the import and a read that cleared the ID
+// means the object does not exist.
+func finishImport(ctx context.Context, d *schema.ResourceData, meta any, read schema.ReadContextFunc) ([]*schema.ResourceData, error) {
+	if diags := read(ctx, d, meta); diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+
+	if d.Id() == "" {
+		return nil, errors.New("the imported resource does not exist")
+	}
+
+	return []*schema.ResourceData{d}, nil
+}
+
+// diagnosticsError joins the error diagnostics into a single error
+func diagnosticsError(diags diag.Diagnostics) error {
+	var errs []error
+	for _, dg := range diags {
+		if dg.Severity != diag.Error {
+			continue
+		}
+		if dg.Detail == "" {
+			errs = append(errs, errors.New(dg.Summary))
+			continue
+		}
+		errs = append(errs, fmt.Errorf("%s: %s", dg.Summary, dg.Detail))
+	}
+
+	return errors.Join(errs...)
+}
+
+// listPageSize is the number of rows requested per page from the list endpoints
+const listPageSize = 250
+
+// forEachPage walks the pages of a list endpoint and hands every row to visit until visit
+// returns true. The walk ends with a short page, an empty page, a page that brings no new
+// row or a page equal to the one before: an endpoint that ignores the page parameter returns
+// the same rows for every page and must not loop forever. Rows are told apart by id, a row
+// whose id is 0 counts as new, the comparison of whole pages covers rows without an id.
+func forEachPage[T any](params map[string]string, id func(T) int, fetch func(map[string]string) ([]T, error), visit func(T) bool) error {
+	if params == nil {
+		params = map[string]string{}
+	}
+	params["pageSize"] = strconv.Itoa(listPageSize)
+
+	seen := map[int]struct{}{}
+	var previous []T
+	for page := 1; ; page++ {
+		params["page"] = strconv.Itoa(page)
+
+		rows, err := fetch(params)
+		if err != nil {
+			return err
+		}
+		if page > 1 && reflect.DeepEqual(rows, previous) {
+			return nil
+		}
+		previous = rows
+
+		added := 0
+		for _, row := range rows {
+			if key := id(row); key > 0 {
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+			}
+			added++
+
+			if visit(row) {
+				return nil
+			}
+		}
+
+		if len(rows) < listPageSize || added == 0 {
+			return nil
+		}
+	}
+}
+
+// listPages collects every row of a list endpoint, see forEachPage
+func listPages[T any](params map[string]string, id func(T) int, fetch func(map[string]string) ([]T, error)) ([]T, error) {
+	var rows []T
+
+	err := forEachPage(params, id, fetch, func(row T) bool {
+		rows = append(rows, row)
+		return false
+	})
+
+	return rows, err
+}
+
+// findInPages returns the first row of a list endpoint that match accepts, nil when there is none
+func findInPages[T any](params map[string]string, id func(T) int, fetch func(map[string]string) ([]T, error), match func(T) bool) (*T, error) {
+	var found *T
+
+	err := forEachPage(params, id, fetch, func(row T) bool {
+		if !match(row) {
+			return false
+		}
+		found = &row
+		return true
+	})
+
+	return found, err
+}
+
+// suppressEquivalentDateTime is a DiffSuppressFunc for date attributes: the API reports a date
+// in its own time zone offset, so a configured value naming the same instant in another offset
+// (or with a different precision) is not a change.
+func suppressEquivalentDateTime(_, oldValue, newValue string, _ *schema.ResourceData) bool {
+	oldDate, err := types.ParseDate(oldValue)
+	if err != nil || oldDate == nil {
+		return false
+	}
+
+	newDate, err := types.ParseDate(newValue)
+	if err != nil || newDate == nil {
+		return false
+	}
+
+	return oldDate.Equal(newDate.Time)
 }
 
 // parseResourceServiceID splits the passed id (format like string:integer) to separate values

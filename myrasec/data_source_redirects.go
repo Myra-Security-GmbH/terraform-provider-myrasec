@@ -170,8 +170,6 @@ func parseRedirectFilter(d any) *redirectFilter {
 // listRedirects ...
 func listRedirects(meta any, subDomainName string, params map[string]string) ([]myrasec.Redirect, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var redirects []myrasec.Redirect
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -182,28 +180,19 @@ func listRedirects(meta any, subDomainName string, params map[string]string) ([]
 			Summary:  "Error fetching domain for given subdomain name",
 			Detail:   formatError(err),
 		})
-		return redirects, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListRedirects(domain.ID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching rate limits",
-				Detail:   formatError(err),
-			})
-			return redirects, diags
-		}
-		redirects = append(redirects, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	redirects, err := listPages(params, func(row myrasec.Redirect) int { return row.ID }, func(params map[string]string) ([]myrasec.Redirect, error) {
+		return client.ListRedirects(domain.ID, subDomainName, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching redirects",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return redirects, diags

@@ -180,3 +180,43 @@ func TestBuildSettingsPayloadHostHeader(t *testing.T) {
 func ptr[T any](v T) *T {
 	return &v
 }
+
+// TestBuildSettingsPayloadBotAttributes pins that the bot management attributes reach the
+// API payload with their configured values and are sent as null when not configured.
+func TestBuildSettingsPayloadBotAttributes(t *testing.T) {
+	for _, res := range []struct {
+		name     string
+		resource *schema.Resource
+		base     map[string]string
+		baseCfg  map[string]cty.Value
+		build    func(*schema.ResourceData, bool) (map[string]any, error)
+	}{
+		{name: "settings", resource: resourceMyrasecSettings(), base: map[string]string{"subdomain_name": "ALL-1"}, baseCfg: map[string]cty.Value{"subdomain_name": cty.StringVal("ALL-1")}, build: buildSettings},
+		{name: "tag settings", resource: resourceMyrasecTagSettings(), base: map[string]string{"tag_id": "1"}, baseCfg: map[string]cty.Value{"tag_id": cty.NumberIntVal(1)}, build: buildTagSettings},
+	} {
+		t.Run(res.name, func(t *testing.T) {
+			attributes := map[string]string{"bot_block_ai_category": "true", "bot_calc_fingerprint": "false", "bot_customer_regex_0": "^crawler/", "bot_external_session_id": "session"}
+			config := map[string]cty.Value{"bot_block_ai_category": cty.True, "bot_calc_fingerprint": cty.False, "bot_customer_regex_0": cty.StringVal("^crawler/"), "bot_external_session_id": cty.StringVal("session")}
+			for k, v := range res.base {
+				attributes[k] = v
+			}
+			for k, v := range res.baseCfg {
+				config[k] = v
+			}
+
+			payload, err := res.build(configuredResourceData(res.resource, attributes, config), false)
+			if err != nil {
+				t.Fatalf("build: %v", err)
+			}
+			want := map[string]any{
+				"bot_block_ai_category": true, "bot_calc_fingerprint": false, "bot_customer_regex_0": "^crawler/",
+				"bot_customer_regex_1": nil, "bot_customer_regex_2": nil, "bot_external_session_id": "session",
+			}
+			for name, value := range want {
+				if got, ok := payload[name]; !ok || got != value {
+					t.Errorf("%s = %#v (present %v), want %#v", name, got, ok, value)
+				}
+			}
+		})
+	}
+}

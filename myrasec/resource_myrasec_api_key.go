@@ -47,11 +47,13 @@ func resourceMyrasecApiKey() *schema.Resource {
 			"key": {
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "The API key.",
 			},
 			"secret": {
 				Type:        schema.TypeString,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "The secret part of the API key.",
 			},
 		},
@@ -203,16 +205,21 @@ func resourceMyrasecApiKeyImport(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	key, diags := findApiKey(keyID, meta)
-	if diags.HasError() || key == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if key == nil {
 		return nil, fmt.Errorf("unable to find API key with ID = [%d]", keyID)
 	}
 
 	d.SetId(strconv.Itoa(keyID))
-	d.Set("key_id", key.ID)
-	d.Set("name", name)
-	resourceMyrasecApiKeyRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	if err := d.Set("key_id", key.ID); err != nil {
+		return nil, err
+	}
+	if err := d.Set("name", name); err != nil {
+		return nil, err
+	}
+	return finishImport(ctx, d, meta, resourceMyrasecApiKeyRead)
 }
 
 // buildApiKey ...
@@ -253,35 +260,20 @@ func findApiKey(keyID int, meta any) (*myrasec.APIKey, diag.Diagnostics) {
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.APIKey) int { return row.ID }, client.ListApiKeys, func(row myrasec.APIKey) bool { return row.ID == keyID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading API keys",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListApiKeys(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading API keys",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
-
-		for _, s := range res {
-			if s.ID == keyID {
-				return &s, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
@@ -300,5 +292,9 @@ func setApiKeyData(d *schema.ResourceData, key *myrasec.APIKey) {
 	d.Set("modified", key.Modified.Format(time.RFC3339))
 	d.Set("name", key.Name)
 	d.Set("key", key.Key)
-	d.Set("secret", key.Secret)
+	// The API returns the secret only in the create response, a read must not overwrite
+	// the stored value with an empty string.
+	if key.Secret != "" {
+		d.Set("secret", key.Secret)
+	}
 }

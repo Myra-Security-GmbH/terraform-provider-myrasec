@@ -133,12 +133,13 @@ func resourceMyrasecErrorPageRead(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	errorPage, diags := findErrorPageByErrorCode(subDomainName, errorCode, meta, domainID)
+	if diags.HasError() {
+		return diags
+	}
+
 	if errorPage == nil {
 		d.SetId("")
 		return nil
-	}
-	if diags.HasError() {
-		return diags
 	}
 
 	setErrorPageData(d, errorPage, domainID)
@@ -245,6 +246,9 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
 	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain [%s]", subDomainName)
 	}
 
@@ -254,7 +258,10 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 		errorPage, diags = findErrorPageByID(subDomainName, id, meta, domain.ID)
 	}
 
-	if diags.HasError() || errorPage == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if errorPage == nil {
 		return nil, fmt.Errorf("unable to find error page [%d] for subdomain [%s]", id, subDomainName)
 	}
 
@@ -266,9 +273,7 @@ func resourceMyrasecErrorPageImport(ctx context.Context, d *schema.ResourceData,
 	d.Set("created", errorPage.Created)
 	d.Set("modified", errorPage.Modified)
 
-	resourceMyrasecErrorPageRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecErrorPageRead)
 }
 
 // buildErrorPage ...
@@ -311,48 +316,40 @@ func findErrorPage(subDomainName string, id int, idIsCode bool, meta any, domain
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
 	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
-		"search":   myrasec.RemoveTrailingDot(subDomainName),
+		"search": myrasec.RemoveTrailingDot(subDomainName),
 	}
-	for {
-		params["page"] = strconv.Itoa(page)
-		pages, err := client.ListErrorPages(domainID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading error pages",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
 
-		for _, ep := range pages {
-			if myrasec.EnsureTrailingDot(ep.SubDomainName) == myrasec.EnsureTrailingDot(subDomainName) &&
-				((idIsCode && ep.ErrorCode == id) || (!idIsCode && ep.ID == id)) {
-
-				epx, err := client.GetErrorPage(domainID, ep.ID)
-				if err != nil {
-					diags = append(diags, diag.Diagnostic{
-						Severity: diag.Error,
-						Summary:  "Error loading error page content",
-						Detail:   formatError(err),
-					})
-				}
-
-				return epx, diags
-			}
-		}
-		if len(pages) < pageSize {
-			break
-		}
-		page++
-
+	found, err := findInPages(params, func(row myrasec.ErrorPage) int { return row.ID }, func(params map[string]string) ([]myrasec.ErrorPage, error) {
+		return client.ListErrorPages(domainID, params)
+	}, func(ep myrasec.ErrorPage) bool {
+		return myrasec.EnsureTrailingDot(ep.SubDomainName) == myrasec.EnsureTrailingDot(subDomainName) &&
+			((idIsCode && ep.ErrorCode == id) || (!idIsCode && ep.ID == id))
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading error pages",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
-	return nil, diags
+
+	if found == nil {
+		return nil, diags
+	}
+
+	errorPage, err := client.GetErrorPage(domainID, found.ID)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading error page content",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
+
+	return errorPage, diags
 }
 
 // setErrorPageData ...

@@ -114,8 +114,6 @@ func dataSourceMyrasecMaintenanceTemplatesRead(ctx context.Context, d *schema.Re
 // listMaintenanceTemplates ...
 func listMaintenanceTemplates(meta any, domainName string, params map[string]string) ([]myrasec.MaintenanceTemplate, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var templates []myrasec.MaintenanceTemplate
-	pageSize := 100
 
 	client := meta.(*myrasec.API)
 	domain, err := client.FetchDomain(domainName)
@@ -125,28 +123,19 @@ func listMaintenanceTemplates(meta any, domainName string, params map[string]str
 			Summary:  "Error fetching domain for given domain name",
 			Detail:   formatError(err),
 		})
-		return templates, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenanceTemplates(domain.ID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching maintenance templates",
-				Detail:   formatError(err),
-			})
-			return templates, diags
-		}
-		templates = append(templates, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	templates, err := listPages(params, func(row myrasec.MaintenanceTemplate) int { return row.ID }, func(params map[string]string) ([]myrasec.MaintenanceTemplate, error) {
+		return client.ListMaintenanceTemplates(domain.ID, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching maintenance templates",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return templates, diags

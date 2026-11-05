@@ -26,6 +26,12 @@ The following arguments are supported:
 * `balancing_method` (Optional) Specifies with which method requests are balanced between upstream servers. Valid values are: `round_robin`, `ip_hash`, `least_conn` or `cookie_based`. Default `round_robin`.
 * `block_not_whitelisted` (Optional) Block all IPs, which are not whitelisted. Default `false`.
 * `block_tor_network` (Optional) Block traffic from the TOR network. Default `false`.
+* `bot_block_ai_category` (Optional) Block bots of the AI category, for example crawlers of AI companies.
+* `bot_calc_fingerprint` (Optional) Calculate a client fingerprint for the bot detection.
+* `bot_customer_regex_0` (Optional) First customer defined regular expression used to identify bots.
+* `bot_customer_regex_1` (Optional) Second customer defined regular expression used to identify bots.
+* `bot_customer_regex_2` (Optional) Third customer defined regular expression used to identify bots.
+* `bot_external_session_id` (Optional) Name of the external session identifier, for example a cookie, used to correlate the requests of a client.
 * `cache_enabled` (Optional) Turn caching on or off. Default `false`.
 * `cache_revalidate` (Optional) Enable stale cache item revalidation. Default `false`.
 * `cdn` (Optional) Use subdomain as Content Delivery Node (CDN). Default `false`. **Deprecated.**

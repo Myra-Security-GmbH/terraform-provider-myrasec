@@ -96,8 +96,8 @@ func dataSourceMyrasecWaitingRooms() *schema.Resource {
 
 // dataSourceMyrasecWaitingRoomsRead ...
 func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	var waitingRooms []myrasec.WaitingRoom
 	var diags diag.Diagnostics
+	var waitingRooms []myrasec.WaitingRoom
 	f := prepareWaitingroomFilter(d.Get("filter"))
 	if f == nil {
 		f = &waitingRoomFilter{}
@@ -184,30 +184,19 @@ func parseWaitingRoomFilter(d any) *waitingRoomFilter {
 // listWaitingRoomsForSubDomain ...
 func listWaitingRoomsForSubDomain(meta any, subDomainName string, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var waitingRooms []myrasec.WaitingRoom
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWaitingRoomsForSubDomain(subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching waiting rooms",
-				Detail:   formatError(err),
-			})
-			return waitingRooms, diags
-		}
-		waitingRooms = append(waitingRooms, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	waitingRooms, err := listPages(params, func(row myrasec.WaitingRoom) int { return row.ID }, func(params map[string]string) ([]myrasec.WaitingRoom, error) {
+		return client.ListWaitingRoomsForSubDomain(subDomainName, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching waiting rooms",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return waitingRooms, diags
@@ -216,30 +205,19 @@ func listWaitingRoomsForSubDomain(meta any, subDomainName string, params map[str
 // listWaitingRoomsForDomain ...
 func listWaitingRoomsForDomain(meta any, domainId int, params map[string]string) ([]myrasec.WaitingRoom, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var waitingRooms []myrasec.WaitingRoom
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWaitingRoomsForDomain(domainId, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching waiting rooms",
-				Detail:   formatError(err),
-			})
-			return waitingRooms, diags
-		}
-		waitingRooms = append(waitingRooms, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	waitingRooms, err := listPages(params, func(row myrasec.WaitingRoom) int { return row.ID }, func(params map[string]string) ([]myrasec.WaitingRoom, error) {
+		return client.ListWaitingRoomsForDomain(domainId, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching waiting rooms",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return waitingRooms, diags

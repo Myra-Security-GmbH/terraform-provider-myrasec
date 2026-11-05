@@ -104,9 +104,10 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Description: "Type of the rule.",
 			},
 			"expire_date": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressEquivalentDateTime,
+				Description:      "Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -139,6 +140,12 @@ func resourceMyrasecWAFRule() *schema.Resource {
 				Optional:    true,
 				Default:     1,
 				Description: "The order in which the rules take action.",
+			},
+			"sync": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether the rule is synchronized to the edge nodes.",
 			},
 			"process_next": {
 				Type:        schema.TypeBool,
@@ -385,8 +392,12 @@ func resourceMyrasecWAFRuleRead(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	rule, diags := findWAFRule(ruleID, meta, subDomainName, domainID)
-	if diags.HasError() || rule == nil {
+	if diags.HasError() {
 		return diags
+	}
+	if rule == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setWAFRuleData(d, rule, domainID)
@@ -491,12 +502,18 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
-	if diags != nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
 	}
 
 	rule, diags := findWAFRule(ruleID, meta, subDomainName, domain.ID)
-	if diags.HasError() || rule == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if rule == nil {
 		return nil, fmt.Errorf("unable to find WAF rule for subdomain [%s] with ID = [%d]", subDomainName, ruleID)
 	}
 
@@ -504,9 +521,7 @@ func resourceMyrasecWAFRuleImport(ctx context.Context, d *schema.ResourceData, m
 	d.Set("rule_id", rule.ID)
 	d.Set("subdomain_name", rule.SubDomainName)
 
-	resourceMyrasecWAFRuleRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecWAFRuleRead)
 }
 
 // buildWAFRule ...
@@ -518,6 +533,7 @@ func buildWAFRule(d *schema.ResourceData) (*myrasec.WAFRule, error) {
 		LogIdentifier: d.Get("log_identifier").(string),
 		Direction:     d.Get("direction").(string),
 		Sort:          d.Get("sort").(int),
+		Sync:          d.Get("sync").(bool),
 		ProcessNext:   d.Get("process_next").(bool),
 		Enabled:       d.Get("enabled").(bool),
 		RuleType:      "domain",
@@ -629,36 +645,24 @@ func findWAFRule(wafRuleID int, meta any, subDomainName string, domainID int) (*
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
 	params := map[string]string{
 		"subDomain": myrasec.EnsureTrailingDot(subDomainName),
-		"pageSize":  strconv.Itoa(pageSize),
-		"page":      strconv.Itoa(page),
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWAFRules(domainID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading WAF rules",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
+	found, err := findInPages(params, func(row myrasec.WAFRule) int { return row.ID }, func(params map[string]string) ([]myrasec.WAFRule, error) {
+		return client.ListWAFRules(domainID, params)
+	}, func(row myrasec.WAFRule) bool { return row.ID == wafRuleID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading WAF rules",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
 
-		for _, r := range res {
-			if r.ID == wafRuleID {
-				return &r, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
@@ -681,8 +685,10 @@ func setWAFRuleData(d *schema.ResourceData, rule *myrasec.WAFRule, domainID int)
 	d.Set("log_identifier", rule.LogIdentifier)
 	d.Set("direction", rule.Direction)
 	d.Set("sort", rule.Sort)
+	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
+	d.Set("expire_date", formatDateTime(rule.ExpireDate))
 	d.Set("domain_id", domainID)
 	d.Set("rule_type", rule.RuleType)
 

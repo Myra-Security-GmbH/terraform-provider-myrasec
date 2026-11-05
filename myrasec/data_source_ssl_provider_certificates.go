@@ -212,30 +212,19 @@ func parseSSLProviderCertificatesFilter(d any) *sslProviderCertificatesFilter {
 // listSSLProviderCertificates ...
 func listSSLProviderCertificates(meta any, credentialsID int, params map[string]string) ([]myrasec.SSLCertificateSummary, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var certificates []myrasec.SSLCertificateSummary
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLProviderCertificates(credentialsID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching SSL provider certificates",
-				Detail:   formatError(err),
-			})
-			return certificates, diags
-		}
-		certificates = append(certificates, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	certificates, err := listPages(params, func(row myrasec.SSLCertificateSummary) int { return row.ID }, func(params map[string]string) ([]myrasec.SSLCertificateSummary, error) {
+		return client.ListSSLProviderCertificates(credentialsID, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching SSL provider certificates",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return certificates, diags

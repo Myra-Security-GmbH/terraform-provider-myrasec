@@ -35,7 +35,7 @@ The following arguments are supported:
 * `direction`  Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` Your notes on this rule.
 * `log_identifier` A comment to identify the matching rule in the access log.
-* `expire_date` Expire date schedules the deaktivation of the WAF rule.
+* `expire_date` Expire date schedules the deactivation of the WAF rule.
 * `sort` The order in which the rules take action.
 * `process_next` After a rule has been applied, the rule chain will be executed as determined.
 * `enabled` Define wether this rule is enabled or not.

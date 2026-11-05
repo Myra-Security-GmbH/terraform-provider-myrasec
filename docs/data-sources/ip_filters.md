@@ -37,5 +37,5 @@ The following arguments are supported:
 * `type` Type of the IP filter.
 * `value` The IP you want to whitelist or blacklist.
 * `enabled` Enable or disable a filter.
-* `expire_date` Expire date schedules the deaktivation of the filter.
+* `expire_date` Expire date schedules the deactivation of the filter.
 * `comment` A comment to describe this IP filter.
