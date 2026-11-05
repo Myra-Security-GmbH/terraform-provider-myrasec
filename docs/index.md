@@ -47,7 +47,7 @@ The following arguments are supported in the `provider` block. Most of them can 
 
 ## Transport
 
-The provider refuses redirects from `https` to `http` and redirects to another host. Requests that fail with HTTP status 429 or 503 are retried, with the delay from the `Retry-After` header when the API sends one. Read requests are also retried on 500, 502 and 504. Write requests are not, as the API may have applied them already.
+The provider refuses redirects from `https` to `http` and redirects to another host. Requests that fail with HTTP status 429 are retried, with the delay from the `Retry-After` header when the API sends one. Read requests are also retried on 500, 502, 503 and 504. Write requests are retried on 503 only when the response carries `Retry-After`, and never on 500, 502 and 504, as the API may have applied them already.
 
 Lists are read in pages of 250 entries. An import whose final read fails reports the error instead of a resource with an empty ID.
 
