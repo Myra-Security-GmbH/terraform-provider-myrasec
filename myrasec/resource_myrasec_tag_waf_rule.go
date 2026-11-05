@@ -471,12 +471,7 @@ func findTagWAFRule(wafRuleID int, tagID int, meta any) (*myrasec.TagWAFRule, di
 
 	tag, err := client.GetTag(tagID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error fetching tag for given ID",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("tag", tagID, err)
 	}
 
 	params := map[string]string{}

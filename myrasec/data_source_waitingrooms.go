@@ -96,8 +96,8 @@ func dataSourceMyrasecWaitingRooms() *schema.Resource {
 
 // dataSourceMyrasecWaitingRoomsRead ...
 func dataSourceMyrasecWaitingRoomsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	var diags diag.Diagnostics
 	var waitingRooms []myrasec.WaitingRoom
+	var diags diag.Diagnostics
 	f := prepareWaitingroomFilter(d.Get("filter"))
 	if f == nil {
 		f = &waitingRoomFilter{}

@@ -3,6 +3,7 @@ package myrasec
 import (
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -61,6 +62,58 @@ func TestListPagesStopsWhenPageIsIgnoredWithoutIDs(t *testing.T) {
 	}
 	if len(got) != listPageSize {
 		t.Errorf("got %d rows, want %d", len(got), listPageSize)
+	}
+}
+
+// TestListPagesStopsWhenPageRepeatsInAnotherOrder covers an endpoint whose second page holds
+// the rows of the first in another order: every row is known already, so the walk ends.
+func TestListPagesStopsWhenPageRepeatsInAnotherOrder(t *testing.T) {
+	calls := 0
+	got, err := listPages(nil, func(row int) int { return row }, func(map[string]string) ([]int, error) {
+		calls++
+		rows := pageOfInts(1, listPageSize)
+		if calls == 2 {
+			slices.Reverse(rows)
+		}
+		return rows, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 {
+		t.Errorf("fetch was called %d times, want 2", calls)
+	}
+	if len(got) != listPageSize {
+		t.Errorf("got %d rows, want %d", len(got), listPageSize)
+	}
+}
+
+// TestListPagesDropsRowsSeenBefore covers pages that overlap, as they do when a row is inserted
+// between two requests: a row from an earlier page is not collected twice and the walk goes
+// on because the page brought new rows.
+func TestListPagesDropsRowsSeenBefore(t *testing.T) {
+	pages := [][]int{pageOfInts(1, listPageSize), pageOfInts(listPageSize-49, listPageSize), nil}
+	calls := 0
+	got, err := listPages(nil, func(row int) int { return row }, func(map[string]string) ([]int, error) {
+		calls++
+		if calls > len(pages) {
+			return nil, errors.New("page beyond the last one requested")
+		}
+		return pages[calls-1], nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := 2*listPageSize - 50
+	if calls != 3 || len(got) != want || got[len(got)-1] != want {
+		t.Errorf("calls=%d rows=%d last=%d, want 3 calls and %d rows", calls, len(got), got[len(got)-1], want)
+	}
+	seen := map[int]bool{}
+	for _, row := range got {
+		if seen[row] {
+			t.Fatalf("row %d was collected twice", row)
+		}
+		seen[row] = true
 	}
 }
 

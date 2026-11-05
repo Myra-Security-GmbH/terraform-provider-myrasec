@@ -584,12 +584,7 @@ func findSSLCertificate(certID int, meta any, domainID int) (*myrasec.SSLCertifi
 
 	c, err := client.GetSSLCertificate(domainID, certID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error loading SSL certificate",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("SSL certificate", certID, err)
 	}
 
 	if c != nil {

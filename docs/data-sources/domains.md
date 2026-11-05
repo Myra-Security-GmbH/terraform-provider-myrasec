@@ -35,4 +35,5 @@ The following arguments are supported:
 * `modified` Date of last modification.
 * `name` The Domain name.
 * `auto_update` Auto update flag from the domain.
+* `reversed` Whether the domain is reversed.
 * `verified` Whether domain ownership is verified. Defaults to `true` if the API does not return verification status. Unverified domains are stored but are not published. Use the Myra dashboard to view the verification status and follow the instructions there.

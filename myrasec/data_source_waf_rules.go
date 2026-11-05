@@ -281,7 +281,7 @@ func listWAFRules(meta any, subDomainName string, params map[string]string) ([]m
 			Summary:  "Error fetching domain for given subdomain name",
 			Detail:   formatError(err),
 		})
-		return rules, diags
+		return nil, diags
 	}
 
 	rules, err = listPages(params, func(row myrasec.WAFRule) int { return row.ID }, func(params map[string]string) ([]myrasec.WAFRule, error) {
@@ -293,7 +293,7 @@ func listWAFRules(meta any, subDomainName string, params map[string]string) ([]m
 			Summary:  "Error fetching WAF rules",
 			Detail:   formatError(err),
 		})
-		return rules, diags
+		return nil, diags
 	}
 
 	return rules, diags

@@ -2,9 +2,15 @@ package myrasec
 
 import (
 	"context"
+	"errors"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
+	myrasec "github.com/Myra-Security-GmbH/myrasec-go/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -54,24 +60,80 @@ func TestConfigValidateRejectsPlainHTTP(t *testing.T) {
 	}
 }
 
+// TestClientInsecureHTTP sends a request through the configured client: the client itself
+// refuses a plain http base URL on a host other than the local machine unless the opt-in
+// reaches it.
+func TestClientInsecureHTTP(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		insecure bool
+	}{
+		{name: "refused"},
+		{name: "allowed with opt-in", insecure: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var hits atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"error": false, "page": 1, "pageSize": 250, "count": 1, "data": [{"id": 1, "name": "example.com"}]}`))
+			}))
+			t.Cleanup(server.Close)
+
+			client, err := (Config{APIToken: "token", Language: "en", APIBaseURL: "http://api.example.com/%s", AllowInsecureHTTP: tc.insecure}).Client()
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Every connection lands on the test server, the URL keeps its non-loopback host.
+			err = client.SetHTTPClient(&http.Client{Transport: &http.Transport{
+				DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+					return (&net.Dialer{}).DialContext(ctx, network, server.Listener.Addr().String())
+				},
+			}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = client.ListDomainsContext(context.Background(), nil)
+			if tc.insecure {
+				if err != nil || hits.Load() != 1 {
+					t.Fatalf("request with opt-in failed: err=%v hits=%d", err, hits.Load())
+				}
+				return
+			}
+			if !errors.Is(err, myrasec.ErrInsecureEndpoint) || hits.Load() != 0 {
+				t.Fatalf("plain http was not refused: err=%v hits=%d", err, hits.Load())
+			}
+		})
+	}
+}
+
 // TestProviderConfigureInsecure covers the provider attribute end to end: a plain http base
-// URL fails the provider configuration unless allow_insecure_http is set.
+// URL fails the provider configuration unless allow_insecure_http is set, in the
+// configuration or through the environment.
 func TestProviderConfigureInsecure(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		insecure bool
+		env      string
 		wantErr  bool
 	}{
 		{name: "refused by default", wantErr: true},
 		{name: "allowed with opt-in", insecure: true},
+		{name: "allowed through the environment", env: "true"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("MYRASEC_ALLOW_INSECURE_HTTP", tc.env)
+			raw := map[string]any{
+				"api_token":    "token",
+				"api_base_url": "http://api.example.com/%s",
+			}
+			if tc.env == "" {
+				raw["allow_insecure_http"] = tc.insecure
+			}
+
 			provider := Provider()
-			d := schema.TestResourceDataRaw(t, provider.Schema, map[string]any{
-				"api_token":           "token",
-				"api_base_url":        "http://api.example.com/%s",
-				"allow_insecure_http": tc.insecure,
-			})
+			d := schema.TestResourceDataRaw(t, provider.Schema, raw)
 
 			client, diags := providerConfigure(context.Background(), d)
 			if diags.HasError() != tc.wantErr {

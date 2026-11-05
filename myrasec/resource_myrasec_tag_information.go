@@ -197,6 +197,7 @@ func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.Resource
 			Summary:  "Error updating tag information",
 			Detail:   formatError(err),
 		})
+		return diags
 	}
 
 	setTagInformationData(d, information, tagID.(int))
@@ -305,12 +306,7 @@ func findTagInformation(informationID int, tagID int, meta any) (*myrasec.TagInf
 		return client.ListTagInformation(tagID, params)
 	}, func(row myrasec.TagInformation) bool { return row.ID == informationID })
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error loading tag information",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("tag information", informationID, err)
 	}
 
 	if found != nil {

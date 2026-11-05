@@ -272,7 +272,10 @@ func resourceMyrasecTagImport(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	tag, diags := findTag(tagID, meta)
-	if diags.HasError() || tag == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if tag == nil {
 		return nil, fmt.Errorf("unable to find tag with id [%d]", tagID)
 	}
 	d.SetId(strconv.Itoa(tagID))

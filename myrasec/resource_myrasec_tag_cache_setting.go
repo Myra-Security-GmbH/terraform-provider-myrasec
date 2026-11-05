@@ -224,6 +224,7 @@ func resourceMyrasecTagCacheSettingUpdate(ctx context.Context, d *schema.Resourc
 			Summary:  "Error updating tag cache setting",
 			Detail:   formatError(err),
 		})
+		return diags
 	}
 
 	setTagCacheSettingData(d, setting, tagID.(int))

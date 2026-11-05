@@ -42,7 +42,7 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_BASE_URL", "https://apiv2.myracloud.com/%s"),
-				Description: "API base URL with the %s placeholder for the API method. Must use https, keep the default value unless you run against a test endpoint.",
+				Description: "API base URL with the %s placeholder for the API method. It must use https. A plain http URL is refused unless it points to the local machine or allow_insecure_http is set. Keep the default value unless you run against a test endpoint.",
 			},
 			"allow_insecure_http": {
 				Type:        schema.TypeBool,

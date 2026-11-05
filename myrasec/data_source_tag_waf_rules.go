@@ -271,7 +271,7 @@ func listTagWAFRules(meta any, tagID int, params map[string]string) ([]myrasec.T
 			Summary:  "Error fetching tag for ID",
 			Detail:   formatError(err),
 		})
-		return rules, diags
+		return nil, diags
 	}
 
 	rules, err = listPages(params, func(row myrasec.TagWAFRule) int { return row.ID }, func(params map[string]string) ([]myrasec.TagWAFRule, error) {
@@ -283,7 +283,7 @@ func listTagWAFRules(meta any, tagID int, params map[string]string) ([]myrasec.T
 			Summary:  "Error fetching WAF rules",
 			Detail:   formatError(err),
 		})
-		return rules, diags
+		return nil, diags
 	}
 
 	return rules, diags

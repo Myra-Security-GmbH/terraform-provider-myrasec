@@ -435,6 +435,7 @@ func listSettings(meta any, subDomainName string) (*myrasec.Settings, diag.Diagn
 			Summary:  "Error fetching domain for given subdomain name",
 			Detail:   formatError(err),
 		})
+		return nil, diags
 	}
 
 	settings, err := client.ListSettings(domain.ID, subDomainName, nil)
@@ -444,6 +445,7 @@ func listSettings(meta any, subDomainName string) (*myrasec.Settings, diag.Diagn
 			Summary:  "Error fetching settings",
 			Detail:   formatError(err),
 		})
+		return nil, diags
 	}
 
 	return settings, diags
