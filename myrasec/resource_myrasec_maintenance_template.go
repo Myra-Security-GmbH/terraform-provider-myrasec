@@ -268,11 +268,14 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 
 	domainID, domainDiag := findDomainIDByDomainName(d, meta, domainName)
 	if domainDiag.HasError() {
-		return nil, fmt.Errorf("unable to find domainID for domainName [%s]", domainName)
+		return nil, diagnosticsError(domainDiag)
 	}
 
 	template, diags := findMaintenanceTemplate(maintenanceTemplateID, meta, domainID)
-	if diags.HasError() || template == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if template == nil {
 		return nil, fmt.Errorf("unable to find maintenance template for domain [%s] with ID = [%d]", domainName, maintenanceTemplateID)
 	}
 
@@ -283,9 +286,7 @@ func resourceMyrasecMaintenanceTemplateImport(ctx context.Context, d *schema.Res
 	d.Set("content", "")
 	d.Set("content_hash", createContentHash(template.Content))
 
-	resourceMyrasecMaintenanceTemplateRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecMaintenanceTemplateRead)
 }
 
 // buildMaintenanceTemplate ...
@@ -325,35 +326,22 @@ func findMaintenanceTemplate(maintenanceTemplateID int, meta any, domainID int) 
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 100
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.MaintenanceTemplate) int { return row.ID }, func(params map[string]string) ([]myrasec.MaintenanceTemplate, error) {
+		return client.ListMaintenanceTemplates(domainID, params)
+	}, func(row myrasec.MaintenanceTemplate) bool { return row.ID == maintenanceTemplateID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading maintenance template",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListMaintenanceTemplates(domainID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading maintenance template",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
-
-		for _, mt := range res {
-			if mt.ID == maintenanceTemplateID {
-				return &mt, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 	return nil, diags
 }

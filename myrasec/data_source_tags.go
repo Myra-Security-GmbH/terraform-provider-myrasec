@@ -124,9 +124,9 @@ func dataSourceMyrasecTagsRead(ctx context.Context, d *schema.ResourceData, meta
 
 	tagData := make([]any, 0)
 	for _, t := range tags {
-		res, err := getTag(t.ID, meta)
-		if err != nil {
-			return diags
+		res, tagDiags := getTag(t.ID, meta)
+		if tagDiags.HasError() {
+			return tagDiags
 		}
 
 		tag := map[string]any{
@@ -192,30 +192,17 @@ func parseTagFilter(d any) *tagFilter {
 // listTags
 func listTags(meta any, params map[string]string) ([]myrasec.Tag, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var tags []myrasec.Tag
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListTags(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching tags",
-				Detail:   formatError(err),
-			})
-			return tags, diags
-		}
-		tags = append(tags, res...)
-		if len(tags) < pageSize {
-			break
-		}
-		page++
+	tags, err := listPages(params, func(row myrasec.Tag) int { return row.ID }, client.ListTags)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching tags",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 	return tags, diags
 }

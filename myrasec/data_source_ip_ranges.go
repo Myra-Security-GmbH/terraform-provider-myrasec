@@ -170,30 +170,17 @@ func parseIPRangeFilter(d any) *ipRangeFilter {
 // listIPRanges ...
 func listIPRanges(meta any, params map[string]string) ([]myrasec.IPRange, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var ranges []myrasec.IPRange
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListIPRanges(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching IP ranges",
-				Detail:   formatError(err),
-			})
-			return ranges, diags
-		}
-		ranges = append(ranges, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	ranges, err := listPages(params, func(row myrasec.IPRange) int { return row.ID }, client.ListIPRanges)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching IP ranges",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return ranges, diags

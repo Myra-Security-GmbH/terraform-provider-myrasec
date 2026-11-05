@@ -166,6 +166,10 @@ func resourceMyrasecWaitingRoomRead(ctx context.Context, d *schema.ResourceData,
 
 	waitingRoom, err := client.GetWaitingRoom(waitingRoomID)
 	if err != nil {
+		if isNotFoundError(err) {
+			d.SetId("")
+			return nil
+		}
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "Error fetching waiting room",
@@ -276,7 +280,10 @@ func resourceMyrasecWaitingRoomImport(ctx context.Context, d *schema.ResourceDat
 	}
 
 	waitingRoom, diags := findWaitingRoomForSubDomain(waitingRoomID, meta, subDomainName)
-	if diags.HasError() || waitingRoom == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if waitingRoom == nil {
 		return nil, fmt.Errorf("unable to find waiting room for subdomain [%s] with ID = [%d]", subDomainName, waitingRoomID)
 	}
 
@@ -284,9 +291,7 @@ func resourceMyrasecWaitingRoomImport(ctx context.Context, d *schema.ResourceDat
 	d.Set("waitingroom_id", waitingRoom.ID)
 	d.Set("subdomain_name", waitingRoom.SubDomainName)
 
-	resourceMyrasecWaitingRoomRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecWaitingRoomRead)
 }
 
 // buildWaitingRoom ...
@@ -357,36 +362,24 @@ func findWaitingRoomForSubDomain(waitingRoomID int, meta any, subDomainName stri
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
 	params := map[string]string{
 		"subDomainName": subDomainName,
-		"pageSize":      strconv.Itoa(pageSize),
-		"page":          strconv.Itoa(page),
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListWaitingRoomsForSubDomain(subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading waiting rooms",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
+	found, err := findInPages(params, func(row myrasec.WaitingRoom) int { return row.ID }, func(params map[string]string) ([]myrasec.WaitingRoom, error) {
+		return client.ListWaitingRoomsForSubDomain(subDomainName, params)
+	}, func(row myrasec.WaitingRoom) bool { return row.ID == waitingRoomID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading waiting rooms",
+			Detail:   formatError(err),
+		})
+		return nil, diags
+	}
 
-		for _, r := range res {
-			if r.ID == waitingRoomID {
-				return &r, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

@@ -182,8 +182,8 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 			"configuration_name":   c.SslConfigurationName,
 			"subject":              c.Certificate.Subject,
 			"algorithm":            c.Certificate.Algorithm,
-			"valid_from":           c.Certificate.ValidFrom.Format(time.RFC3339),
-			"valid_to":             c.Certificate.ValidTo.Format(time.RFC3339),
+			"valid_from":           formatDateTime(c.Certificate.ValidFrom),
+			"valid_to":             formatDateTime(c.Certificate.ValidTo),
 			"fingerprint":          c.Certificate.Fingerprint,
 			"serial_number":        c.Certificate.SerialNumber,
 			"subject_alternatives": c.SubjectAlternatives,
@@ -200,8 +200,8 @@ func dataSourceMyrasecSSLCertificatesRead(ctx context.Context, d *schema.Resourc
 					"algorithm":     inter.Certificate.Algorithm,
 					"fingerprint":   inter.Certificate.Fingerprint,
 					"serial_number": inter.Certificate.SerialNumber,
-					"valid_from":    inter.Certificate.ValidFrom.Format(time.RFC3339),
-					"valid_to":      inter.Certificate.ValidTo.Format(time.RFC3339),
+					"valid_from":    formatDateTime(inter.Certificate.ValidFrom),
+					"valid_to":      formatDateTime(inter.Certificate.ValidTo),
 					"issuer":        inter.Issuer,
 				})
 			}
@@ -249,8 +249,6 @@ func parseSSLCertificateFilter(d any) *sslCertificateFilter {
 // listSSLCertificates ...
 func listSSLCertificates(meta any, domainName string, params map[string]string) ([]myrasec.SSLCertificate, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var certificates []myrasec.SSLCertificate
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -261,28 +259,19 @@ func listSSLCertificates(meta any, domainName string, params map[string]string) 
 			Summary:  "Error fetching domain for given domain name",
 			Detail:   formatError(err),
 		})
-		return certificates, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLCertificates(domain.ID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching SSL certificates",
-				Detail:   formatError(err),
-			})
-			return certificates, diags
-		}
-		certificates = append(certificates, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	certificates, err := listPages(params, func(row myrasec.SSLCertificate) int { return row.Certificate.ID }, func(params map[string]string) ([]myrasec.SSLCertificate, error) {
+		return client.ListSSLCertificates(domain.ID, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching SSL certificates",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return certificates, diags

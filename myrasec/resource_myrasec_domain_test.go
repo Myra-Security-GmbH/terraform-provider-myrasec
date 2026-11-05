@@ -355,7 +355,7 @@ func TestDomainReadErrorPreservesState(t *testing.T) {
 					_ = json.NewEncoder(w).Encode(map[string]any{"error": true, "violationList": []any{map[string]string{"message": tc.message}}})
 				case "/domains":
 					listCalls++
-					if r.URL.Query().Get("search") != "example.com" || r.URL.Query().Get("page") != strconv.Itoa(listCalls) || r.URL.Query().Get("pageSize") != "100" {
+					if r.URL.Query().Get("search") != "example.com" || r.URL.Query().Get("page") != strconv.Itoa(listCalls) || r.URL.Query().Get("pageSize") != strconv.Itoa(listPageSize) {
 						t.Errorf("unexpected list parameters: %s", r.URL.RawQuery)
 					}
 					if tc.listStatus != 0 {
@@ -365,7 +365,7 @@ func TestDomainReadErrorPreservesState(t *testing.T) {
 					}
 					domains := []any{}
 					if tc.fullPage && listCalls == 1 {
-						for id := 100; id < 200; id++ {
+						for id := 100; id < 100+listPageSize; id++ {
 							domains = append(domains, map[string]any{"id": id, "name": "other.example.com"})
 						}
 					} else if tc.listedID != 0 {
@@ -415,6 +415,93 @@ func TestDomainReadErrorPreservesState(t *testing.T) {
 				t.Errorf("list calls = %d, want %d", listCalls, wantCalls)
 			}
 			assertDomainVerificationWarning(t, diags, false)
+		})
+	}
+}
+
+// TestDomainAutoDNS covers the create-only auto_dns flag: it is sent as configured on create
+// and as false on update, a later change of the configured value is not a diff. The reversed
+// flag is read from the API.
+func TestDomainAutoDNS(t *testing.T) {
+	var posted, updated map[string]any
+	client := domainTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/domains":
+			if err := json.NewDecoder(r.Body).Decode(&posted); err != nil {
+				t.Errorf("decode request: %v", err)
+			}
+		case r.Method == http.MethodPut && r.URL.Path == "/domains/1":
+			if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
+				t.Errorf("decode request: %v", err)
+			}
+		case r.Method == http.MethodGet && r.URL.Path == "/domains/1":
+		default:
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+			http.NotFound(w, r)
+			return
+		}
+		domain := map[string]any{
+			"id": 1, "name": "example.com", "autoUpdate": true, "reversed": true,
+			"created": "2026-10-01T00:00:00Z", "modified": "2026-10-01T00:00:00Z",
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": false, "data": []any{domain}})
+	}))
+
+	r := resourceMyrasecDomain()
+	d := r.TestResourceData()
+	for k, v := range map[string]any{"name": "example.com", "auto_dns": true} {
+		if err := d.Set(k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if diags := r.CreateContext(context.Background(), d, client); diags.HasError() {
+		t.Fatal(diags)
+	}
+	if posted["autoDns"] != true {
+		t.Errorf("create request sent autoDns=%v, want true", posted["autoDns"])
+	}
+	if d.Get("reversed") != true {
+		t.Errorf("reversed = %v, want true", d.Get("reversed"))
+	}
+
+	if diags := r.UpdateContext(context.Background(), d, client); diags.HasError() {
+		t.Fatal(diags)
+	}
+	if updated["autoDns"] != false {
+		t.Errorf("update request sent autoDns=%v, want false", updated["autoDns"])
+	}
+
+	suppress := r.Schema["auto_dns"].DiffSuppressFunc
+	if !suppress("auto_dns", "true", "false", d) {
+		t.Error("auto_dns change on an existing domain was not suppressed")
+	}
+	if suppress("auto_dns", "false", "true", r.TestResourceData()) {
+		t.Error("auto_dns was suppressed for a new domain")
+	}
+}
+
+// TestDomainImportReportsError pins the importer by ID: a domain the API does not know is
+// reported as missing, every other API error is passed on as it is. The importer has no
+// name to confirm a 403 through the listing, so a 403 is passed on as well.
+func TestDomainImportReportsError(t *testing.T) {
+	for _, tc := range readErrorCases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := domainTestClient(t, apiErrorHandler(t, http.MethodGet, "/domains/1", tc.status, tc.message))
+			r := resourceMyrasecDomain()
+			d := r.TestResourceData()
+			d.SetId("1")
+			imported, err := r.Importer.StateContext(context.Background(), d, client)
+			if err == nil || imported != nil {
+				t.Fatalf("import did not fail: %v", imported)
+			}
+			want := wantErrorDetail(tc.status, tc.message)
+			if tc.status == http.StatusNotFound {
+				want = "unable to find domain with ID = [1]"
+			}
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("import error %q does not name %q", err, want)
+			}
 		})
 	}
 }

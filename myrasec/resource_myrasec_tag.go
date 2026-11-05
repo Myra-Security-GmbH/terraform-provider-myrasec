@@ -190,9 +190,13 @@ func resourceMyrasecTagRead(ctx context.Context, d *schema.ResourceData, meta an
 	}
 
 	tag, diags := findTag(tagId, meta)
+	if diags.HasError() {
+		return diags
+	}
+
 	if tag == nil {
 		d.SetId("")
-		return diags
+		return nil
 	}
 
 	setTagData(d, tag)
@@ -268,14 +272,16 @@ func resourceMyrasecTagImport(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	tag, diags := findTag(tagID, meta)
-	if diags.HasError() || tag == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if tag == nil {
 		return nil, fmt.Errorf("unable to find tag with id [%d]", tagID)
 	}
 	d.SetId(strconv.Itoa(tagID))
 	d.Set("tag_id", tag.ID)
 
-	resourceMyrasecTagRead(ctx, d, meta)
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecTagRead)
 }
 
 // findTag
@@ -286,12 +292,7 @@ func findTag(tagId int, meta any) (*myrasec.Tag, diag.Diagnostics) {
 
 	t, err := client.GetTag(tagId)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Error loading tag",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("tag", tagId, err)
 	}
 
 	if t != nil {
@@ -299,7 +300,7 @@ func findTag(tagId int, meta any) (*myrasec.Tag, diag.Diagnostics) {
 	}
 
 	diags = append(diags, diag.Diagnostic{
-		Severity: diag.Error,
+		Severity: diag.Warning,
 		Summary:  "Unable to find tag",
 		Detail:   fmt.Sprintf("Unable to find tag with ID [%d]", tagId),
 	})

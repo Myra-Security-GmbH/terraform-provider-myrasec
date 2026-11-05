@@ -245,30 +245,17 @@ func parseSSLCertificateRequestFilter(d any) *sslCertificateRequestFilter {
 // listSSLCertificateRequests ...
 func listSSLCertificateRequests(meta any, params map[string]string) ([]myrasec.SSLCertificateRequest, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var requests []myrasec.SSLCertificateRequest
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListSSLCertificateRequests(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching SSL certificate requests",
-				Detail:   formatError(err),
-			})
-			return requests, diags
-		}
-		requests = append(requests, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	requests, err := listPages(params, func(row myrasec.SSLCertificateRequest) int { return row.ID }, client.ListSSLCertificateRequests)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching SSL certificate requests",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return requests, diags

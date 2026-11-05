@@ -42,7 +42,13 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_API_BASE_URL", "https://apiv2.myracloud.com/%s"),
-				Description: "API Base URL. Keep the default value. No change required.",
+				Description: "API base URL with the %s placeholder for the API method. It must use https. A plain http URL is refused unless it points to the local machine or allow_insecure_http is set. Keep the default value unless you run against a test endpoint.",
+			},
+			"allow_insecure_http": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("MYRASEC_ALLOW_INSECURE_HTTP", false),
+				Description: "Allow a plain http:// API base URL on a host other than the local machine. The API credentials are sent in clear text then, use this for a test endpoint only.",
 			},
 			"api_cache_ttl": {
 				Type:        schema.TypeInt,
@@ -117,14 +123,15 @@ func Provider() *schema.Provider {
 // providerConfigure ...
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	config := Config{
-		APIKey:        d.Get("api_key").(string),
-		Secret:        d.Get("secret").(string),
-		APIToken:      d.Get("api_token").(string),
-		Language:      d.Get("language").(string),
-		APIBaseURL:    d.Get("api_base_url").(string),
-		APICacheTTL:   d.Get("api_cache_ttl").(int),
-		APIRetryCount: 3,
-		APIRetrySleep: 1,
+		APIKey:            d.Get("api_key").(string),
+		Secret:            d.Get("secret").(string),
+		APIToken:          d.Get("api_token").(string),
+		Language:          d.Get("language").(string),
+		APIBaseURL:        d.Get("api_base_url").(string),
+		APICacheTTL:       d.Get("api_cache_ttl").(int),
+		APIRetryCount:     3,
+		APIRetrySleep:     1,
+		AllowInsecureHTTP: d.Get("allow_insecure_http").(bool),
 	}
 
 	var diags diag.Diagnostics

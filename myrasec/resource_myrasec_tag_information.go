@@ -140,8 +140,12 @@ func resourceMyrasecTagInformationRead(ctx context.Context, d *schema.ResourceDa
 	}
 
 	info, diags := findTagInformation(informationID, tagID.(int), meta)
-	if diags.HasError() || info == nil {
+	if diags.HasError() {
 		return diags
+	}
+	if info == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setTagInformationData(d, info, tagID.(int))
@@ -193,6 +197,7 @@ func resourceMyrasecTagInformationUpdate(ctx context.Context, d *schema.Resource
 			Summary:  "Error updating tag information",
 			Detail:   formatError(err),
 		})
+		return diags
 	}
 
 	setTagInformationData(d, information, tagID.(int))
@@ -254,9 +259,7 @@ func resourceMyrasecTagInformationImport(ctx context.Context, d *schema.Resource
 
 	d.SetId(strconv.Itoa(informationID))
 	d.Set("tag_id", tagID)
-	resourceMyrasecTagInformationRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecTagInformationRead)
 }
 
 // buildTagInformation ...
@@ -297,35 +300,17 @@ func findTagInformation(informationID int, tagID int, meta any) (*myrasec.TagInf
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.TagInformation) int { return row.ID }, func(params map[string]string) ([]myrasec.TagInformation, error) {
+		return client.ListTagInformation(tagID, params)
+	}, func(row myrasec.TagInformation) bool { return row.ID == informationID })
+	if err != nil {
+		return nil, lookupDiagnostics("tag information", informationID, err)
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-
-		res, err := client.ListTagInformation(tagID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading tag information",
-				Detail:   formatError(err),
-			})
-		}
-
-		for _, s := range res {
-			if s.ID == informationID {
-				return &s, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{

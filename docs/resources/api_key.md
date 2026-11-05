@@ -25,7 +25,7 @@ The following arguments are supported:
 * `created` (*Computed*) Date of creation.
 * `modified` (*Computed*) Date of last modification.
 * `name` (**Required**) Name of the API key.
-* `key` The API key.
-* `secret` The secret part of the API key.
+* `key` (*Computed*) The API key. The attribute is sensitive: it is hidden in plans and CLI output but stored in the state.
+* `secret` (*Computed*) The secret part of the API key. The API returns it only when the key is created, so it is known for keys created by this resource and empty for imported keys. The attribute is sensitive: it is hidden in plans and CLI output but stored in the state.
 
-**Note:** The `secret` is only sent once, when creating a new API key. After this, the `secret` won't be communicated again.
+**Note:** The `secret` is only sent once, when creating a new API key. After this, the `secret` won't be communicated again. The provider keeps the stored value on later reads.

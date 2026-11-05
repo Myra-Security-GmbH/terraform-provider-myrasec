@@ -53,9 +53,10 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				Description: "Type of the rule.",
 			},
 			"expire_date": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Expire date schedules the deaktivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressEquivalentDateTime,
+				Description:      "Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
 			},
 			"name": {
 				Type:        schema.TypeString,
@@ -93,13 +94,13 @@ func resourceMyrasecTagWAFRule() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "",
+				Description: "Whether the rule is synchronized to the edge nodes.",
 			},
 			"template": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "",
+				Description: "Whether the rule is a template that is not applied to traffic. Not sent to the API for tag WAF rules.",
 			},
 			"process_next": {
 				Type:        schema.TypeBool,
@@ -273,8 +274,12 @@ func resourceMyrasecTagWAFRuleRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	rule, diags := findTagWAFRule(ruleID, tagID.(int), meta)
-	if diags.HasError() || rule == nil {
+	if diags.HasError() {
 		return diags
+	}
+	if rule == nil {
+		d.SetId("")
+		return nil
 	}
 
 	setTagWAFRuleData(d, rule)
@@ -384,9 +389,7 @@ func resourceMyrasecTagWAFRuleImport(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(strconv.Itoa(ruleID))
 	d.Set("tag_id", tagID)
-	resourceMyrasecTagWAFRuleRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecTagWAFRuleRead)
 }
 
 // buildTagWAFRule ...
@@ -468,43 +471,25 @@ func findTagWAFRule(wafRuleID int, tagID int, meta any) (*myrasec.TagWAFRule, di
 
 	tag, err := client.GetTag(tagID)
 	if err != nil {
+		return nil, lookupDiagnostics("tag", tagID, err)
+	}
+
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.TagWAFRule) int { return row.ID }, func(params map[string]string) ([]myrasec.TagWAFRule, error) {
+		return client.ListTagWAFRules(tag.ID, params)
+	}, func(row myrasec.TagWAFRule) bool { return row.ID == wafRuleID })
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "Error fetching tag for given ID",
+			Summary:  "Error loading tag WAF rules",
 			Detail:   formatError(err),
 		})
 		return nil, diags
 	}
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
-	}
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListTagWAFRules(tag.ID, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading tag WAF rules",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
-
-		for _, r := range res {
-			if r.ID == wafRuleID {
-				return &r, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
@@ -530,6 +515,7 @@ func setTagWAFRuleData(d *schema.ResourceData, rule *myrasec.TagWAFRule) {
 	d.Set("sync", rule.Sync)
 	d.Set("process_next", rule.ProcessNext)
 	d.Set("enabled", rule.Enabled)
+	d.Set("expire_date", formatDateTime(rule.ExpireDate))
 
 	conditions := createConditions(rule.Conditions)
 	d.Set("conditions", conditions)

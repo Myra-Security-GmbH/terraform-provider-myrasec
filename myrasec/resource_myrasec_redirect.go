@@ -293,12 +293,18 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
-	if diags != nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
 	}
 
 	redirect, diags := findRedirect(redirectID, meta, subDomainName, domain.ID)
-	if diags.HasError() || redirect == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if redirect == nil {
 		return nil, fmt.Errorf("unable to find redirect for subdomain [%s] with ID = [%d]", subDomainName, redirectID)
 	}
 
@@ -306,9 +312,7 @@ func resourceMyrasecRedirectImport(ctx context.Context, d *schema.ResourceData, 
 	d.Set("redirect_id", redirect.ID)
 	d.Set("subdomain_name", redirect.SubDomainName)
 
-	resourceMyrasecRedirectRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecRedirectRead)
 }
 
 // buildRedirect ...
@@ -357,12 +361,7 @@ func findRedirect(redirectID int, meta any, subDomainName string, domainID int) 
 
 	r, err := client.GetRedirect(domainID, subDomainName, redirectID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Error loading redirect",
-			Detail:   formatError(err),
-		})
-		return nil, diags
+		return nil, lookupDiagnostics("redirect", redirectID, err)
 	}
 
 	if r != nil {

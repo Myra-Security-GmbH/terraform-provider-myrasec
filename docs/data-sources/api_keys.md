@@ -30,6 +30,6 @@ The following arguments are supported:
 * `created` Date of creation.
 * `modified` Date of last modification.
 * `name` Name of the API key.
-* `key` The key.
+* `key` The API key. The attribute is sensitive: it is hidden in plans and CLI output but stored in the state.
 
 **Note:** The `secret` won't be part of this datasource. The `secret` is visible only right after creating a new API key and won't be communicated again.

@@ -121,7 +121,7 @@ func dataSourceMyrasecCacheSettingsRead(ctx context.Context, d *schema.ResourceD
 			"ttl":           r.TTL,
 			"not_found_ttl": r.NotFoundTTL,
 			"sort":          r.Sort,
-			"enabled":       r.Enabled,
+			"enabled":       r.Enabled != nil && *r.Enabled,
 			"enforce":       r.Enforce,
 			"comment":       r.Comment,
 		})
@@ -171,8 +171,6 @@ func parseCacheSettingFilter(d any) *cacheSettingFilter {
 // listCacheSettings ...
 func listCacheSettings(meta any, subDomainName string, params map[string]string) ([]myrasec.CacheSetting, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var settings []myrasec.CacheSetting
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
@@ -183,28 +181,19 @@ func listCacheSettings(meta any, subDomainName string, params map[string]string)
 			Summary:  "Error fetching domain for given subdomain name",
 			Detail:   formatError(err),
 		})
-		return settings, diags
+		return nil, diags
 	}
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListCacheSettings(domain.ID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching cache settings",
-				Detail:   formatError(err),
-			})
-			return settings, diags
-		}
-		settings = append(settings, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	settings, err := listPages(params, func(row myrasec.CacheSetting) int { return row.ID }, func(params map[string]string) ([]myrasec.CacheSetting, error) {
+		return client.ListCacheSettings(domain.ID, subDomainName, params)
+	})
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching cache settings",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return settings, diags

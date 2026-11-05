@@ -295,12 +295,18 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 	}
 
 	domain, diags := findDomainBySubdomainName(meta, subDomainName)
-	if diags != nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if domain == nil {
 		return nil, fmt.Errorf("unable to find domain for subdomain: [%s]", subDomainName)
 	}
 
 	setting, diags := findCacheSetting(settingID, meta, subDomainName, domain.ID)
-	if diags.HasError() || setting == nil {
+	if diags.HasError() {
+		return nil, diagnosticsError(diags)
+	}
+	if setting == nil {
 		return nil, fmt.Errorf("unable to find cache setting for subdomain [%s] with ID = [%d]", subDomainName, settingID)
 	}
 
@@ -308,9 +314,7 @@ func resourceMyrasecCacheSettingImport(ctx context.Context, d *schema.ResourceDa
 	d.Set("setting_id", setting.ID)
 	d.Set("subdomain_name", subDomainName)
 
-	resourceMyrasecCacheSettingRead(ctx, d, meta)
-
-	return []*schema.ResourceData{d}, nil
+	return finishImport(ctx, d, meta, resourceMyrasecCacheSettingRead)
 }
 
 // buildCacheSetting ...
@@ -321,7 +325,7 @@ func buildCacheSetting(d *schema.ResourceData) (*myrasec.CacheSetting, error) {
 		TTL:         d.Get("ttl").(int),
 		NotFoundTTL: d.Get("not_found_ttl").(int),
 		Sort:        d.Get("sort").(int),
-		Enabled:     d.Get("enabled").(bool),
+		Enabled:     myrasec.BoolPtr(d.Get("enabled").(bool)),
 		Enforce:     d.Get("enforce").(bool),
 		Comment:     d.Get("comment").(string),
 	}
@@ -356,35 +360,22 @@ func findCacheSetting(settingID int, meta any, subDomainName string, domainID in
 
 	client := meta.(*myrasec.API)
 
-	page := 1
-	pageSize := 250
-	params := map[string]string{
-		"pageSize": strconv.Itoa(pageSize),
-		"page":     strconv.Itoa(page),
+	params := map[string]string{}
+
+	found, err := findInPages(params, func(row myrasec.CacheSetting) int { return row.ID }, func(params map[string]string) ([]myrasec.CacheSetting, error) {
+		return client.ListCacheSettings(domainID, subDomainName, params)
+	}, func(row myrasec.CacheSetting) bool { return row.ID == settingID })
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error loading cache settings",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListCacheSettings(domainID, subDomainName, params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error loading cache settings",
-				Detail:   formatError(err),
-			})
-			return nil, diags
-		}
-
-		for _, s := range res {
-			if s.ID == settingID {
-				return &s, diags
-			}
-		}
-
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	if found != nil {
+		return found, diags
 	}
 
 	diags = append(diags, diag.Diagnostic{
@@ -406,7 +397,7 @@ func setCacheSettingData(d *schema.ResourceData, setting *myrasec.CacheSetting, 
 	d.Set("ttl", setting.TTL)
 	d.Set("not_found_ttl", setting.NotFoundTTL)
 	d.Set("sort", setting.Sort)
-	d.Set("enabled", setting.Enabled)
+	d.Set("enabled", setting.Enabled != nil && *setting.Enabled)
 	d.Set("enforce", setting.Enforce)
 	d.Set("comment", setting.Comment)
 	d.Set("subdomain_name", subDomainName)

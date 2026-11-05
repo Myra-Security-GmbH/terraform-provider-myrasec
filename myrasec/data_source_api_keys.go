@@ -50,8 +50,9 @@ func dataSourceMyrasecApiKeys() *schema.Resource {
 							Computed: true,
 						},
 						"key": {
-							Type:     schema.TypeString,
-							Computed: true,
+							Type:      schema.TypeString,
+							Computed:  true,
+							Sensitive: true,
 						},
 					},
 				},
@@ -131,30 +132,17 @@ func parseApiKeyFilter(d any) *apiKeyFilter {
 // listApiKeys ...
 func listApiKeys(meta any, params map[string]string) ([]myrasec.APIKey, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	var keys []myrasec.APIKey
-	pageSize := 250
 
 	client := meta.(*myrasec.API)
 
-	params["pageSize"] = strconv.Itoa(pageSize)
-	page := 1
-
-	for {
-		params["page"] = strconv.Itoa(page)
-		res, err := client.ListApiKeys(params)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error fetching API keys",
-				Detail:   formatError(err),
-			})
-			return keys, diags
-		}
-		keys = append(keys, res...)
-		if len(res) < pageSize {
-			break
-		}
-		page++
+	keys, err := listPages(params, func(row myrasec.APIKey) int { return row.ID }, client.ListApiKeys)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error fetching API keys",
+			Detail:   formatError(err),
+		})
+		return nil, diags
 	}
 
 	return keys, diags

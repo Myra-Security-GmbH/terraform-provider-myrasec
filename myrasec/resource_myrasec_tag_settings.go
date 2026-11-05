@@ -79,6 +79,42 @@ func resourceMyrasecTagSettings() *schema.Resource {
 				Optional:    true,
 				Description: "Block traffic from the TOR network.",
 			},
+			"bot_block_ai_category": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Block bots of the AI category, for example crawlers of AI companies.",
+			},
+			"bot_calc_fingerprint": {
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Description: "Calculate a client fingerprint for the bot detection.",
+			},
+			"bot_customer_regex_0": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "First customer defined regular expression used to identify bots.",
+			},
+			"bot_customer_regex_1": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Second customer defined regular expression used to identify bots.",
+			},
+			"bot_customer_regex_2": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Third customer defined regular expression used to identify bots.",
+			},
+			"bot_external_session_id": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Description: "Name of the external session identifier, for example a cookie, used to correlate the requests of a client.",
+			},
 			"cache_enabled": {
 				Type:        schema.TypeBool,
 				Required:    false,

@@ -36,5 +36,5 @@ The following arguments are supported:
 * `type` (**Required**) Type of the IP filter. Valid types are: `BLACKLIST`, `WHITELIST` and `WHITELIST_REQUEST_LIMITER`.
 * `value` (**Required**) The value of an IPFilter rule can contain a single IP address or a CIDR notation. IPv4 and IPv6 both are supported. If the type is `WHITELIST` or  `BLACKLIST`, then the value can be a single or range of IPv4 addresses or single IPv6 address.If the type is `WHITELIST_REQUEST_LIMITER`, then the value can be a single or range of IPv4 or IPv6 addresses
 * `enabled` (Optional) Enable or disable a filter. Default `true`.
-* `expire_date` (Optional) Expiry date schedules the deactivation of the filter. If none is set, the filter will be active until manual deactivation.
+* `expire_date` (Optional) Expiry date schedules the deactivation of the filter. If none is set, the filter will be active until manual deactivation. The value is compared as a point in time, so the same instant written with another time zone offset causes no diff. An unset date is read back as an empty string.
 * `comment` (Optional) A comment to describe this IP filter. Default `""`.
