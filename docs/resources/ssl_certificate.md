@@ -58,6 +58,13 @@ EOF
 }
 ```
 
+## Validation: errors and warnings
+
+The API checks the certificate, the key and the intermediate chain when `terraform apply` saves them (create, replacement through `cert_to_refresh` and an update of the intermediates). `terraform plan` does not contact this check, so a plan can succeed for material the apply rejects.
+
+* A blocking result fails the apply with an error that names the field, the message and the result code, for example `cert: The certificate has expired. [LEAF_EXPIRED]` or `intermediates[0].cert: ... [INTERMEDIATE_WRONG_KEY]`. Nothing is stored and the Terraform state stays as it was.
+* A warning, for example `intermediates: ... [CHAIN_INTERMEDIATE_MISSING]` or `cert: ... [LEAF_EXPIRES_SOON]`, does not fail the apply. It is shown as a warning diagnostic of the apply that saved the certificate. A refresh or a later apply without changes reads the stored certificate only and shows no warning again, so a warning never causes a new diff.
+
 ## Import example
 Importing an existing SSL certificate requires the domain name and the ID of the certificate you want to import.
 ```hcl
