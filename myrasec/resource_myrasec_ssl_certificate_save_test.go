@@ -125,6 +125,44 @@ func TestSSLCertificateReplaceReportsAPIWarnings(t *testing.T) {
 	diags := resourceMyrasecSSLCertificateUpdate(context.Background(), d, client)
 
 	assertSSLCertificateWarnings(t, diags)
+	if got := d.State().Attributes["certificate"]; got != "-----BEGIN CERTIFICATE----- renewed" {
+		t.Errorf("state certificate = %q after a successful replace, want the renewed one", got)
+	}
+}
+
+func TestSSLCertificateRejectedUpdateKeepsTheStoredMaterialInState(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+		diff   *terraform.InstanceDiff
+	}{
+		{name: "update", method: http.MethodPut, path: "/domain/1/certificates/7", diff: &terraform.InstanceDiff{Attributes: map[string]*terraform.ResourceAttrDiff{
+			"subdomains.#": {Old: "0", New: "1"},
+		}}},
+		{name: "replace", method: http.MethodPost, path: "/domain/1/certificates", diff: &terraform.InstanceDiff{Attributes: map[string]*terraform.ResourceAttrDiff{
+			"certificate": {Old: "-----BEGIN CERTIFICATE-----", New: "-----BEGIN CERTIFICATE----- renewed"},
+			"key":         {Old: "key", New: "renewed key"},
+		}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := domainTestClient(t, sslCertificateSaveHandler(t, tc.method, tc.path, http.StatusBadRequest, sslCertificateRejected))
+			d := storedSSLCertificateResourceData(t, tc.diff)
+
+			diags := resourceMyrasecSSLCertificateUpdate(context.Background(), d, client)
+
+			if !diags.HasError() {
+				t.Fatalf("a rejected %s did not fail the apply: %v", tc.name, diags)
+			}
+			state := d.State()
+			if state.Attributes["certificate"] != "-----BEGIN CERTIFICATE-----" || state.Attributes["key"] != "key" {
+				t.Errorf("a rejected %s wrote the proposed material into state: certificate=%q key=%q", tc.name, state.Attributes["certificate"], state.Attributes["key"])
+			}
+			if state.ID != "7" || state.Attributes["subdomains.#"] != "" && state.Attributes["subdomains.#"] != "0" {
+				t.Errorf("a rejected %s changed the stored state: id=%q subdomains=%q", tc.name, state.ID, state.Attributes["subdomains.#"])
+			}
+		})
+	}
 }
 
 func TestSSLCertificateCreateRejectedKeepsNoState(t *testing.T) {

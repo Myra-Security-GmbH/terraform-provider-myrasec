@@ -323,6 +323,7 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 
 // resourceMyrasecSSLCertificateUpdate ...
 func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	d.Partial(true)
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -385,6 +386,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 		return diags
 	}
 
+	d.Partial(false)
 	setSSLCertificateData(d, cert, domainName, domainID)
 
 	return append(diags, sslCertificateWarningDiagnostics(warnings)...)
