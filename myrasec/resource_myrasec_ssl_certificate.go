@@ -261,7 +261,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
 	}
 
-	resp, err := client.CreateSSLCertificate(cert, domainID)
+	resp, warnings, err := client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -272,6 +272,7 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
+	diags = append(diags, sslCertificateWarningDiagnostics(warnings)...)
 	diags = append(diags, resourceMyrasecSSLCertificateRead(ctx, d, meta)...)
 	return diags
 }
@@ -358,19 +359,21 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	oldCert, newCert := d.GetChange("certificate")
 	oldKey, newKey := d.GetChange("key")
 
+	var warnings []*myrasec.Warning
+
 	if oldCert == newCert && oldKey == newKey {
 		log.Println("[INFO] Update certificate")
-		cert, err = client.UpdateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.UpdateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	} else if cert.ID > 0 {
 		log.Println("[INFO] Replace certificate")
 		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
 		cert.CertToRefresh = cert.ID
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	} else {
 		log.Println("[INFO] Create certificate")
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	}
 
 	if err != nil {
@@ -383,6 +386,22 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	}
 
 	setSSLCertificateData(d, cert, domainName, domainID)
+
+	return append(diags, sslCertificateWarningDiagnostics(warnings)...)
+}
+
+// sslCertificateWarningDiagnostics turns the warnings the API returned next to a saved certificate
+// into warning diagnostics. They do not fail the apply and appear only on an apply that saves.
+func sslCertificateWarningDiagnostics(warnings []*myrasec.Warning) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	for _, w := range warnings {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "SSL certificate saved with a warning",
+			Detail:   w.String(),
+		})
+	}
 
 	return diags
 }
