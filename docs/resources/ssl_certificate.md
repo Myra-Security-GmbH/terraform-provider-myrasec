@@ -82,7 +82,7 @@ The following arguments are supported:
 * `subject_alternatives` (*Computed*) Sub domain(s) the certificate is valid for.
 * `wildcard` (*Computed*) True if the certificate contains a wildcard domain.
 * `extended_validation` (*Computed*) True if the certificate has extended validation.
-* `subdomains` (Optional) List of subdomains where to assign the certificate.
+* `subdomains` (Optional) List of subdomains where to assign the certificate. Some changes of other resources also change the subdomains of the certificate on the server and with them its `modified` timestamp: deleting the last DNS record of a name or renaming it removes the name from the certificate, and creating a DNS record can assign it to a certificate that covers it when automatic certificate requests are enabled for the organization. When the same apply changes `subdomains` of this certificate in the same way, the API refuses the certificate update as "edited in the meantime". The provider then re-reads the certificate and sends the update once more, but only if every subdomain the server removed or added is removed or added by this apply as well and the certificate and its TLS configuration are unchanged. Any other change made on the server in the meantime is reported as an error and never overwritten.
 * `cert_to_refresh` (Optional) ID of the certificate to refresh. Default `0`.
 * `cert_refresh_forced` (Optional) `true` to force certificate update. Default `true`.
 * `intermediate` (Optional) A list of intermediate certificate(s).

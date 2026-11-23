@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -360,7 +361,7 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 
 	if oldCert == newCert && oldKey == newKey {
 		log.Println("[INFO] Update certificate")
-		cert, err = client.UpdateSSLCertificate(cert, domainID)
+		cert, err = updateSSLCertificateRetryingStale(client, cert, domainID, sslStaleRetryGuardFromState(d))
 	} else if cert.ID > 0 {
 		log.Println("[INFO] Replace certificate")
 		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
@@ -385,6 +386,197 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	setSSLCertificateData(d, cert, domainName, domainID)
 
 	return diags
+}
+
+// sslStaleRetryGuard is the state of the certificate the plan was made against and the
+// subdomains the plan sends. updateSSLCertificateRetryingStale compares the certificate on the
+// server with it to decide whether a refused update may be sent again.
+type sslStaleRetryGuard struct {
+	// stateSubdomains are the subdomains of the certificate in the state (before this apply).
+	stateSubdomains []string
+	// plannedSubdomains are the subdomains the update sends.
+	plannedSubdomains []string
+	// stateFingerprint is the fingerprint of the certificate in the state.
+	stateFingerprint string
+	// stateConfigurationName is the TLS configuration of the certificate in the state.
+	stateConfigurationName string
+}
+
+// sslStaleRetryGuardFromState reads the guard of an update from the resource data: the prior
+// (state) values of subdomains, fingerprint and configuration_name and the planned subdomains.
+func sslStaleRetryGuardFromState(d *schema.ResourceData) sslStaleRetryGuard {
+	oldSubdomains, newSubdomains := d.GetChange("subdomains")
+	oldFingerprint, _ := d.GetChange("fingerprint")
+	oldConfigurationName, _ := d.GetChange("configuration_name")
+
+	return sslStaleRetryGuard{
+		stateSubdomains:        setToStrings(oldSubdomains),
+		plannedSubdomains:      setToStrings(newSubdomains),
+		stateFingerprint:       stringOrEmpty(oldFingerprint),
+		stateConfigurationName: stringOrEmpty(oldConfigurationName),
+	}
+}
+
+func setToStrings(v any) []string {
+	set, ok := v.(*schema.Set)
+	if !ok || set == nil {
+		return nil
+	}
+
+	out := make([]string, 0, set.Len())
+	for _, item := range set.List() {
+		if s, ok := item.(string); ok {
+			out = append(out, s)
+		}
+	}
+
+	return out
+}
+
+func stringOrEmpty(v any) string {
+	s, _ := v.(string)
+	return s
+}
+
+// normalizeSubdomain is the form the subdomains schema stores (its StateFunc): lower case,
+// without a trailing dot.
+func normalizeSubdomain(s string) string {
+	return strings.ToLower(myrasec.RemoveTrailingDot(s))
+}
+
+// serverChangeMatchesPlannedSubdomains reports whether the certificate on the server differs
+// from the state only in subdomain assignments that this plan makes itself. The API changes
+// the assignments of a certificate as a side effect of other writes in the same apply:
+//   - deleting the last A/AAAA/CNAME record of a name, or renaming it away, drops the name
+//     from its certificate,
+//   - creating a record, with automatic certificate requests enabled for the organization,
+//     assigns it to an issued certificate whose SANs (or parent wildcard) cover it,
+//   - updating a managed certificate request, or uploading another certificate for the
+//     name, detaches the name from this certificate or attaches it to a covering one.
+//
+// It is true when every subdomain the server dropped is dropped by the plan too, every
+// subdomain the server gained is in the plan too, and at least one subdomain changed. It is
+// false, and the refused update is reported instead of retried, when the certificate on the
+// server
+//   - is another certificate or was replaced (different ID or fingerprint),
+//   - carries another TLS configuration,
+//   - gained a subdomain the plan does not assign,
+//   - lost a subdomain the plan keeps, or
+//   - has the subdomains of the state (then something else changed it).
+//
+// So a change by someone else that the plan does not make itself is never overwritten by the
+// retry.
+func serverChangeMatchesPlannedSubdomains(current *myrasec.SSLCertificate, certID int, guard sslStaleRetryGuard) bool {
+	if current == nil || current.Certificate == nil || current.ID != certID {
+		return false
+	}
+
+	if guard.stateFingerprint == "" || current.Fingerprint != guard.stateFingerprint {
+		return false
+	}
+
+	if !strings.EqualFold(current.SslConfigurationName, guard.stateConfigurationName) {
+		return false
+	}
+
+	stateSet := make(map[string]bool, len(guard.stateSubdomains))
+	for _, s := range guard.stateSubdomains {
+		stateSet[normalizeSubdomain(s)] = true
+	}
+
+	plannedSet := make(map[string]bool, len(guard.plannedSubdomains))
+	for _, s := range guard.plannedSubdomains {
+		plannedSet[normalizeSubdomain(s)] = true
+	}
+
+	changed := 0
+
+	currentSet := make(map[string]bool, len(current.Subdomains))
+	for _, s := range current.Subdomains {
+		n := normalizeSubdomain(s)
+		if currentSet[n] {
+			continue
+		}
+		currentSet[n] = true
+		if stateSet[n] {
+			continue
+		}
+		// Gained on the server: only acceptable when the plan assigns it as well.
+		if !plannedSet[n] {
+			return false
+		}
+		changed++
+	}
+
+	for s := range stateSet {
+		if currentSet[s] {
+			continue
+		}
+		// Dropped on the server: only acceptable when the plan drops it as well.
+		if plannedSet[s] {
+			return false
+		}
+		changed++
+	}
+
+	return changed > 0
+}
+
+// updateSSLCertificateRetryingStale sends the certificate update. The API locks optimistically:
+// it refuses an update whose modified timestamp is older than the stored one with HTTP 400
+// "The record has been edited in the meantime". Within one apply that happens when deleting a
+// myrasec_dns_record removes its subdomain from the certificate on the server before the
+// certificate update runs.
+//
+// On an HTTP 400 the certificate is read again. The update is sent ONCE more, with the stored
+// modified timestamp and otherwise unchanged, only when the stored timestamp differs from the
+// one that was sent AND serverChangeMatchesPlannedSubdomains holds. Every other case returns
+// the first error unchanged: any other status, a failed re-read, an unchanged timestamp (a
+// genuine validation error) and any server-side change the plan did not make itself. A refused
+// retry is reported as the API answered it; there is never a third attempt.
+func updateSSLCertificateRetryingStale(client *myrasec.API, cert *myrasec.SSLCertificate, domainID int, guard sslStaleRetryGuard) (*myrasec.SSLCertificate, error) {
+	updated, err := client.UpdateSSLCertificate(cert, domainID)
+	if err == nil {
+		return updated, nil
+	}
+
+	var apiErr *myrasec.APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusBadRequest {
+		return nil, err
+	}
+
+	if cert.Certificate == nil || cert.Modified == nil {
+		return nil, err
+	}
+
+	current, readErr := client.GetSSLCertificate(domainID, cert.ID)
+	if readErr != nil {
+		log.Printf("[WARN] Could not re-read SSL certificate %d after a refused update: %v", cert.ID, readErr)
+		return nil, err
+	}
+
+	if current == nil || current.Certificate == nil || current.Modified == nil {
+		return nil, err
+	}
+
+	if current.Modified.Equal(cert.Modified.Time) {
+		return nil, err
+	}
+
+	if !serverChangeMatchesPlannedSubdomains(current, cert.ID, guard) {
+		log.Printf("[WARN] SSL certificate %d was changed on the server in a way this plan did not make, not retrying the refused update", cert.ID)
+		return nil, err
+	}
+
+	log.Printf("[INFO] SSL certificate %d had its subdomains changed on the server as this plan changes them (%s -> %s), retrying the update once",
+		cert.ID, cert.Modified.Format(time.RFC3339), current.Modified.Format(time.RFC3339))
+
+	retry := *cert
+	retryCertificate := *cert.Certificate
+	retryCertificate.Modified = current.Modified
+	retry.Certificate = &retryCertificate
+
+	return client.UpdateSSLCertificate(&retry, domainID)
 }
 
 func warnIfIPLockEnabled(meta any, domainID int) diag.Diagnostics {
