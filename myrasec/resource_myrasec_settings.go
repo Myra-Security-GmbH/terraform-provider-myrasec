@@ -705,17 +705,9 @@ func resourceMyrasecSettingsDelete(ctx context.Context, d *schema.ResourceData, 
 
 	var diags diag.Diagnostics
 
-	settingID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing setting ID",
-			Detail:   formatError(err),
-		})
-		return diags
-	}
-
-	log.Printf("[INFO] Deleting settings: %v", settingID)
+	// The ID is a Unix timestamp after create and update, but the subdomain name after an
+	// import. The destroy resets the settings of subdomain_name, so it does not parse the ID.
+	log.Printf("[INFO] Deleting settings: %v", d.Id())
 
 	settings, err := buildSettings(d, true)
 	if err != nil {

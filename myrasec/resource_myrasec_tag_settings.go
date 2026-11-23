@@ -632,16 +632,9 @@ func resourceMyrasecTagSettingsDelete(ctx context.Context, d *schema.ResourceDat
 
 	var diags diag.Diagnostics
 
-	settingID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error parsing tag setting ID",
-			Detail:   formatError(err),
-		})
-		return diags
-	}
-	log.Printf("[INFO] Deleting settings: %v", settingID)
+	// The ID is a Unix timestamp after create and update, but whatever was passed after an
+	// import. The destroy resets the settings of tag_id, so it does not parse the ID.
+	log.Printf("[INFO] Deleting tag settings: %v", d.Id())
 
 	settings, err := buildTagSettings(d, true)
 	if err != nil {
