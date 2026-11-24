@@ -58,6 +58,20 @@ EOF
 }
 ```
 
+## Validation: errors and warnings
+
+The API checks the certificate, the key and the intermediate chain every time `terraform apply` sends them. `terraform plan` does not run this check, so a plan can succeed for material the apply rejects. The apply sends them:
+
+* on create;
+* on every change of `certificate` or `key`: the provider replaces the stored certificate (it sends the stored one as `cert_to_refresh` itself, you do not have to set it);
+* on every other update of an existing certificate. Such an update always sends the configured `intermediate` blocks, so with intermediates configured, a change of only `subdomains` or `configuration_name` runs the chain check again and can warn or fail.
+
+A blocking result fails the apply with one error per result, on the attribute it belongs to, with the message and the result code, for example `certificate: The certificate has expired. [LEAF_EXPIRED]`. Nothing is stored and the Terraform state stays as it was. The warnings of the same check are shown next to the errors.
+
+A warning, for example `intermediate: ... [CHAIN_INTERMEDIATE_MISSING]` or `certificate: ... [LEAF_EXPIRES_SOON]`, does not fail the apply. It is shown as a warning diagnostic of the apply that sent the material. A refresh or a later apply without changes reads the stored certificate only and shows no warning again, so a warning never causes a new diff.
+
+A result on one intermediate names it by its subject, for example `intermediate "CN=Example Intermediate CA,O=Example": ... [INTERMEDIATE_WRONG_KEY]`. `intermediate` is a set, so the provider does not send the blocks in the order of the configuration; the subject tells which block is meant. When the subject cannot be read, the result shows the position in the order sent (`intermediate 2`).
+
 ## Import example
 Importing an existing SSL certificate requires the domain name and the ID of the certificate you want to import.
 ```hcl

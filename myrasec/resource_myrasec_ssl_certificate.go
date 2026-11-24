@@ -261,17 +261,13 @@ func resourceMyrasecSSLCertificateCreate(ctx context.Context, d *schema.Resource
 		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
 	}
 
-	resp, err := client.CreateSSLCertificate(cert, domainID)
+	resp, warnings, err := client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error creating SSL certificate",
-			Detail:   formatError(err),
-		})
-		return diags
+		return append(diags, sslCertificateSaveErrorDiagnostics("Error creating SSL certificate", err, cert.Intermediates)...)
 	}
 
 	d.SetId(fmt.Sprintf("%d", resp.ID))
+	diags = append(diags, sslCertificateWarningDiagnostics("SSL certificate saved with a warning", warnings, cert.Intermediates)...)
 	diags = append(diags, resourceMyrasecSSLCertificateRead(ctx, d, meta)...)
 	return diags
 }
@@ -322,6 +318,10 @@ func resourceMyrasecSSLCertificateRead(ctx context.Context, d *schema.ResourceDa
 
 // resourceMyrasecSSLCertificateUpdate ...
 func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	// Keep partial mode on until the save succeeded. On an error SDK v2 writes the proposed
+	// configuration into the state unless partial mode is on, and Read never reads certificate or
+	// key back, so a rejected certificate would stay in the state and the next plan shows no diff.
+	d.Partial(true)
 	client := meta.(*myrasec.API)
 
 	var diags diag.Diagnostics
@@ -358,33 +358,34 @@ func resourceMyrasecSSLCertificateUpdate(ctx context.Context, d *schema.Resource
 	oldCert, newCert := d.GetChange("certificate")
 	oldKey, newKey := d.GetChange("key")
 
+	var warnings []*myrasec.Warning
+	sent := cert.Intermediates
+
 	if oldCert == newCert && oldKey == newKey {
 		log.Println("[INFO] Update certificate")
-		cert, err = client.UpdateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.UpdateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	} else if cert.ID > 0 {
 		log.Println("[INFO] Replace certificate")
 		diags = append(diags, warnIfIPLockEnabled(meta, domainID)...)
 		cert.CertToRefresh = cert.ID
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	} else {
 		log.Println("[INFO] Create certificate")
 		cert.ID = 0
-		cert, err = client.CreateSSLCertificate(cert, domainID)
+		cert, warnings, err = client.CreateSSLCertificateWithWarningsContext(ctx, cert, domainID)
 	}
 
 	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "Error updating SSL certificate",
-			Detail:   formatError(err),
-		})
-		return diags
+		return append(diags, sslCertificateSaveErrorDiagnostics("Error updating SSL certificate", err, sent)...)
 	}
 
+	// Only after the error check: leaving partial mode lets SDK v2 store the new configuration,
+	// which is right once the API accepted it.
+	d.Partial(false)
 	setSSLCertificateData(d, cert, domainName, domainID)
 
-	return diags
+	return append(diags, sslCertificateWarningDiagnostics("SSL certificate saved with a warning", warnings, sent)...)
 }
 
 func warnIfIPLockEnabled(meta any, domainID int) diag.Diagnostics {
