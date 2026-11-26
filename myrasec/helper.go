@@ -279,21 +279,58 @@ func findInPages[T any](params map[string]string, id func(T) int, fetch func(map
 	return found, err
 }
 
+// compactOffsetDateTime is the layout the API uses for dates: RFC3339 with the time zone
+// offset written without the colon (+0100).
+const compactOffsetDateTime = "2006-01-02T15:04:05Z0700"
+
+// parseDateTime parses a configured date. Besides RFC3339 it accepts the form the API itself
+// returns, where the offset has no colon, so a value copied from the API is a valid
+// configuration. An empty value is an unset date and returns nil.
+func parseDateTime(value string) (*types.DateTime, error) {
+	if value == "" {
+		return nil, nil
+	}
+
+	for _, layout := range []string{time.RFC3339, compactOffsetDateTime} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return &types.DateTime{Time: parsed}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("invalid date %q: expected RFC3339 like 2027-01-01T12:00:00+01:00, the offset may also be written without the colon (+0100)", value)
+}
+
+// validateDateTime is a ValidateFunc for optional date attributes: it rejects a value that
+// parseDateTime does not accept at plan time, an empty value is an unset date.
+func validateDateTime(i any, k string) ([]string, []error) {
+	value, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
+	}
+
+	if _, err := parseDateTime(value); err != nil {
+		return nil, []error{fmt.Errorf("%q: %w", k, err)}
+	}
+
+	return nil, nil
+}
+
 // suppressEquivalentDateTime is a DiffSuppressFunc for date attributes: the API reports a date
 // in its own time zone offset, so a configured value naming the same instant in another offset
-// (or with a different precision) is not a change.
+// (with or without the colon) is not a change. Dates are sent and read back in whole seconds,
+// so a configured fraction of a second is not a change either.
 func suppressEquivalentDateTime(_, oldValue, newValue string, _ *schema.ResourceData) bool {
-	oldDate, err := types.ParseDate(oldValue)
+	oldDate, err := parseDateTime(oldValue)
 	if err != nil || oldDate == nil {
 		return false
 	}
 
-	newDate, err := types.ParseDate(newValue)
+	newDate, err := parseDateTime(newValue)
 	if err != nil || newDate == nil {
 		return false
 	}
 
-	return oldDate.Equal(newDate.Time)
+	return oldDate.Truncate(time.Second).Equal(newDate.Truncate(time.Second))
 }
 
 // parseResourceServiceID splits the passed id (format like string:integer) to separate values

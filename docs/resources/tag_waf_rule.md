@@ -46,7 +46,7 @@ The following arguments are supported:
 * `direction` (**Required**) Phase specifies the condition under which a rule applies. Pre-origin means before your server (request), post-origin is past your server (response). Valid values are `in` for request or `out` for response.
 * `description` (Optional) Your notes on this rule. Default `""`.
 * `log_identifier` (Optional) A comment to identify the matching rule in the access log. Default `""`.
-* `expire_date` (Optional) Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation. The value is compared as a point in time, so the same instant written with another time zone offset causes no diff. An unset date is read back as an empty string.
+* `expire_date` (Optional) Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation. The value is an RFC3339 date (`2027-01-01T12:00:00+01:00`), the offset may also be written without the colon as the API returns it (`2027-01-01T12:00:00+0100`). It is compared as a point in time, so the same instant written with another time zone offset causes no diff. A fraction of a second is dropped. An unset date is read back as an empty string.
 * `sort` (Optional) The order in which the rules take action. Default `1`.
 * `sync` (Optional) Whether the rule is synchronized to the edge nodes. Default `false`.
 * `template` (Optional) Whether the rule is a template that is not applied to traffic. Not sent to the API for tag WAF rules. Default `false`.

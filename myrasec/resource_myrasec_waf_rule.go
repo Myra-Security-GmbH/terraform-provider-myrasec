@@ -106,6 +106,7 @@ func resourceMyrasecWAFRule() *schema.Resource {
 			"expire_date": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				ValidateFunc:     validateDateTime,
 				DiffSuppressFunc: suppressEquivalentDateTime,
 				Description:      "Expire date schedules the deactivation of the WAF rule. If none is set, the rule will be active until manual deactivation.",
 			},
@@ -548,7 +549,7 @@ func buildWAFRule(d *schema.ResourceData) (*myrasec.WAFRule, error) {
 		}
 	}
 	date := d.Get("expire_date").(string)
-	expireDate, err := types.ParseDate(date)
+	expireDate, err := parseDateTime(date)
 	if err != nil {
 		return nil, err
 	}
