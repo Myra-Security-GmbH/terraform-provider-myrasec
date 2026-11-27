@@ -77,6 +77,7 @@ func resourceMyrasecIPFilter() *schema.Resource {
 			"expire_date": {
 				Type:             schema.TypeString,
 				Optional:         true,
+				ValidateFunc:     validateDateTime,
 				DiffSuppressFunc: suppressEquivalentDateTime,
 				Description:      "Expire date schedules the deactivation of the filter. If none is set, the filter will be active until manual deactivation.",
 			},
@@ -334,7 +335,7 @@ func buildIPFilter(d *schema.ResourceData) (*myrasec.IPFilter, error) {
 	}
 	filter.Modified = modified
 
-	expireDate, err := types.ParseDate(d.Get("expire_date").(string))
+	expireDate, err := parseDateTime(d.Get("expire_date").(string))
 	if err != nil {
 		return nil, err
 	}

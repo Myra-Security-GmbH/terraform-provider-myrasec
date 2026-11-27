@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Myra-Security-GmbH/myrasec-go/v2/pkg/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -260,6 +261,11 @@ func TestSuppressEquivalentDateTime(t *testing.T) {
 		{name: "same instant other offset", oldValue: "2026-12-31T23:00:00Z", newValue: "2027-01-01T00:00:00+01:00", want: true},
 		{name: "same value", oldValue: "2026-12-31T23:00:00Z", newValue: "2026-12-31T23:00:00Z", want: true},
 		{name: "fractional seconds", oldValue: "2026-12-31T23:00:00Z", newValue: "2026-12-31T23:00:00.000Z", want: true},
+		{name: "configured fraction of a second", oldValue: "2027-01-01T12:00:00+01:00", newValue: "2027-01-01T12:00:00.5+0100", want: true},
+		{name: "next second", oldValue: "2027-01-01T12:00:00+01:00", newValue: "2027-01-01T12:00:01.5+0100"},
+		{name: "configured offset without colon", oldValue: "2027-01-01T12:00:00+01:00", newValue: "2027-01-01T12:00:00+0100", want: true},
+		{name: "stored offset without colon", oldValue: "2027-01-01T12:00:00+0100", newValue: "2027-01-01T11:00:00Z", want: true},
+		{name: "other instant without colon", oldValue: "2027-01-01T12:00:00+01:00", newValue: "2027-01-01T12:00:00+0200"},
 		{name: "other instant", oldValue: "2026-12-31T23:00:00Z", newValue: "2026-12-31T23:00:01Z"},
 		{name: "unset old", oldValue: "", newValue: "2026-12-31T23:00:00Z"},
 		{name: "unset new", oldValue: "2026-12-31T23:00:00Z", newValue: ""},
@@ -271,6 +277,58 @@ func TestSuppressEquivalentDateTime(t *testing.T) {
 				t.Errorf("suppress(%q, %q) = %v, want %v", tc.oldValue, tc.newValue, got, tc.want)
 			}
 		})
+	}
+}
+
+// TestParseDateTime covers the two accepted date forms: RFC3339 and the form the API returns,
+// whose offset has no colon. Both must name the same instant, everything else is rejected by
+// the parser and by the plan time validation.
+func TestParseDateTime(t *testing.T) {
+	want := time.Date(2027, time.January, 1, 11, 0, 0, 0, time.UTC)
+	for _, value := range []string{
+		"2027-01-01T12:00:00+01:00",
+		"2027-01-01T12:00:00+0100",
+		"2027-01-01T11:00:00Z",
+		"2027-01-01T11:00:00.000Z",
+		"2027-01-01T06:00:00-0500",
+	} {
+		t.Run(value, func(t *testing.T) {
+			date, err := parseDateTime(value)
+			if err != nil || date == nil {
+				t.Fatalf("parseDateTime(%q) = %v, %v", value, date, err)
+			}
+			if !date.Equal(want) {
+				t.Errorf("parseDateTime(%q) = %s, want %s", value, date.Format(time.RFC3339), want.Format(time.RFC3339))
+			}
+			if _, errs := validateDateTime(value, "expire_date"); len(errs) > 0 {
+				t.Errorf("validation rejected %q: %v", value, errs)
+			}
+		})
+	}
+
+	t.Run("unset", func(t *testing.T) {
+		date, err := parseDateTime("")
+		if err != nil || date != nil {
+			t.Fatalf("parseDateTime(\"\") = %v, %v, want nil, nil", date, err)
+		}
+		if _, errs := validateDateTime("", "expire_date"); len(errs) > 0 {
+			t.Errorf("validation rejected an unset date: %v", errs)
+		}
+	})
+
+	for _, value := range []string{"yesterday", "2027-01-01", "2027-01-01T12:00:00", "2027-01-01 12:00:00+01:00", "2027-01-01T12:00:00+01"} {
+		t.Run("invalid "+value, func(t *testing.T) {
+			if date, err := parseDateTime(value); err == nil || !strings.Contains(err.Error(), strconv.Quote(value)) {
+				t.Errorf("parseDateTime(%q) = %v, %v, want an error naming the value", value, date, err)
+			}
+			if _, errs := validateDateTime(value, "expire_date"); len(errs) != 1 || !strings.Contains(errs[0].Error(), "expire_date") {
+				t.Errorf("validation of %q = %v, want one error naming the attribute", value, errs)
+			}
+		})
+	}
+
+	if _, errs := validateDateTime(1, "expire_date"); len(errs) != 1 {
+		t.Errorf("validation of a non string value = %v, want one error", errs)
 	}
 }
 
